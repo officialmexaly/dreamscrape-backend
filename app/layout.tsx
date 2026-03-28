@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Navigation } from '@/src/components/Navigation';
 import { Footer } from '@/src/components/Footer';
@@ -7,6 +7,12 @@ export const metadata: Metadata = {
   title: 'Dreamscape Curated Events',
   description:
     'Luxury weddings, private celebrations, and elevated brand experiences thoughtfully designed and beautifully executed.',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
