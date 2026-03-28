@@ -136,8 +136,10 @@ export function ConsultationPage() {
     });
   };
 
-  const isEventTypeDisabled = (value: string) =>
-    lockedEventTypes ? !lockedEventTypes.has(value) : false;
+  const isEventTypeDisabled = (value: string) => {
+    if (!lockedEventTypes) return false;
+    return !lockedEventTypes.has(value as any);
+  };
 
   return (
     <div className="w-full bg-brand-light min-h-screen pt-40 md:pt-44 pb-24">
