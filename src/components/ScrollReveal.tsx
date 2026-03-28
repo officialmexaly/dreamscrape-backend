@@ -15,26 +15,17 @@ export function ScrollReveal({
 }: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('down');
-
-  useEffect(() => {
-    let previousY = window.scrollY;
-
-    const handleScroll = () => {
-      const currentY = window.scrollY;
-      setScrollDirection(currentY > previousY ? 'down' : 'up');
-      previousY = currentY;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsVisible(entry.isIntersecting);
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          // Once visible, we can stop observing to save memory
+          if (ref.current) {
+            observer.unobserve(ref.current);
+          }
+        }
       },
       {
         threshold: 0.18,
@@ -56,13 +47,13 @@ export function ScrollReveal({
 
     switch (direction) {
       case 'up':
-        return scrollDirection === 'down' ? 'translate3d(0, 48px, 0)' : 'translate3d(0, -48px, 0)';
+        return 'translate3d(0, 48px, 0)';
       case 'down':
-        return scrollDirection === 'down' ? 'translate3d(0, -48px, 0)' : 'translate3d(0, 48px, 0)';
+        return 'translate3d(0, -48px, 0)';
       case 'left':
-        return scrollDirection === 'down' ? 'translate3d(48px, 0, 0)' : 'translate3d(-48px, 0, 0)';
+        return 'translate3d(48px, 0, 0)';
       case 'right':
-        return scrollDirection === 'down' ? 'translate3d(-48px, 0, 0)' : 'translate3d(48px, 0, 0)';
+        return 'translate3d(-48px, 0, 0)';
       default:
         return 'translate3d(0, 0, 0)';
     }
@@ -75,10 +66,9 @@ export function ScrollReveal({
       style={{
         opacity: isVisible ? 1 : 0.08,
         transform: getTransform(),
-        transition: `opacity ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, transform ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`,
-        willChange: 'opacity, transform'
+        transition: `opacity ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, transform ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`
       }}>
-      
+
       {children}
     </div>);
 

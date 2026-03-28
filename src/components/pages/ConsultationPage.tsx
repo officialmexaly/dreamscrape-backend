@@ -97,6 +97,26 @@ export function ConsultationPage() {
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>(
     selectedService ? [...(SERVICE_EVENT_TYPE_MAP[selectedService] ?? [])] : []
   );
+
+  // Form state
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    eventDate: undefined as Date | undefined,
+    eventLocation: '',
+    budget: '',
+    guests: '',
+    howDidYouHear: '',
+    additionalDetails: ''
+  });
+
+  // Submission state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [submitMessage, setSubmitMessage] = useState('');
+
   const selectedDateStatus = date ? (BOOKED_DATE_KEYS.has(formatDateKey(date)) ? 'booked' : 'available') : undefined;
   const isBookedDay = selectedDateStatus === 'booked';
   const consultationIntro =
@@ -139,6 +159,81 @@ export function ConsultationPage() {
   const isEventTypeDisabled = (value: string) => {
     if (!lockedEventTypes) return false;
     return !lockedEventTypes.has(value as any);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validation
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+      setSubmitStatus('error');
+      setSubmitMessage('Please fill in all required fields.');
+      return;
+    }
+
+    if (!date || !selectedTime) {
+      setSubmitStatus('error');
+      setSubmitMessage('Please select a consultation date and time.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    try {
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          event_date: formData.eventDate ? formData.eventDate.toISOString().split('T')[0] : undefined,
+          event_location: formData.eventLocation || undefined,
+          event_types: selectedEventTypes,
+          budget: formData.budget || undefined,
+          guests: formData.guests || undefined,
+          how_did_you_hear: formData.howDidYouHear || undefined,
+          additional_details: formData.additionalDetails || undefined,
+          consultation_date: date.toISOString().split('T')[0],
+          consultation_time: selectedTime,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create booking');
+      }
+
+      setSubmitStatus('success');
+      setSubmitMessage('Your consultation has been booked successfully! You will receive a confirmation email shortly.');
+
+      // Reset form
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        eventDate: undefined,
+        eventLocation: '',
+        budget: '',
+        guests: '',
+        howDidYouHear: '',
+        additionalDetails: ''
+      });
+      setUploadedFiles([]);
+
+    } catch (error) {
+      console.error('Booking error:', error);
+      setSubmitStatus('error');
+      setSubmitMessage(error instanceof Error ? error.message : 'Failed to create booking. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -281,7 +376,17 @@ export function ConsultationPage() {
                 : 'Select an available day and time for your appointment to complete this form.'}
             </div>
 
-            <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-8" onSubmit={handleSubmit}>
+              {submitStatus !== 'idle' && (
+                <div className={`p-4 rounded-lg ${
+                  submitStatus === 'success'
+                    ? 'bg-green-50 text-green-800 border border-green-200'
+                    : 'bg-red-50 text-red-800 border border-red-200'
+                }`}>
+                  {submitMessage}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <div className="space-y-2">
                   <Label className="text-brand-gray font-normal text-sm">
@@ -289,8 +394,12 @@ export function ConsultationPage() {
                   </Label>
                   <Input
                     placeholder="Please provide your first name"
-                    className="border-brand-purple/15 bg-white rounded-full h-11" />
-                  
+                    className="border-brand-purple/15 bg-white rounded-full h-11"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                    disabled={isSubmitting}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-brand-gray font-normal text-sm">
@@ -298,21 +407,40 @@ export function ConsultationPage() {
                   </Label>
                   <Input
                     placeholder="Please provide your last name"
-                    className="border-brand-purple/15 bg-white rounded-full h-11" />
-                  
+                    className="border-brand-purple/15 bg-white rounded-full h-11"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                    disabled={isSubmitting}
+                    required
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-brand-gray font-normal text-sm">
                     Phone Number:<span className="text-red-500">*</span>
                   </Label>
-                  <Input className="border-brand-purple/15 bg-white rounded-full h-11" />
+                  <Input
+                    placeholder="Your phone number"
+                    className="border-brand-purple/15 bg-white rounded-full h-11"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    disabled={isSubmitting}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-brand-gray font-normal text-sm">
                     Email Address:<span className="text-red-500">*</span>
                   </Label>
-                  <Input className="border-brand-purple/15 bg-white rounded-full h-11" />
+                  <Input
+                    type="email"
+                    placeholder="Your email address"
+                    className="border-brand-purple/15 bg-white rounded-full h-11"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    disabled={isSubmitting}
+                    required
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -323,16 +451,18 @@ export function ConsultationPage() {
                     <button
                       type="button"
                       onClick={() => setIsEventDatePickerOpen((open) => !open)}
-                      className="flex h-11 w-full items-center rounded-full border border-brand-purple/15 bg-white px-4 text-left text-sm text-brand-dark transition-colors hover:border-brand-pink">
-                      {date ? formatLongDate(date) : 'Select date'}
+                      className="flex h-11 w-full items-center rounded-full border border-brand-purple/15 bg-white px-4 text-left text-sm text-brand-dark transition-colors hover:border-brand-pink"
+                      disabled={isSubmitting}
+                    >
+                      {formData.eventDate ? formatLongDate(formData.eventDate) : 'Select date'}
                     </button>
 
                     {isEventDatePickerOpen && (
                       <div className="absolute left-0 top-full z-30 mt-2 rounded-[1.25rem] border border-brand-purple/12 bg-white p-3 shadow-[0_22px_60px_rgba(33,27,37,0.12)]">
                         <Calendar
-                          selected={date}
+                          selected={formData.eventDate}
                           onSelect={(selectedDate) => {
-                            setDate(selectedDate);
+                            setFormData({...formData, eventDate: selectedDate});
                             setIsEventDatePickerOpen(false);
                           }}
                           getDayStatus={(calendarDate) =>
@@ -357,15 +487,26 @@ export function ConsultationPage() {
                   </Label>
                   <Input
                     placeholder="$50,000"
-                    className="border-brand-purple/15 bg-white rounded-full h-11" />
-                  
+                    className="border-brand-purple/15 bg-white rounded-full h-11"
+                    value={formData.budget}
+                    onChange={(e) => setFormData({...formData, budget: e.target.value})}
+                    disabled={isSubmitting}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-brand-gray font-normal text-sm">
                     Estimated Number of Guests:
                     <span className="text-red-500">*</span>
                   </Label>
-                  <Input className="border-brand-purple/15 bg-white rounded-full h-11" />
+                  <Input
+                    placeholder="100"
+                    className="border-brand-purple/15 bg-white rounded-full h-11"
+                    value={formData.guests}
+                    onChange={(e) => setFormData({...formData, guests: e.target.value})}
+                    disabled={isSubmitting}
+                    required
+                  />
                 </div>
               </div>
 
@@ -398,14 +539,26 @@ export function ConsultationPage() {
                 <Label className="text-brand-gray font-normal text-sm">
                   How did you hear about us?
                 </Label>
-                <Input className="border-brand-purple/15 bg-white rounded-full h-11" />
+                <Input
+                  placeholder="Instagram, referral, etc."
+                  className="border-brand-purple/15 bg-white rounded-full h-11"
+                  value={formData.howDidYouHear}
+                  onChange={(e) => setFormData({...formData, howDidYouHear: e.target.value})}
+                  disabled={isSubmitting}
+                />
               </div>
 
               <div className="space-y-2">
                 <Label className="text-brand-gray font-normal text-sm">
                   Additional Details (Optional)
                 </Label>
-                <Textarea className="border-brand-purple/15 bg-white rounded-[1.5rem] min-h-[120px] resize-none" />
+                <Textarea
+                  placeholder="Tell us more about your event..."
+                  className="border-brand-purple/15 bg-white rounded-[1.5rem] min-h-[120px] resize-none"
+                  value={formData.additionalDetails}
+                  onChange={(e) => setFormData({...formData, additionalDetails: e.target.value})}
+                  disabled={isSubmitting}
+                />
               </div>
 
               <div className="flex flex-col items-center justify-center pt-4 pb-8">
@@ -438,8 +591,12 @@ export function ConsultationPage() {
               </div>
 
               <div className="flex justify-end pt-4 border-t border-brand-purple/10">
-                <Button className="bg-brand-purple hover:bg-brand-pink text-white rounded-full px-8 h-11 font-medium tracking-[0.14em] uppercase">
-                  Submit and Finish
+                <Button
+                  type="submit"
+                  className="bg-brand-purple hover:bg-brand-pink text-white rounded-full px-8 h-11 font-medium tracking-[0.14em] uppercase"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit and Finish'}
                 </Button>
               </div>
             </form>
