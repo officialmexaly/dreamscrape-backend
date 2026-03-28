@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -11,10 +11,9 @@ import { Label } from '../ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { Calendar } from '../ui/calendar';
 import { Checkbox } from '../ui/checkbox';
+import { useAvailability } from '@/src/lib/hooks/useAvailability';
 
 const TIME_OPTIONS = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'] as const;
-const BOOKED_DATE_KEYS = new Set(['2026-03-28', '2026-03-30', '2026-04-03', '2026-04-10']);
-const BOOKED_TIME_OPTIONS = new Set(['10:00', '13:00', '16:00']);
 const CONSULTATION_CONTENT = {
   'wedding-destination-social': {
     title: 'Wedding/Destination/Social Event Planning',
@@ -117,8 +116,11 @@ export function ConsultationPage() {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [submitMessage, setSubmitMessage] = useState('');
 
-  const selectedDateStatus = date ? (BOOKED_DATE_KEYS.has(formatDateKey(date)) ? 'booked' : 'available') : undefined;
-  const isBookedDay = selectedDateStatus === 'booked';
+  // Real-time availability from database
+  const startDate = useMemo(() => new Date(2026, 2, 1), []); // March 2026
+  const endDate = useMemo(() => new Date(2026, 11, 31), []); // December 2026
+  const { isDateBooked, isSlotBooked, getAvailableTimes } = useAvailability(startDate, endDate);
+
   const consultationIntro =
     (selectedService && CONSULTATION_CONTENT[selectedService]) ||
     CONSULTATION_CONTENT['wedding-destination-social'];
@@ -285,7 +287,7 @@ export function ConsultationPage() {
                     selected={date}
                     onSelect={setDate}
                     getDayStatus={(calendarDate) =>
-                      BOOKED_DATE_KEYS.has(formatDateKey(calendarDate)) ? 'booked' : 'available'
+                      isDateBooked(calendarDate) ? 'booked' : 'available'
                     }
                     className="w-full max-w-sm bg-transparent p-0"
                   />
@@ -319,8 +321,8 @@ export function ConsultationPage() {
                     {date ? `${formatLongDate(date)} at ${selectedTime}` : 'Select a date and time'}
                   </p>
                   {date &&
-                    <p className={`mt-2 text-sm ${isBookedDay ? 'text-brand-gray' : 'text-brand-pink'}`}>
-                      {isBookedDay ? 'This day is fully booked.' : 'This day is available for consultation.'}
+                    <p className={`mt-2 text-sm ${isDateBooked(date) ? 'text-brand-gray' : 'text-brand-pink'}`}>
+                      {isDateBooked(date) ? 'This day is fully booked.' : 'This day is available for consultation.'}
                     </p>
                   }
                 </div>
@@ -337,8 +339,8 @@ export function ConsultationPage() {
                 <div className="grid max-w-[420px] grid-cols-2 gap-3 sm:grid-cols-4">
                   {TIME_OPTIONS.map((time) => {
                     const isSelected = selectedTime === time;
-                    const isBookedTime = BOOKED_TIME_OPTIONS.has(time);
-                    const isDisabled = isBookedDay || isBookedTime;
+                    const isBookedTime = date ? isSlotBooked(date, time) : false;
+                    const isDisabled = !date || isDateBooked(date) || isBookedTime;
 
                     return (
                       <button
@@ -361,7 +363,7 @@ export function ConsultationPage() {
 
                 <Button
                   className="mt-8 w-full max-w-[320px] bg-brand-purple hover:bg-brand-pink text-white h-12 rounded-full font-medium tracking-[0.14em] uppercase"
-                  disabled={!date || isBookedDay}
+                  disabled={!date || isDateBooked(date)}
                   onClick={() => setActiveTab('form')}>
                   Submit and Next
                 </Button>
@@ -371,7 +373,7 @@ export function ConsultationPage() {
 
           <TabsContent value="form" className="mt-0">
             <div className="border-b border-brand-pink/15 pb-4 mb-8 text-sm text-brand-gray">
-              {date && selectedTime && !isBookedDay
+              {date && selectedTime && !isDateBooked(date)
                 ? `Your consultation is set for ${formatLongDate(date)} at ${selectedTime}.`
                 : 'Select an available day and time for your appointment to complete this form.'}
             </div>
@@ -466,7 +468,7 @@ export function ConsultationPage() {
                             setIsEventDatePickerOpen(false);
                           }}
                           getDayStatus={(calendarDate) =>
-                            BOOKED_DATE_KEYS.has(formatDateKey(calendarDate)) ? 'booked' : 'available'
+                            isDateBooked(calendarDate) ? 'booked' : 'available'
                           }
                           className="w-full bg-transparent p-0"
                         />
