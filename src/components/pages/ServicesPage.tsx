@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Button } from '../ui/button';
 import { ScrollReveal } from '../ScrollReveal';
 export function ServicesPage() {
   return (
@@ -62,11 +61,13 @@ export function ServicesPage() {
                   <li>Destination Weddings (including international experiences such as Dallas, USA)</li>
                 </ul>
               </div>
-              <Link
-                href="/contact"
+              <a
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi! I\'m interested in learning more about your wedding planning services.')}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-block rounded-full border border-brand-purple px-6 py-3 text-sm uppercase tracking-[0.14em] text-brand-purple transition-colors hover:bg-brand-purple hover:text-white">
                 See Details
-              </Link>
+              </a>
             </ScrollReveal>
           </div>
         </div>
@@ -82,7 +83,7 @@ export function ServicesPage() {
                   src="https://images.unsplash.com/photo-1530103862676-de8892b07439?q=80&w=2070&auto=format&fit=crop"
                   alt="Private and Social Events"
                   className="w-full h-full object-cover rounded-sm shadow-xl" />
-                
+
               </div>
             </ScrollReveal>
 
@@ -116,11 +117,13 @@ export function ServicesPage() {
                 </ul>
               </div>
 
-              <Link
-                href="/contact"
+              <a
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi! I\'m interested in learning more about your private and social event services.')}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-block rounded-full border border-brand-purple px-6 py-3 text-sm uppercase tracking-[0.14em] text-brand-purple transition-colors hover:bg-brand-purple hover:text-white">
                 See Details
-              </Link>
+              </a>
             </ScrollReveal>
           </div>
         </div>
@@ -158,11 +161,13 @@ export function ServicesPage() {
                 <li>Corporate events & retreats</li>
                 <li>Expos, showcases & industry events</li>
               </ul>
-              <Link
-                href="/contact"
+              <a
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi! I\'m interested in learning more about your corporate and brand event services.')}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-block rounded-full border border-white px-6 py-3 text-sm uppercase tracking-[0.14em] text-white transition-colors hover:bg-white hover:text-brand-purple">
                 See Details
-              </Link>
+              </a>
             </ScrollReveal>
           </div>
         </div>
@@ -178,7 +183,7 @@ export function ServicesPage() {
                   src="https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=2069&auto=format&fit=crop"
                   alt="Special and Public Events"
                   className="w-full h-full object-cover rounded-sm shadow-xl" />
-                
+
               </div>
             </ScrollReveal>
 
@@ -195,11 +200,13 @@ export function ServicesPage() {
                 execution at scale.
               </p>
 
-              <Link
-                href="/contact"
+              <a
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi! I\'m interested in learning more about your special and public event services.')}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-block rounded-full border border-brand-purple px-6 py-3 text-sm uppercase tracking-[0.14em] text-brand-purple transition-colors hover:bg-brand-purple hover:text-white">
                 See Details
-              </Link>
+              </a>
             </ScrollReveal>
           </div>
         </div>
@@ -232,11 +239,13 @@ export function ServicesPage() {
                 unforgettable.
               </p>
 
-              <Link
-                href="/contact"
+              <a
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi! I\'m interested in learning more about your destination and luxury experience services.')}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-block rounded-full border border-brand-purple px-6 py-3 text-sm uppercase tracking-[0.14em] text-brand-purple transition-colors hover:bg-brand-purple hover:text-white">
                 See Details
-              </Link>
+              </a>
             </ScrollReveal>
           </div>
         </div>
