@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS bookings (
   additional_details TEXT,
   consultation_date DATE NOT NULL,
   consultation_time TEXT NOT NULL,
+  file_urls TEXT[] DEFAULT '{}',
+  file_names TEXT[] DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -78,3 +80,26 @@ GROUP BY consultation_date, consultation_time;
 -- Grant access on the view
 GRANT SELECT ON booking_availability TO anon;
 GRANT SELECT ON booking_availability TO service_role;
+
+-- Create storage bucket for file uploads
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('booking-files', 'booking-files', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow public access for uploading files (with proper validation in API)
+CREATE POLICY "Allow public uploads"
+ON storage.objects FOR INSERT
+TO anon
+WITH CHECK (bucket_id = 'booking-files');
+
+-- Allow public access to view files
+CREATE POLICY "Allow public view"
+ON storage.objects FOR SELECT
+TO anon
+USING (bucket_id = 'booking-files');
+
+-- Allow service role to delete files
+CREATE POLICY "Allow service role delete"
+ON storage.objects FOR DELETE
+TO service_role
+USING (bucket_id = 'booking-files');

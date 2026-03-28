@@ -2,12 +2,50 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase, type Booking } from '@/src/lib/supabase';
 import { Resend } from 'resend';
 import { createCalendarEvent } from '@/src/lib/google-calendar';
+import { bookingSchema, sanitizeInput } from '@/src/lib/validation';
+import { rateLimitMiddleware } from '@/src/lib/rate-limit';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
   try {
-    const booking: Booking = await request.json();
+    // Rate limiting
+    const rateLimitResult = await rateLimitMiddleware(request, 'booking');
+    if (!rateLimitResult.success) {
+      return rateLimitResult.response!;
+    }
+
+    // Parse and validate request body
+    const rawBooking = await request.json();
+
+    // Sanitize inputs
+    const sanitizedBooking = {
+      ...rawBooking,
+      first_name: sanitizeInput(rawBooking.first_name),
+      last_name: sanitizeInput(rawBooking.last_name),
+      email: sanitizeInput(rawBooking.email.toLowerCase()),
+      phone: sanitizeInput(rawBooking.phone),
+      event_location: rawBooking.event_location ? sanitizeInput(rawBooking.event_location) : undefined,
+      budget: rawBooking.budget ? sanitizeInput(rawBooking.budget) : undefined,
+      guests: rawBooking.guests ? sanitizeInput(rawBooking.guests) : undefined,
+      how_did_you_hear: rawBooking.how_did_you_hear ? sanitizeInput(rawBooking.how_did_you_hear) : undefined,
+      additional_details: rawBooking.additional_details ? sanitizeInput(rawBooking.additional_details) : undefined,
+    };
+
+    // Validate using Zod schema
+    const validationResult = bookingSchema.safeParse(sanitizedBooking);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Validation failed',
+          details: validationResult.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
+    const booking = validationResult.data as Booking;
 
     // Validate required fields
     if (!booking.first_name || !booking.last_name || !booking.email || !booking.phone ||
@@ -49,6 +87,8 @@ export async function POST(request: NextRequest) {
         additional_details: booking.additional_details || null,
         consultation_date: booking.consultation_date,
         consultation_time: booking.consultation_time,
+        file_urls: booking.file_urls || [],
+        file_names: booking.file_names || [],
       }])
       .select()
       .single();

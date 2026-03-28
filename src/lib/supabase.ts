@@ -20,5 +20,7 @@ export interface Booking {
   additional_details?: string;
   consultation_date: string;
   consultation_time: string;
+  file_urls?: string[];
+  file_names?: string[];
   created_at?: string;
 }

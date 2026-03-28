@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Upload as UploadIcon, X, File } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { Calendar } from '../ui/calendar';
 import { Checkbox } from '../ui/checkbox';
 import { useAvailability } from '@/src/lib/hooks/useAvailability';
+import { useFileUpload } from '@/src/lib/hooks/useFileUpload';
 
 const TIME_OPTIONS = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'] as const;
 const CONSULTATION_CONTENT = {
@@ -91,8 +92,24 @@ export function ConsultationPage() {
   const [date, setDate] = useState<Date | undefined>(new Date(2026, 2, 31));
   const [selectedTime, setSelectedTime] = useState<string>('12:00');
   const [activeTab, setActiveTab] = useState('availability');
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const [isEventDatePickerOpen, setIsEventDatePickerOpen] = useState(false);
+
+  // File upload hook
+  const {
+    uploads,
+    successfulUploads,
+    isUploading,
+    isDragActive,
+    getRootProps,
+    getInputProps,
+    removeUpload,
+    clearUploads,
+  } = useFileUpload({
+    maxFiles: 5,
+    onUploadComplete: (files) => {
+      console.log('Uploaded files:', files);
+    },
+  });
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>(
     selectedService ? [...(SERVICE_EVENT_TYPE_MAP[selectedService] ?? [])] : []
   );
@@ -202,6 +219,8 @@ export function ConsultationPage() {
           additional_details: formData.additionalDetails || undefined,
           consultation_date: date.toISOString().split('T')[0],
           consultation_time: selectedTime,
+          file_urls: successfulUploads.map(u => u.url),
+          file_names: successfulUploads.map(u => u.fileName),
         }),
       });
 
@@ -227,7 +246,7 @@ export function ConsultationPage() {
         howDidYouHear: '',
         additionalDetails: ''
       });
-      setUploadedFiles([]);
+      clearUploads();
 
     } catch (error) {
       console.error('Booking error:', error);
@@ -564,32 +583,77 @@ export function ConsultationPage() {
               </div>
 
               <div className="flex flex-col items-center justify-center pt-4 pb-8">
-                <input
-                  id="consultation-file-upload"
-                  type="file"
-                  multiple
-                  className="sr-only"
-                  onChange={(e) =>
-                    setUploadedFiles(
-                      Array.from(e.target.files ?? []).map((file) => file.name)
-                    )
-                  }
-                />
-                <Label htmlFor="consultation-file-upload" className="cursor-pointer">
-                  <span className="inline-flex items-center justify-center border border-brand-purple/15 text-brand-gray font-normal rounded-full px-6 h-11 mb-2 bg-brand-light transition-colors hover:border-brand-pink hover:text-brand-pink">
-                    Choose file(s) to upload
-                  </span>
-                </Label>
-                <p className="text-brand-gray/70 text-sm">
-                  or drag files here to upload
-                </p>
-                {uploadedFiles.length > 0 &&
-                  <div className="mt-4 space-y-1 text-center text-sm text-brand-gray">
-                    {uploadedFiles.map((fileName) => (
-                      <p key={fileName}>{fileName}</p>
+                <div
+                  {...getRootProps()}
+                  className={`w-full max-w-xl border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-colors ${
+                    isDragActive
+                      ? 'border-brand-pink bg-brand-pink/5'
+                      : 'border-brand-purple/20 hover:border-brand-pink/50'
+                  }`}
+                >
+                  <input {...getInputProps()} />
+                  <UploadIcon className="mx-auto h-12 w-12 text-brand-gray mb-4" />
+                  <p className="text-sm text-brand-gray mb-2">
+                    <span className="font-semibold text-brand-purple">Click to upload</span> or drag and drop
+                  </p>
+                  <p className="text-xs text-brand-gray/60">
+                    PNG, JPG, GIF, PDF, DOC, DOCX, XLS, XLSX (max 10MB each)
+                  </p>
+                  <p className="text-xs text-brand-gray/50 mt-1">
+                    Up to {successfulUploads.length} files allowed
+                  </p>
+                </div>
+
+                {/* Uploaded files list */}
+                {uploads.length > 0 && (
+                  <div className="w-full max-w-xl mt-4 space-y-2">
+                    <p className="text-sm font-medium text-brand-gray">Uploaded Files:</p>
+                    {uploads.map((upload, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-white rounded-lg border border-brand-purple/10"
+                      >
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <File className="h-5 w-5 text-brand-purple flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-brand-dark truncate">
+                              {upload.file.name}
+                            </p>
+                            <p className="text-xs text-brand-gray">
+                              {(upload.file.size / 1024).toFixed(1)} KB
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {upload.status === 'success' && upload.url && (
+                            <a
+                              href={upload.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-brand-pink hover:underline"
+                            >
+                              View
+                            </a>
+                          )}
+                          {upload.status === 'error' && (
+                            <span className="text-xs text-red-500">{upload.error}</span>
+                          )}
+                          {upload.status === 'uploading' && (
+                            <span className="text-xs text-brand-gray">Uploading...</span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removeUpload(index)}
+                            className="p-1 hover:bg-brand-gray/100 rounded-full"
+                            disabled={isSubmitting}
+                          >
+                            <X className="h-4 w-4 text-brand-gray hover:text-red-500" />
+                          </button>
+                        </div>
+                      </div>
                     ))}
                   </div>
-                }
+                )}
               </div>
 
               <div className="flex justify-end pt-4 border-t border-brand-purple/10">
