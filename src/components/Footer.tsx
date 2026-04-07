@@ -4,7 +4,20 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const footerGroups = [
+type FooterLink = {
+  label: string;
+  href: string;
+  external?: boolean;
+};
+
+type FooterConfig = {
+  exploreLinks?: FooterLink[];
+  companyLinks?: FooterLink[];
+  connectLinks?: FooterLink[];
+  copyright?: string;
+};
+
+const defaultFooterGroups = [
   {
     title: 'Explore',
     links: [
@@ -31,7 +44,43 @@ const footerGroups = [
   }
 ];
 
-export function Footer() {
+function normalizeLinks(links: unknown): FooterLink[] {
+  if (!Array.isArray(links)) return [];
+  return links
+    .map((link) => {
+      if (!link || typeof link !== 'object') return null;
+      const label = typeof (link as any).label === 'string' ? (link as any).label : '';
+      const href = typeof (link as any).href === 'string' ? (link as any).href : '';
+      if (!label.trim() || !href.trim()) return null;
+      return { label, href };
+    })
+    .filter((link): link is FooterLink => Boolean(link));
+}
+
+export function Footer({ config }: { config?: FooterConfig }) {
+  const groups = React.useMemo(() => {
+    if (!config) return defaultFooterGroups;
+
+    const explore = normalizeLinks(config.exploreLinks);
+    const company = normalizeLinks(config.companyLinks);
+    const connect = normalizeLinks(config.connectLinks);
+
+    const connectWithAdmin = (() => {
+      const hasAdmin = connect.some((l) => l.href === '/admin' || l.label.toLowerCase() === 'admin');
+      return hasAdmin ? connect : [...connect, { label: 'Admin', href: '/admin' }];
+    })();
+
+    return [
+      { title: 'Explore', links: explore.length ? explore : defaultFooterGroups[0].links },
+      { title: 'Company', links: company.length ? company : defaultFooterGroups[1].links },
+      { title: 'Connect', links: connectWithAdmin.length ? connectWithAdmin : defaultFooterGroups[2].links },
+    ];
+  }, [config]);
+
+  const copyright =
+    (config?.copyright && String(config.copyright).trim()) ||
+    `© ${new Date().getFullYear()} Dreamscape Curated Events Inc. All rights reserved.`;
+
   return (
     <footer className="bg-brand-dark pt-10 pb-6 border-t border-white/10 text-white">
       <div className="container mx-auto px-4 sm:px-6">
@@ -75,14 +124,14 @@ export function Footer() {
           </div>
 
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
-            {footerGroups.map((group) => (
+            {groups.map((group) => (
               <div key={group.title}>
                 <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/42 mb-4">
                   {group.title}
                 </p>
                 <div className="flex flex-col gap-3">
                   {group.links.map((link) =>
-                    link.external ? (
+                    link.external || link.href.startsWith('http') || link.href.startsWith('mailto:') ? (
                       <a
                         key={link.label}
                         href={link.href}
@@ -107,7 +156,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 border-t border-white/10 pt-5 text-center text-[0.72rem] text-white/38">
-          &copy; {new Date().getFullYear()} Dreamscape Curated Events Inc. All rights reserved.
+          {copyright}
         </div>
       </div>
     </footer>

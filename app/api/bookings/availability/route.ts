@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/src/lib/supabase';
+import { CACHE_DURATION } from '@/src/lib/cache';
+import { ErrorHandler, ErrorType, createErrorResponse } from '@/src/lib/error-handler';
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,39 +9,62 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date');
 
     if (!date) {
-      return NextResponse.json(
-        { error: 'Date parameter is required' },
-        { status: 400 }
+      throw ErrorHandler.createError(
+        'Date parameter is required',
+        ErrorType.VALIDATION,
+        400,
+        { providedParams: Array.from(searchParams.keys()) }
+      );
+    }
+
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+      throw ErrorHandler.createError(
+        'Invalid date format. Use YYYY-MM-DD',
+        ErrorType.VALIDATION,
+        400,
+        { providedDate: date }
       );
     }
 
     // Get all bookings for the specified date
-    const { data: bookings, error } = await supabase
+    const { data: bookings, error } = await supabase()
       .from('bookings')
       .select('consultation_time')
       .eq('consultation_date', date);
 
     if (error) {
-      return NextResponse.json(
-        { error: 'Failed to check availability' },
-        { status: 500 }
-      );
+      throw ErrorHandler.handleDatabaseError(error, {
+        operation: 'check_availability',
+        date,
+      });
     }
 
     // Extract booked time slots
-    const bookedTimes = bookings?.map(booking => booking.consultation_time) || [];
+    const bookedTimes = bookings?.map((booking: any) => booking.consultation_time) || [];
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       date,
       bookedTimes,
-      available: true
+      available: bookedTimes.length < 10, // Assume max 10 slots per day
+      totalSlots: 10,
+      bookedSlots: bookedTimes.length,
     });
 
+    // Add shorter cache headers for availability (real-time data)
+    response.headers.set('Cache-Control', `public, max-age=${CACHE_DURATION.AVAILABILITY}, stale-while-revalidate=${CACHE_DURATION.AVAILABILITY}`);
+    response.headers.set('CDN-Cache-Control', `public, max-age=${CACHE_DURATION.AVAILABILITY}, stale-while-revalidate=${CACHE_DURATION.AVAILABILITY}`);
+
+    return response;
+
   } catch (error) {
-    console.error('Availability check error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    const appError = error instanceof Error ? error : ErrorHandler.createError(
+      'Failed to check availability',
+      ErrorType.INTERNAL,
+      500
     );
+    ErrorHandler.logError(appError, { operation: 'check_availability' });
+    return createErrorResponse(appError);
   }
 }

@@ -1,0 +1,106 @@
+'use client';
+
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+
+type MediaItem = any;
+
+type MediaContextValue = {
+  media: MediaItem[];
+  isLoading: boolean;
+  refresh: () => Promise<void>;
+  createMedia: (draft: {
+    name: string;
+    url: string;
+    type?: string;
+    mime_type?: string | null;
+    size?: number | null;
+    width?: number | null;
+    height?: number | null;
+    alt_text?: string | null;
+    folder?: string | null;
+    tags?: unknown[] | null;
+  }) => Promise<MediaItem>;
+  updateMedia: (
+    id: string,
+    draft: {
+      name: string;
+      url: string;
+      type?: string;
+      mime_type?: string | null;
+      size?: number | null;
+      width?: number | null;
+      height?: number | null;
+      alt_text?: string | null;
+      folder?: string | null;
+      tags?: unknown[] | null;
+    }
+  ) => Promise<MediaItem>;
+  deleteMedia: (id: string) => Promise<void>;
+};
+
+const MediaContext = createContext<MediaContextValue | null>(null);
+
+export function MediaProvider({ children }: { children: React.ReactNode }) {
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const refresh = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/admin/media-library', { cache: 'no-store' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || 'Failed to load media');
+      setMedia(json.items || []);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void refresh();
+  }, []);
+
+  const createMedia: MediaContextValue['createMedia'] = async (draft) => {
+    const res = await fetch('/api/admin/media-library', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(draft),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json?.error || 'Failed to create media');
+    setMedia((prev) => [json.item, ...prev]);
+    return json.item;
+  };
+
+  const updateMedia: MediaContextValue['updateMedia'] = async (id, draft) => {
+    const res = await fetch(`/api/admin/media-library/${id}`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(draft),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json?.error || 'Failed to update media');
+    setMedia((prev) => prev.map((m: any) => (m.id === id ? json.item : m)));
+    return json.item;
+  };
+
+  const deleteMedia: MediaContextValue['deleteMedia'] = async (id) => {
+    const res = await fetch(`/api/admin/media-library/${id}`, { method: 'DELETE' });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json?.error || 'Failed to delete media');
+    setMedia((prev) => prev.filter((m: any) => m.id !== id));
+  };
+
+  const value = useMemo<MediaContextValue>(
+    () => ({ media, isLoading, refresh, createMedia, updateMedia, deleteMedia }),
+    [media, isLoading]
+  );
+
+  return <MediaContext.Provider value={value}>{children}</MediaContext.Provider>;
+}
+
+export function useMedia() {
+  const ctx = useContext(MediaContext);
+  if (!ctx) throw new Error('useMedia must be used within MediaProvider');
+  return ctx;
+}

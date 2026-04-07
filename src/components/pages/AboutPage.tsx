@@ -1,83 +1,222 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ScrollReveal } from '../ScrollReveal';
-export function AboutPage() {
+
+type FounderContent = {
+  label: string;
+  name: string;
+  role: string;
+  bio1: string;
+  bio2: string;
+  quote: string;
+  image: string;
+};
+
+type StoryContent = {
+  title: string;
+  content: string;
+};
+
+type PhilosophyContent = {
+  title: string;
+  content: string;
+};
+
+type TeamContent = {
+  title: string;
+  description: string;
+};
+
+export function AboutPage({
+  initialFounder,
+  initialStory,
+  initialPhilosophy,
+  initialTeam
+}: {
+  initialFounder?: FounderContent;
+  initialStory?: StoryContent;
+  initialPhilosophy?: PhilosophyContent;
+  initialTeam?: TeamContent;
+}) {
+  const [founder, setFounder] = useState<FounderContent | null>(initialFounder ?? null);
+  const [story, setStory] = useState<StoryContent | null>(initialStory ?? null);
+  const [philosophy, setPhilosophy] = useState<PhilosophyContent | null>(initialPhilosophy ?? null);
+  const [team, setTeam] = useState<TeamContent | null>(initialTeam ?? null);
+  const [isLoading, setIsLoading] = useState(
+    !(initialFounder || initialStory || initialPhilosophy || initialTeam)
+  );
+
+  useEffect(() => {
+    if (initialFounder || initialStory || initialPhilosophy || initialTeam) return;
+    const fetchContent = async () => {
+      try {
+        const res = await fetch('/api/site-content?page=about', { cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json();
+        const data = json.grouped || {};
+
+        if (data.about_founder) {
+          setFounder({
+            label: data.about_founder.label?.value || '',
+            name: data.about_founder.name?.value || '',
+            role: data.about_founder.role?.value || '',
+            bio1: data.about_founder.bio1?.value || '',
+            bio2: data.about_founder.bio2?.value || '',
+            quote: data.about_founder.quote?.value || '',
+            image: data.about_founder.image?.value || ''
+          });
+        }
+
+        if (data.about_story) {
+          setStory({
+            title: data.about_story.title?.value || '',
+            content: data.about_story.content?.value || ''
+          });
+        }
+
+        if (data.about_philosophy) {
+          setPhilosophy({
+            title: data.about_philosophy.title?.value || '',
+            content: data.about_philosophy.content?.value || ''
+          });
+        }
+
+        if (data.about_team) {
+          setTeam({
+            title: data.about_team.title?.value || '',
+            description: data.about_team.description?.value || ''
+          });
+        }
+      } catch {
+        // ignore
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchContent();
+  }, [initialFounder, initialStory, initialPhilosophy, initialTeam]);
+
+  const storyParagraphs = story?.content
+    ? story.content.split(/\n{2,}/g).filter(Boolean)
+    : [];
+
+  const philosophyParagraphs = philosophy?.content
+    ? philosophy.content.split(/\n{2,}/g).filter(Boolean)
+    : [];
+
+  if (isLoading) {
+    return (
+      <div className="w-full pt-32 pb-24 bg-brand-light min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-purple border-t-transparent mb-4"></div>
+          <p className="text-brand-gray">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full pt-32 pb-24 bg-brand-light">
       {/* FOUNDER SECTION (Asymmetric) */}
-      <section className="container mx-auto px-6 py-12 lg:py-20">
-        <div className="flex flex-col lg:flex-row gap-16 items-center">
-          <ScrollReveal direction="right" className="w-full lg:w-5/12">
-            <div className="relative aspect-[3/4] w-full">
-              <img
-                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1976&auto=format&fit=crop"
-                alt="Oseremen Emmanuella Ohiku - Founder"
-                className="w-full h-full object-cover rounded-sm shadow-xl" />
-              
-              <div className="absolute -bottom-8 -left-8 w-full h-full border border-brand-purple/20 -z-10" />
-            </div>
-          </ScrollReveal>
+      {founder && (
+        <section className="container mx-auto px-6 py-12 lg:py-20">
+          <div className="flex flex-col lg:flex-row gap-16 items-center">
+            <ScrollReveal direction="right" className="w-full lg:w-5/12">
+              <div className="relative aspect-[3/4] w-full">
+                <img
+                  src={founder.image}
+                  alt="Oseremen Emmanuella Ohiku - Founder"
+                  className="w-full h-full object-cover rounded-sm shadow-xl" />
 
-          <ScrollReveal direction="left" className="w-full lg:w-7/12 lg:pl-12">
-            <h2 className="text-xs tracking-[0.2em] uppercase text-brand-gray mb-4">
-              Meet The Executive Planner
-            </h2>
-            <h1 className="text-4xl md:text-5xl font-serif text-brand-dark mb-2">
-              Oseremen Ohiku
-            </h1>
-            <p className="text-sm tracking-widest uppercase text-brand-pink mb-10">
-              Founder & Executive Planner
-            </p>
+                <div className="absolute -bottom-8 -left-8 w-full h-full border border-brand-purple/20 -z-10" />
+              </div>
+            </ScrollReveal>
 
-            <div className="space-y-6 text-brand-gray font-light leading-relaxed">
-              <p>
-                Oseremen Ohiku is the Founder and Executive Planner of
-                Dreamscape Curated Events Inc. Known for her structured planning
-                approach and refined aesthetic direction, she specializes in
-                curating elevated celebrations that are both beautifully
-                designed and seamlessly executed.
+            <ScrollReveal direction="left" className="w-full lg:w-7/12 lg:pl-12">
+              <h2 className="text-xs tracking-[0.2em] uppercase text-brand-gray mb-4">
+                {founder.label}
+              </h2>
+              <h1 className="text-4xl md:text-5xl font-serif text-brand-dark mb-2">
+                {founder.name}
+              </h1>
+              <p className="text-sm tracking-widest uppercase text-brand-pink mb-10">
+                {founder.role}
               </p>
-              <p>
-                With a strong foundation in organization, leadership, and
-                precision, Oseremen brings clarity and calm to every event she
-                manages. She believes meaningful celebrations deserve thoughtful
-                coordination and intentional design.
-              </p>
-              <p className="text-xl font-serif text-brand-purple italic pt-4">
-                Her philosophy is simple: every event should feel effortless
-                for the client and unforgettable for the guests.
-              </p>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
+
+              <div className="space-y-6 text-brand-gray font-light leading-relaxed">
+                {founder.bio1 && <p>{founder.bio1}</p>}
+                {founder.bio2 && <p>{founder.bio2}</p>}
+                {founder.quote && (
+                  <p className="text-xl font-serif text-brand-purple italic pt-4">
+                    {founder.quote}
+                  </p>
+                )}
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+      )}
 
       {/* OUR STORY */}
-      <section className="py-24 bg-white mt-12">
-        <div className="container mx-auto px-6 max-w-4xl text-center">
-          <ScrollReveal direction="up">
-            <h2 className="text-3xl md:text-4xl font-serif text-brand-dark mb-10">
-              Our Story
-            </h2>
-            <div className="space-y-6 text-brand-gray font-light leading-relaxed text-left md:text-center">
-              <p>
-                Dreamscape was born from a desire to create experiences that
-                feel meaningful, organized, and unforgettable. What began as
-                planning celebrations for friends and family quickly revealed
-                itself as something deeper, a calling rooted in creativity,
-                faith, and a passion for beautifully executed events.
+      {story && (
+        <section className="py-24 bg-white mt-12">
+          <div className="container mx-auto px-6 max-w-4xl text-center">
+            <ScrollReveal direction="up">
+              <h2 className="text-3xl md:text-4xl font-serif text-brand-dark mb-10">
+                {story.title}
+              </h2>
+              <div className="space-y-6 text-brand-gray font-light leading-relaxed text-left md:text-center">
+                {storyParagraphs.map((paragraph, index) => (
+                  <p key={index}>{paragraph}</p>
+                ))}
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+      )}
+
+      {/* OUR PHILOSOPHY */}
+      {philosophy && (
+        <section className="py-24 bg-brand-light">
+          <div className="container mx-auto px-6 max-w-4xl text-center">
+            <ScrollReveal direction="up">
+              <h2 className="text-3xl md:text-4xl font-serif text-brand-dark mb-10">
+                {philosophy.title}
+              </h2>
+              <div className="space-y-6 text-brand-gray font-light leading-relaxed text-left md:text-center">
+                {philosophyParagraphs.map((paragraph, index) => (
+                  <p key={index}>{paragraph}</p>
+                ))}
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+      )}
+
+      {/* OUR TEAM */}
+      {team && (
+        <section className="py-24 bg-white">
+          <div className="container mx-auto px-6 max-w-4xl text-center">
+            <ScrollReveal direction="up">
+              <h2 className="text-3xl md:text-4xl font-serif text-brand-dark mb-6">
+                {team.title}
+              </h2>
+              <p className="text-brand-gray font-light leading-relaxed text-lg">
+                {team.description}
               </p>
-              <p>
-                Today, Dreamscape stands on a foundation of structure,
-                intentional design, and excellence, delivering elevated
-                experiences that leave lasting impressions.
-              </p>
-            </div>
-          </ScrollReveal>
+            </ScrollReveal>
+          </div>
+        </section>
+      )}
+
+      {/* NO CONTENT MESSAGE */}
+      {!founder && !story && !philosophy && !team && (
+        <div className="container mx-auto px-6 py-24 text-center">
+          <p className="text-brand-gray">No content available. Please add content through the admin panel.</p>
         </div>
-      </section>
+      )}
     </div>);
 
 }

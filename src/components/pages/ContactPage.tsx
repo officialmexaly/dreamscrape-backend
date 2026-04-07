@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -12,7 +12,7 @@ import {
 } from '../ui/accordion';
 import { ScrollReveal } from '../ScrollReveal';
 
-const CONTACT_CARDS = [
+const DEFAULT_CONTACT_CARDS = [
   {
     label: 'Email Address',
     value: 'dreamscapeventts@gmail.com',
@@ -30,7 +30,34 @@ const CONTACT_CARDS = [
   }
 ] as const;
 
-export function ContactPage() {
+type ContactCard = { label: string; value: string; href: string };
+
+export function ContactPage({ initialCards }: { initialCards?: ContactCard[] }) {
+  const [contactCards, setContactCards] = useState<ContactCard[]>(
+    initialCards?.length ? initialCards : [...DEFAULT_CONTACT_CARDS]
+  );
+
+  // Fetch contact cards from database
+  useEffect(() => {
+    if (initialCards?.length) return;
+    const fetchContactCards = async () => {
+      try {
+        const res = await fetch('/api/site-content?page=contact&section=contact_info', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          const data = json.grouped?.contact_contact_info || {};
+          const cards = data.cards?.value || [];
+          if (cards.length > 0) {
+            setContactCards(cards);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load contact cards:', error);
+      }
+    };
+
+    fetchContactCards();
+  }, [initialCards?.length]);
   return (
     <div className="w-full bg-brand-light min-h-screen pt-40 md:pt-44 pb-24">
       <div className="container mx-auto max-w-6xl px-4 sm:px-6">
@@ -63,7 +90,7 @@ export function ContactPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {CONTACT_CARDS.map((card) => (
+              {contactCards.map((card) => (
                 <a
                   key={card.label}
                   href={card.href}

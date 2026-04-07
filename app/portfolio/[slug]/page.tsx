@@ -1,26 +1,29 @@
 import { notFound } from 'next/navigation';
 import { PortfolioStoryPage } from '@/src/components/pages/PortfolioStoryPage';
-import { BLOG_POSTS, getBlogPostById } from '@/src/lib/blog-posts';
+import { BLOG_POSTS } from '@/src/lib/blog-posts';
+import { mapPortfolioItemToPublicPost } from '@/src/lib/public-posts';
+import { getPublishedPortfolioItemCached } from '@/src/lib/cached-posts';
 
-type PageProps = {
-  params: Promise<{
-    slug: string;
-  }>;
-};
-
-export function generateStaticParams() {
-  return BLOG_POSTS.map((post) => ({
-    slug: post.id
-  }));
-}
+type PageProps = { params: Promise<{ slug: string }> };
 
 export default async function Page({ params }: PageProps) {
   const { slug } = await params;
-  const post = getBlogPostById(slug);
+  const key = (slug || '').trim().replace(/\s+/g, '');
 
-  if (!post) {
-    notFound();
+  const fallback = BLOG_POSTS.find((p) => p.id === key);
+
+  try {
+    const data = await getPublishedPortfolioItemCached(key);
+    if (data) {
+      return <PortfolioStoryPage slug={key} post={mapPortfolioItemToPublicPost(data)} />;
+    }
+  } catch {
+    // fall through to fallback/notFound
   }
 
-  return <PortfolioStoryPage post={post} />;
+  if (fallback) {
+    return <PortfolioStoryPage slug={key} post={fallback} />;
+  }
+
+  notFound();
 }

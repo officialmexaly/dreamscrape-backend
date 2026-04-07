@@ -8,6 +8,13 @@ export type BlogPost = {
   desc: string;
   fullStory: string[];
   gallery: string[];
+  contentBlocks?: Array<{
+    id: string;
+    type: 'text' | 'image' | 'heading' | 'quote';
+    content: string;
+    level?: string;
+    caption?: string;
+  }>;
 };
 
 export const BLOG_POSTS: BlogPost[] = [

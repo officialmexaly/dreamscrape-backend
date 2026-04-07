@@ -4,15 +4,35 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ScrollReveal } from '../ScrollReveal';
 import { BLOG_POSTS } from '@/src/lib/blog-posts';
+import type { BlogPost } from '@/src/lib/blog-posts';
+import { mapPortfolioItemToPublicPost } from '@/src/lib/public-posts';
 
-export function PortfolioPage() {
+export function PortfolioPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [posts, setPosts] = useState<BlogPost[] | null>(initialPosts?.length ? initialPosts : null);
 
   const heroSlides = [
     'https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=80&w=2070&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2070&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=2070&auto=format&fit=crop'
   ];
+
+  useEffect(() => {
+    if (initialPosts?.length) return;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/portfolio-items', { cache: 'no-store' });
+        const json = await res.json();
+        if (!res.ok) return;
+        const rows = Array.isArray(json?.items) ? json.items : [];
+        const mapped = rows.map(mapPortfolioItemToPublicPost).filter((p: BlogPost) => p.id && p.title);
+        setPosts(mapped.length ? mapped : BLOG_POSTS);
+      } catch {
+        setPosts(BLOG_POSTS);
+      }
+    };
+    load();
+  }, [initialPosts?.length]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -22,8 +42,10 @@ export function PortfolioPage() {
     return () => window.clearInterval(timer);
   }, [heroSlides.length]);
 
-  const featuredPost = BLOG_POSTS[0];
-  const remainingPosts = BLOG_POSTS.slice(1);
+  const isPostsLoading = posts === null;
+  const resolvedPosts = posts ?? [];
+  const featuredPost = isPostsLoading ? null : (resolvedPosts[0] || BLOG_POSTS[0]);
+  const remainingPosts = isPostsLoading ? [] : (resolvedPosts.length ? resolvedPosts.slice(1) : BLOG_POSTS.slice(1));
 
   return (
     <div className="min-h-screen w-full bg-[#fcf8f7] pb-24">
@@ -93,40 +115,57 @@ export function PortfolioPage() {
           </ScrollReveal>
 
           <div className="grid grid-cols-1 gap-10 border-b border-brand-purple/10 pb-20 xl:grid-cols-[1.08fr_0.92fr] xl:items-center">
-            <ScrollReveal direction="up">
-              <div className="aspect-[4/3] overflow-hidden rounded-[1.75rem]">
-                <img
-                  src={featuredPost.img}
-                  alt={featuredPost.title}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            </ScrollReveal>
+            {isPostsLoading ? (
+              <>
+                <div className="aspect-[4/3] overflow-hidden rounded-[1.75rem] bg-[#f5f1f2]" />
+                <div className="max-w-xl">
+                  <div className="h-3 w-40 rounded bg-brand-purple/10" />
+                  <div className="mt-5 h-10 w-3/4 rounded bg-brand-purple/10" />
+                  <div className="mt-4 h-3 w-48 rounded bg-brand-purple/10" />
+                  <div className="mt-6 h-4 w-full rounded bg-brand-purple/10" />
+                  <div className="mt-3 h-4 w-5/6 rounded bg-brand-purple/10" />
+                  <div className="mt-8 h-11 w-40 rounded-full bg-brand-purple/10" />
+                </div>
+              </>
+            ) : featuredPost ? (
+              <>
+                <ScrollReveal direction="up">
+                  <div className="aspect-[4/3] overflow-hidden rounded-[1.75rem]">
+                    <img
+                      src={featuredPost.img}
+                      alt={featuredPost.title}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                </ScrollReveal>
 
-            <ScrollReveal direction="up" delay={120}>
-              <div className="max-w-xl">
-                <p className="mb-4 text-[0.72rem] uppercase tracking-[0.28em] text-brand-pink">
-                  {featuredPost.category}
-                </p>
-                <h3 className="text-3xl font-serif leading-tight text-brand-dark md:text-5xl">
-                  {featuredPost.title}
-                </h3>
-                <p className="mt-4 text-[0.72rem] uppercase tracking-[0.22em] text-brand-gray">
-                  {featuredPost.date} / {featuredPost.location}
-                </p>
-                <p className="mt-6 text-base leading-relaxed text-brand-gray md:text-lg">
-                  {featuredPost.desc}
-                </p>
-                <p className="mt-5 text-base leading-relaxed text-brand-gray">
-                  {featuredPost.fullStory[0]}
-                </p>
-                <Link
-                  href={`/portfolio/${featuredPost.id}`}
-                  className="mt-8 inline-flex rounded-full bg-brand-purple px-6 py-3 text-sm uppercase tracking-[0.14em] text-white transition-colors hover:bg-brand-pink">
-                  Read Story
-                </Link>
-              </div>
-            </ScrollReveal>
+                <ScrollReveal direction="up" delay={120}>
+                  <div className="max-w-xl">
+                    <p className="mb-4 text-[0.72rem] uppercase tracking-[0.28em] text-brand-pink">
+                      {featuredPost.category}
+                    </p>
+                    <h3 className="text-3xl font-serif leading-tight text-brand-dark md:text-5xl">
+                      {featuredPost.title}
+                    </h3>
+                    <p className="mt-4 text-[0.72rem] uppercase tracking-[0.22em] text-brand-gray">
+                      {featuredPost.date} / {featuredPost.location || '—'}
+                    </p>
+                    <p className="mt-6 text-base leading-relaxed text-brand-gray md:text-lg">
+                      {featuredPost.desc}
+                    </p>
+                    <p className="mt-5 text-base leading-relaxed text-brand-gray">
+                      {featuredPost.contentBlocks?.find((b) => b.type === 'text')?.content ||
+                        featuredPost.fullStory[0]}
+                    </p>
+                    <Link
+                      href={`/portfolio/${featuredPost.id}`}
+                      className="mt-8 inline-flex rounded-full bg-brand-purple px-6 py-3 text-sm uppercase tracking-[0.14em] text-white transition-colors hover:bg-brand-pink">
+                      Read Story
+                    </Link>
+                  </div>
+                </ScrollReveal>
+              </>
+            ) : null}
           </div>
 
           <div className="pt-24">
@@ -144,38 +183,47 @@ export function PortfolioPage() {
             </ScrollReveal>
 
             <div className="grid grid-cols-1 gap-12 md:grid-cols-2 xl:grid-cols-3 xl:gap-14">
-              {remainingPosts.map((post, index) => (
-                <ScrollReveal key={post.id} direction="up" delay={index * 100}>
-                  <Link
-                    href={`/portfolio/${post.id}`}
-                    className="group block text-left">
-                    <div className="mb-6 aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-[#f5f1f2]">
-                      <img
-                        src={post.img}
-                        alt={post.title}
-                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
+              {isPostsLoading
+                ? Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="animate-pulse">
+                      <div className="mb-6 aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-[#f5f1f2]" />
+                      <div className="mb-3 h-3 w-24 rounded bg-brand-purple/10" />
+                      <div className="mb-4 h-7 w-3/4 rounded bg-brand-purple/10" />
+                      <div className="mb-2 h-4 w-full rounded bg-brand-purple/10" />
+                      <div className="mb-6 h-4 w-5/6 rounded bg-brand-purple/10" />
+                      <div className="h-px w-full bg-brand-purple/10" />
                     </div>
-                    <p className="mb-3 text-[0.68rem] uppercase tracking-[0.22em] text-brand-gray">
-                      {post.date}
-                    </p>
-                    <h4 className="mb-4 text-2xl font-serif leading-tight text-brand-dark transition-colors group-hover:text-brand-pink">
-                      {post.title}
-                    </h4>
-                    <p className="mb-6 text-sm font-light leading-relaxed text-brand-gray">
-                      {post.desc}
-                    </p>
-                    <div className="flex items-center justify-between border-t border-brand-purple/10 pt-5">
-                      <span className="text-[0.68rem] uppercase tracking-[0.2em] text-brand-gray">
-                        {post.location}
-                      </span>
-                      <span className="text-[0.68rem] font-medium uppercase tracking-[0.22em] text-brand-purple transition-colors group-hover:text-brand-pink">
-                        Read Story
-                      </span>
-                    </div>
-                  </Link>
-                </ScrollReveal>
-              ))}
+                  ))
+                : remainingPosts.map((post, index) => (
+                    <ScrollReveal key={post.id} direction="up" delay={index * 100}>
+                      <Link href={`/portfolio/${post.id}`} className="group block text-left">
+                        <div className="mb-6 aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-[#f5f1f2]">
+                          <img
+                            src={post.img}
+                            alt={post.title}
+                            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                        </div>
+                        <p className="mb-3 text-[0.68rem] uppercase tracking-[0.22em] text-brand-gray">
+                          {post.date}
+                        </p>
+                        <h4 className="mb-4 text-2xl font-serif leading-tight text-brand-dark transition-colors group-hover:text-brand-pink">
+                          {post.title}
+                        </h4>
+                        <p className="mb-6 text-sm font-light leading-relaxed text-brand-gray">
+                          {post.desc}
+                        </p>
+                        <div className="flex items-center justify-between border-t border-brand-purple/10 pt-5">
+                          <span className="text-[0.68rem] uppercase tracking-[0.2em] text-brand-gray">
+                            {post.location || '—'}
+                          </span>
+                          <span className="text-[0.68rem] font-medium uppercase tracking-[0.22em] text-brand-purple transition-colors group-hover:text-brand-pink">
+                            Read Story
+                          </span>
+                        </div>
+                      </Link>
+                    </ScrollReveal>
+                  ))}
             </div>
           </div>
         </div>

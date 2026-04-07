@@ -1,7 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RATE_LIMITS } from '@/src/lib/validation';
 
-// In-memory rate limiting store (for production, use Redis or similar)
+/**
+ * Rate limiting module for Dreamscape Curated Events
+ *
+ * Provides in-memory rate limiting with support for:
+ * - Multiple rate limit types (booking, contact, upload, general)
+ * - Per-client identification using IP and user agent
+ * - Automatic cleanup of expired entries
+ *
+ * For production use with Redis, see rate-limit-redis.ts (optional)
+ */
+
+interface RateLimitResult {
+  success: boolean;
+  remaining?: number;
+  resetTime?: number;
+  error?: string;
+}
+
+// In-memory rate limiting store
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
 interface RateLimitResult {
@@ -11,6 +29,13 @@ interface RateLimitResult {
   error?: string;
 }
 
+/**
+ * Check if a request should be rate limited
+ *
+ * @param identifier - Unique identifier for the client (IP + user agent hash)
+ * @param type - Type of rate limit to apply
+ * @returns Rate limit result with success status and remaining requests
+ */
 export function rateLimit(
   identifier: string,
   type: keyof typeof RATE_LIMITS = 'general'
@@ -52,6 +77,15 @@ export function rateLimit(
   };
 }
 
+/**
+ * Generate a unique client identifier from the request
+ *
+ * Combines IP address and user agent to create a unique identifier
+ * while preserving privacy by hashing the combination.
+ *
+ * @param request - Next.js request object
+ * @returns Base64-encoded hash of IP + user agent
+ */
 export function getClientIdentifier(request: NextRequest): string {
   // Try to get IP address from various headers
   const forwardedFor = request.headers.get('x-forwarded-for');
@@ -67,6 +101,16 @@ export function getClientIdentifier(request: NextRequest): string {
   return Buffer.from(`${ip}-${userAgent}`).toString('base64').substring(0, 32);
 }
 
+/**
+ * Express-style middleware for rate limiting API routes
+ *
+ * Automatically generates client identifier and returns appropriate
+ * response if rate limit is exceeded.
+ *
+ * @param request - Next.js request object
+ * @param type - Type of rate limit to apply
+ * @returns Object with success status and optional error response
+ */
 export async function rateLimitMiddleware(
   request: NextRequest,
   type: keyof typeof RATE_LIMITS = 'general'
@@ -99,8 +143,9 @@ export async function rateLimitMiddleware(
 }
 
 // Cleanup old entries periodically (run every hour)
-if (typeof window === 'undefined') {
-  setInterval(() => {
+let cleanupInterval: NodeJS.Timeout | null = null;
+if (typeof window === 'undefined' && !cleanupInterval) {
+  cleanupInterval = setInterval(() => {
     const now = Date.now();
     for (const [key, entry] of rateLimitStore.entries()) {
       if (now > entry.resetTime) {

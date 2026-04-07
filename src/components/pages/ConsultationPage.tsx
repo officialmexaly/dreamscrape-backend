@@ -14,33 +14,36 @@ import { Checkbox } from '../ui/checkbox';
 import { useAvailability } from '@/src/lib/hooks/useAvailability';
 import { useFileUpload } from '@/src/lib/hooks/useFileUpload';
 
-const TIME_OPTIONS = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'] as const;
-const CONSULTATION_CONTENT = {
+const DEFAULT_TIME_OPTIONS = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'] as const;
+
+const DEFAULT_CONSULTATION_CONTENT = {
   'wedding-destination-social': {
     title: 'Wedding/Destination/Social Event Planning',
     subtitle: 'Dreamscape Curated Events',
-    description:
-      'A brief overview before you schedule your consultation. Choose a date and time that fits your calendar, then continue to the inquiry form with your selected appointment details.'
+    description: 'A brief overview before you schedule your consultation. Choose a date and time that fits your calendar, then continue to the inquiry form with your selected appointment details.'
   },
-  'event-design-styling': {
+  'design-styling': {
     title: 'Event Design & Styling',
     subtitle: 'Dreamscape Curated Events',
-    description:
-      'A consultation focused on visual storytelling, styling direction, tablescape decisions, ambiance, and the design details that shape how your event feels from first impression to final reveal.'
+    description: 'A consultation focused on visual storytelling, styling direction, tablescape decisions, ambiance, and the design details that shape how your event feels from first impression to final reveal.'
+  },
+  'corporate-brand': {
+    title: 'Corporate & Brand Events',
+    subtitle: 'Dreamscape Curated Events',
+    description: 'Strategic planning and production for corporate events, brand activations, and professional experiences.'
+  },
+  'private-social': {
+    title: 'Private & Social Events',
+    subtitle: 'Dreamscape Curated Events',
+    description: 'Planning support for private celebrations, milestones, and intimate social gatherings.'
   },
   'pick-my-brain': {
     title: 'Pick My Brain Session (1-Hour Virtual Consultation)',
     subtitle: 'Dreamscape Curated Events',
-    description:
-      'For clients who need strategic event guidance, vendor advice, or professional clarity before moving forward. Ideal for a focused conversation around planning decisions and next steps.'
-  },
-  'real-time-assessment': {
-    title: 'Real-Time Event Assessment',
-    subtitle: 'Dreamscape Curated Events',
-    description:
-      'A consultation designed to review your current event progress, identify what is missing, and recommend the structure, support, and production touchpoints needed to move the experience forward with confidence.'
+    description: 'For clients who need strategic event guidance, vendor advice, or professional clarity before moving forward. Ideal for a focused conversation around planning decisions and next steps.'
   }
-} as const;
+};
+
 const SERVICE_EVENT_TYPE_MAP = {
   'wedding-destination-social': ['wedding-destination-social'],
   'event-design-styling': ['design-styling'],
@@ -48,24 +51,18 @@ const SERVICE_EVENT_TYPE_MAP = {
   'real-time-assessment': ['assessment']
 } as const;
 
-const EVENT_TYPE_OPTIONS = [
-  {
-    id: 'wedding-destination-social',
-    label: 'Wedding / Destination Planning'
-  },
-  {
-    id: 'design-styling',
-    label: 'Event Design & Styling'
-  },
-  {
-    id: 'pick-my-brain',
-    label: 'Pick My Brain Session (1-Hour Virtual Consultation)'
-  },
-  {
-    id: 'assessment',
-    label: 'Real-Time Event Assessment'
-  }
-] as const;
+const DEFAULT_EVENT_TYPE_OPTIONS = [
+  { id: 'wedding-destination-social', label: 'Wedding / Destination Planning' },
+  { id: 'design-styling', label: 'Event Design & Styling' },
+  { id: 'corporate-brand', label: 'Corporate & Brand Events' },
+  { id: 'private-social', label: 'Private & Social Events' },
+  { id: 'pick-my-brain', label: 'Pick My Brain Session' }
+];
+
+const DEFAULT_DATE_RANGE = {
+  start_date: '2026-03-01',
+  end_date: '2026-12-31'
+};
 
 function formatDateKey(date: Date) {
   const year = date.getFullYear();
@@ -85,10 +82,33 @@ function formatLongDate(date?: Date) {
   });
 }
 
-export function ConsultationPage() {
+export function ConsultationPage({
+  initialTimeOptions,
+  initialEventTypeOptions,
+  initialConsultationContent,
+  initialDateRange,
+}: {
+  initialTimeOptions?: string[];
+  initialEventTypeOptions?: { id: string; label: string }[];
+  initialConsultationContent?: typeof DEFAULT_CONSULTATION_CONTENT;
+  initialDateRange?: typeof DEFAULT_DATE_RANGE;
+}) {
   const eventDatePickerRef = useRef<HTMLDivElement | null>(null);
   const searchParams = useSearchParams();
-  const selectedService = searchParams.get('service') as keyof typeof CONSULTATION_CONTENT | null;
+  const selectedService = searchParams.get('service') as keyof typeof DEFAULT_CONSULTATION_CONTENT | null;
+
+  // Database-driven state
+  const [timeOptions, setTimeOptions] = useState<string[]>(
+    initialTimeOptions?.length ? initialTimeOptions : [...DEFAULT_TIME_OPTIONS]
+  );
+  const [eventTypeOptions, setEventTypeOptions] = useState(
+    initialEventTypeOptions?.length ? initialEventTypeOptions : DEFAULT_EVENT_TYPE_OPTIONS
+  );
+  const [consultationContent, setConsultationContent] = useState(
+    initialConsultationContent ?? DEFAULT_CONSULTATION_CONTENT
+  );
+  const [dateRange, setDateRange] = useState(initialDateRange ?? DEFAULT_DATE_RANGE);
+
   const [date, setDate] = useState<Date | undefined>(new Date(2026, 2, 31));
   const [selectedTime, setSelectedTime] = useState<string>('12:00');
   const [activeTab, setActiveTab] = useState('availability');
@@ -107,11 +127,11 @@ export function ConsultationPage() {
   } = useFileUpload({
     maxFiles: 5,
     onUploadComplete: (files) => {
-      console.log('Uploaded files:', files);
+      // Files uploaded successfully
     },
   });
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>(
-    selectedService ? [...(SERVICE_EVENT_TYPE_MAP[selectedService] ?? [])] : []
+    selectedService ? [...(SERVICE_EVENT_TYPE_MAP[selectedService as keyof typeof SERVICE_EVENT_TYPE_MAP] ?? [])] : []
   );
 
   // Form state
@@ -134,15 +154,83 @@ export function ConsultationPage() {
   const [submitMessage, setSubmitMessage] = useState('');
 
   // Real-time availability from database
-  const startDate = useMemo(() => new Date(2026, 2, 1), []); // March 2026
-  const endDate = useMemo(() => new Date(2026, 11, 31), []); // December 2026
+  const startDate = useMemo(() => new Date(dateRange.start_date), [dateRange.start_date]);
+  const endDate = useMemo(() => new Date(dateRange.end_date), [dateRange.end_date]);
   const { isDateBooked, isSlotBooked, getAvailableTimes } = useAvailability(startDate, endDate);
 
+  // Fetch consultation configuration from database
+  useEffect(() => {
+    const hasInitial =
+      (initialTimeOptions?.length ?? 0) > 0 ||
+      (initialEventTypeOptions?.length ?? 0) > 0 ||
+      Boolean(initialConsultationContent) ||
+      Boolean(initialDateRange);
+    if (hasInitial) return;
+
+    const fetchConsultationConfig = async () => {
+      try {
+        // Fetch time options
+        const timeRes = await fetch('/api/site-content?page=consultation&section=time_options', { cache: 'no-store' });
+        if (timeRes.ok) {
+          const timeJson = await timeRes.json();
+          const timeData = timeJson.grouped?.consultation_time_options || {};
+          const times = timeData.options?.value || [];
+          if (times.length > 0) setTimeOptions(times);
+        }
+
+        // Fetch event type options
+        const eventRes = await fetch('/api/site-content?page=consultation&section=event_types', { cache: 'no-store' });
+        if (eventRes.ok) {
+          const eventJson = await eventRes.json();
+          const eventData = eventJson.grouped?.consultation_event_types || {};
+          const events = eventData.options?.value || [];
+          if (events.length > 0) setEventTypeOptions(events);
+        }
+
+        // Fetch consultation types content
+        const contentRes = await fetch('/api/site-content?page=consultation&section=consultation_types', { cache: 'no-store' });
+        if (contentRes.ok) {
+          const contentJson = await contentRes.json();
+          const contentData = contentJson.grouped?.consultation_consultation_types || {};
+          const types = contentData.types?.value || {};
+          if (Object.keys(types).length > 0) {
+            // Transform the database format to match our component structure
+            const transformedContent = Object.entries(types).reduce((acc, [key, value]) => {
+              const stringValue = typeof value === 'string' ? value : String(value);
+              acc[key] = {
+                title: stringValue,
+                subtitle: 'Dreamscape Curated Events',
+                description: stringValue
+              };
+              return acc;
+            }, {} as Record<string, { title: string; subtitle: string; description: string }>);
+            setConsultationContent(transformedContent as typeof DEFAULT_CONSULTATION_CONTENT);
+          }
+        }
+
+        // Fetch date range
+        const dateRes = await fetch('/api/site-content?page=consultation&section=date_range', { cache: 'no-store' });
+        if (dateRes.ok) {
+          const dateJson = await dateRes.json();
+          const dateData = dateJson.grouped?.consultation_date_range || {};
+          const range = dateData.config?.value || {};
+          if (range.start_date && range.end_date) {
+            setDateRange(range);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load consultation configuration:', error);
+      }
+    };
+
+    fetchConsultationConfig();
+  }, [initialTimeOptions?.length, initialEventTypeOptions?.length, initialConsultationContent, initialDateRange]);
+
   const consultationIntro =
-    (selectedService && CONSULTATION_CONTENT[selectedService]) ||
-    CONSULTATION_CONTENT['wedding-destination-social'];
+    (selectedService && consultationContent[selectedService]) ||
+    consultationContent['wedding-destination-social'];
   const lockedEventTypes = selectedService
-    ? new Set(SERVICE_EVENT_TYPE_MAP[selectedService] ?? [])
+    ? new Set(SERVICE_EVENT_TYPE_MAP[selectedService as keyof typeof SERVICE_EVENT_TYPE_MAP] ?? [])
     : null;
 
   useEffect(() => {
@@ -160,8 +248,8 @@ export function ConsultationPage() {
   }, []);
 
   useEffect(() => {
-    if (selectedService && SERVICE_EVENT_TYPE_MAP[selectedService]) {
-      setSelectedEventTypes([...SERVICE_EVENT_TYPE_MAP[selectedService]]);
+    if (selectedService && SERVICE_EVENT_TYPE_MAP[selectedService as keyof typeof SERVICE_EVENT_TYPE_MAP]) {
+      setSelectedEventTypes([...SERVICE_EVENT_TYPE_MAP[selectedService as keyof typeof SERVICE_EVENT_TYPE_MAP]]);
     }
   }, [selectedService]);
 
@@ -356,7 +444,7 @@ export function ConsultationPage() {
                 </div>
 
                 <div className="grid max-w-[420px] grid-cols-2 gap-3 sm:grid-cols-4">
-                  {TIME_OPTIONS.map((time) => {
+                  {timeOptions.map((time) => {
                     const isSelected = selectedTime === time;
                     const isBookedTime = date ? isSlotBooked(date, time) : false;
                     const isDisabled = !date || isDateBooked(date) || isBookedTime;
@@ -499,7 +587,12 @@ export function ConsultationPage() {
                   <Label className="text-brand-gray font-normal text-sm">
                     Event Location (If Known)
                   </Label>
-                  <Input className="border-brand-purple/15 bg-white rounded-full h-11" />
+                  <Input
+                    className="border-brand-purple/15 bg-white rounded-full h-11"
+                    value={formData.eventLocation}
+                    onChange={(e) => setFormData({...formData, eventLocation: e.target.value})}
+                    disabled={isSubmitting}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -536,7 +629,7 @@ export function ConsultationPage() {
                   Event Type: <span className="text-red-500">*</span>
                 </Label>
                 <div className="flex flex-wrap gap-6">
-                  {EVENT_TYPE_OPTIONS.map((option) => (
+                  {eventTypeOptions.map((option) => (
                     <div key={option.id} className="flex items-center space-x-2">
                       <Checkbox
                         id={option.id}

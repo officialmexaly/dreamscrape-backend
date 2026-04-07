@@ -1,27 +1,133 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { ScrollReveal } from '../ScrollReveal';
 import { BLOG_POSTS, type BlogPost } from '@/src/lib/blog-posts';
+import { mapPortfolioItemToPublicPost } from '@/src/lib/public-posts';
 
 type PortfolioStoryPageProps = {
-  post: BlogPost;
+  slug?: string;
+  post?: BlogPost;
 };
 
-export function PortfolioStoryPage({ post }: PortfolioStoryPageProps) {
-  const relatedPosts = BLOG_POSTS.filter((item) => item.id !== post.id).slice(0, 3);
-  const storyBlocks = post.fullStory.map((paragraph, index) => ({
-    paragraph,
-    image: post.gallery[index] ?? null
-  }));
+export function PortfolioStoryPage({ slug, post: initialPost }: PortfolioStoryPageProps) {
+  const [post, setPost] = useState<BlogPost | null>(initialPost ?? null);
+  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>(() => {
+    if (!initialPost) return BLOG_POSTS.slice(0, 3);
+    return BLOG_POSTS.filter((item) => item.id !== initialPost.id).slice(0, 3);
+  });
+  const [isLoading, setIsLoading] = useState(!initialPost);
+  const [isNotFound, setIsNotFound] = useState(false);
+
+  useEffect(() => {
+    if (!slug || initialPost) return;
+
+    const load = async () => {
+      setIsLoading(true);
+      setIsNotFound(false);
+      try {
+        const [itemRes, listRes] = await Promise.all([
+          fetch(`/api/portfolio-items/${encodeURIComponent(slug)}`, { cache: 'no-store' }),
+          fetch('/api/portfolio-items', { cache: 'no-store' })
+        ]);
+
+        if (itemRes.status === 404) {
+          const fallback = BLOG_POSTS.find((p) => p.id === slug);
+          if (fallback) {
+            setPost(fallback);
+            setRelatedPosts(BLOG_POSTS.filter((item) => item.id !== fallback.id).slice(0, 3));
+            return;
+          }
+          setIsNotFound(true);
+          return;
+        }
+
+        if (itemRes.ok) {
+          const json = await itemRes.json();
+          if (json?.item) {
+            setPost(mapPortfolioItemToPublicPost(json.item));
+          }
+        }
+
+        if (listRes.ok) {
+          const json = await listRes.json();
+          const rows = Array.isArray(json?.items) ? json.items : [];
+          const mapped = rows.map(mapPortfolioItemToPublicPost).filter((p: BlogPost) => p.id && p.title);
+          setRelatedPosts(mapped.filter((p) => p.id !== slug).slice(0, 3));
+        }
+      } catch {
+        // ignore, keep fallback
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void load();
+  }, [slug, initialPost]);
+
+  const contentBlocks = useMemo(() => {
+    if (!post) return [];
+    if (Array.isArray(post.contentBlocks) && post.contentBlocks.length) return post.contentBlocks;
+
+    const blocks = post.fullStory.map((paragraph, index) => ({
+      id: `${post.id}-t-${index}`,
+      type: 'text' as const,
+      content: paragraph
+    }));
+
+    post.gallery.forEach((url, index) => {
+      if (!url) return;
+      blocks.push({
+        id: `${post.id}-i-${index}`,
+        type: 'image' as const,
+        content: url
+      });
+    });
+
+    return blocks;
+  }, [post]);
+
+  const heroImage =
+    post?.img ||
+    post?.contentBlocks?.find((b) => b.type === 'image')?.content ||
+    post?.gallery?.[0] ||
+    BLOG_POSTS[0]?.img;
+
+  if (isNotFound) {
+    return (
+      <div className="min-h-screen w-full bg-[#fcf8f7] pb-24 pt-32">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <h1 className="text-3xl md:text-4xl font-serif text-brand-dark mb-4">Item not found</h1>
+          <p className="text-brand-gray mb-8">This story may have been removed or is not published.</p>
+          <Link
+            href="/portfolio"
+            className="inline-flex min-h-12 items-center justify-center rounded-full bg-brand-purple px-6 text-sm uppercase tracking-[0.14em] text-white transition-colors hover:bg-brand-pink">
+            Back to Portfolio
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading && !post) {
+    return (
+      <div className="min-h-screen w-full bg-[#fcf8f7] pb-24 pt-32">
+        <div className="mx-auto max-w-3xl px-6 text-center text-brand-gray">Loading…</div>
+      </div>
+    );
+  }
+
+  if (!post) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen w-full bg-[#fcf8f7] pb-24">
       <section className="relative min-h-[38svh] overflow-hidden pt-24 md:min-h-[44svh] md:pt-36">
         <img
-          src={post.img}
+          src={heroImage}
           alt={post.title}
           className="absolute inset-0 h-full w-full object-cover"
         />
@@ -47,7 +153,7 @@ export function PortfolioStoryPage({ post }: PortfolioStoryPageProps) {
                 href="/portfolio"
                 className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/24 bg-black/20 px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-white shadow-[0_10px_30px_rgba(0,0,0,0.28)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-white/50 hover:bg-white/18 hover:shadow-[0_16px_38px_rgba(0,0,0,0.34)] md:text-[0.72rem] md:tracking-[0.2em]">
                 <ArrowLeft className="h-4 w-4" />
-                <span>Back to Blog</span>
+                <span>Back to Portfolio</span>
               </Link>
             </div>
           </div>
@@ -59,28 +165,35 @@ export function PortfolioStoryPage({ post }: PortfolioStoryPageProps) {
           <div className="grid grid-cols-1 gap-10 md:gap-12 xl:grid-cols-[minmax(0,760px)_300px] xl:items-start xl:justify-between">
             <div>
               <div className="space-y-10 md:space-y-14">
-                {storyBlocks.map((block, index) => (
-                  <React.Fragment key={`${post.id}-story-${index}`}>
-                    <ScrollReveal direction="up">
-                      <div className="space-y-4">
-                        <p className="text-[1rem] leading-[1.85] text-brand-gray md:text-base md:leading-[1.95]">
-                          {block.paragraph}
-                        </p>
-                      </div>
-                    </ScrollReveal>
-
-                    {block.image && (
-                      <ScrollReveal direction="up" delay={index * 100}>
-                        <figure className="overflow-hidden rounded-[1.25rem] md:rounded-[1.75rem]">
-                          <img
-                            src={block.image}
-                            alt={`${post.title} detail ${index + 2}`}
-                            className="max-h-[68svh] w-full object-cover md:max-h-none"
-                          />
-                        </figure>
-                      </ScrollReveal>
+                {contentBlocks.map((block, index) => (
+                  <ScrollReveal key={block.id || index} direction="up" delay={index * 60}>
+                    {block.type === 'heading' ? (
+                      <h2 className="text-2xl md:text-3xl font-serif text-brand-dark">
+                        {block.content}
+                      </h2>
+                    ) : block.type === 'quote' ? (
+                      <blockquote className="rounded-2xl border border-brand-purple/10 bg-white px-6 py-6 text-brand-dark shadow-[0_18px_50px_rgba(64,21,63,0.06)]">
+                        <p className="font-serif text-xl italic leading-relaxed">“{block.content}”</p>
+                      </blockquote>
+                    ) : block.type === 'image' ? (
+                      <figure className="overflow-hidden rounded-[1.25rem] md:rounded-[1.75rem]">
+                        <img
+                          src={block.content}
+                          alt={block.caption || `${post.title} image`}
+                          className="max-h-[68svh] w-full object-cover md:max-h-none"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        {block.caption ? (
+                          <figcaption className="mt-3 text-sm text-brand-gray">{block.caption}</figcaption>
+                        ) : null}
+                      </figure>
+                    ) : (
+                      <p className="text-[1rem] leading-[1.85] text-brand-gray md:text-base md:leading-[1.95]">
+                        {block.content}
+                      </p>
                     )}
-                  </React.Fragment>
+                  </ScrollReveal>
                 ))}
               </div>
             </div>
@@ -100,7 +213,7 @@ export function PortfolioStoryPage({ post }: PortfolioStoryPageProps) {
                   <p className="mb-2 text-[0.78rem] uppercase tracking-[0.14em] text-brand-gray md:text-[0.68rem] md:tracking-[0.18em]">
                     Location
                   </p>
-                  <p className="text-[1rem] text-brand-dark md:text-base">{post.location}</p>
+                  <p className="text-[1rem] text-brand-dark md:text-base">{post.location || '—'}</p>
                 </div>
                 <div>
                   <p className="mb-2 text-[0.78rem] uppercase tracking-[0.14em] text-brand-gray md:text-[0.68rem] md:tracking-[0.18em]">

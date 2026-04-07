@@ -1,26 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
+import type { Booking } from '@/src/types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+let supabaseInstance: ReturnType<typeof createClient> | null = null;
 
-export interface Booking {
-  id?: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  event_date?: string;
-  event_location?: string;
-  event_types: string[];
-  budget?: string;
-  guests?: string;
-  how_did_you_hear?: string;
-  additional_details?: string;
-  consultation_date: string;
-  consultation_time: string;
-  file_urls?: string[];
-  file_names?: string[];
-  created_at?: string;
-}
+export const supabase = () => {
+  if (!supabaseInstance) {
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+  }
+  return supabaseInstance;
+};
+
+// Re-export Booking type from central types
+export type { Booking };

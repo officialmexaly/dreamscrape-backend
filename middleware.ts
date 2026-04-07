@@ -1,30 +1,54 @@
-import { NextResponse } from 'next/server';
-import { createMiddlewareClient } from 'next-auth/react';
+import { NextResponse } from 'next/server'
+import { auth } from '@/auth'
 
 export async function middleware(request: any) {
-  // For NextAuth v5 beta, use the new middleware pattern
-  const response = NextResponse.next();
+  const { pathname } = request.nextUrl
 
-  // Skip middleware for non-admin routes
-  if (!request.nextUrl.pathname.startsWith('/admin')) {
-    return response;
+  // Public paths that don't require authentication
+  const publicPaths = ['/admin/setup', '/admin/login', '/admin/forgot-password']
+  const isPublicPath = publicPaths.includes(pathname)
+
+  // API routes that don't need auth check
+  if (pathname.startsWith('/api/auth') || pathname.startsWith('/api/debug')) {
+    return NextResponse.next()
   }
 
-  // Skip middleware for login page
-  if (request.nextUrl.pathname === '/admin/login') {
-    return response;
+  // Allow public paths
+  if (isPublicPath) {
+    return NextResponse.next()
   }
 
-  // Check for session token
-  const sessionToken = request.cookies.get('next-auth.session-token')?.value;
-
-  if (!sessionToken) {
-    return NextResponse.redirect(new URL('/admin/login', request.url));
+  // Only protect /admin routes
+  if (!pathname.startsWith('/admin')) {
+    return NextResponse.next()
   }
 
-  return response;
+  try {
+    const session = await auth()
+
+    // If no session, redirect to login
+    if (!session?.user) {
+      const loginUrl = new URL('/admin/login', request.url)
+      loginUrl.searchParams.set('callbackUrl', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+
+    // Check if user has admin role
+    if (session.user.role !== 'admin' && session.user.role !== 'super_admin') {
+      const loginUrl = new URL('/admin/login', request.url)
+      loginUrl.searchParams.set('callbackUrl', pathname)
+      loginUrl.searchParams.set('error', 'unauthorized')
+      return NextResponse.redirect(loginUrl)
+    }
+
+    // Session is valid, proceed
+    return NextResponse.next()
+  } catch (error) {
+    console.error('Middleware error:', error)
+    return NextResponse.next()
+  }
 }
 
 export const config = {
   matcher: ['/admin/:path*'],
-};
+}

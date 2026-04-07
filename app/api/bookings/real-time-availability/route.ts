@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all bookings within the date range
-    const { data: bookings, error } = await supabase
+    const { data: bookings, error } = await supabase()
       .from('bookings')
       .select('consultation_date, consultation_time')
       .gte('consultation_date', startDate)
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     // Group bookings by date
     const bookedSlots = new Map<string, string[]>();
-    bookings?.forEach(booking => {
+    bookings?.forEach((booking: any) => {
       const date = booking.consultation_date;
       if (!bookedSlots.has(date)) {
         bookedSlots.set(date, []);
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
 
 // Helper function to check if a specific date/time is available
 export async function checkSlotAvailability(date: string, time: string): Promise<boolean> {
-  const { data: existingBookings } = await supabase
+  const { data: existingBookings } = await supabase()
     .from('bookings')
     .select('id')
     .eq('consultation_date', date)

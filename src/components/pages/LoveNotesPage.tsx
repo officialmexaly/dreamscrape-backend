@@ -1,10 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ScrollReveal } from '../ScrollReveal';
-export function LoveNotesPage() {
-  const testimonials = [
+
+const DEFAULT_TESTIMONIALS = [
   {
     name: 'Nneoma Achioso',
     quote: 'Dreamscape truly made my dream birthday come true…',
@@ -14,7 +14,37 @@ export function LoveNotesPage() {
     name: 'Dr. Chika Obetta',
     quote: 'My grad party turned out amazing…',
     img: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=2069&auto=format&fit=crop'
-  }];
+  }
+];
+
+type Testimonial = { name: string; quote: string; img: string };
+
+export function LoveNotesPage({ initialTestimonials }: { initialTestimonials?: Testimonial[] }) {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(
+    initialTestimonials?.length ? initialTestimonials : DEFAULT_TESTIMONIALS
+  );
+
+  // Fetch testimonials from database
+  useEffect(() => {
+    if (initialTestimonials?.length) return;
+    const fetchTestimonials = async () => {
+      try {
+        const res = await fetch('/api/site-content?page=love_notes&section=testimonials', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          const data = json.grouped?.love_notes_testimonials || {};
+          const items = data.items?.value || [];
+          if (items.length > 0) {
+            setTestimonials(items);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load testimonials:', error);
+      }
+    };
+
+    fetchTestimonials();
+  }, [initialTestimonials?.length]);
 
   return (
     <div className="w-full bg-white min-h-screen pb-24">
@@ -25,7 +55,7 @@ export function LoveNotesPage() {
           src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=80&w=2070&auto=format&fit=crop"
           alt="Love Notes Hero"
           className="absolute inset-0 w-full h-full object-cover" />
-        
+
         <div className="relative z-20 text-center px-4 sm:px-6 mt-20 md:mt-16">
           <ScrollReveal direction="up">
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-serif text-white tracking-wide">
@@ -73,7 +103,7 @@ export function LoveNotesPage() {
                       </p>
                     </div>
                     <p className="font-serif text-xl sm:text-2xl md:text-3xl italic text-brand-dark leading-relaxed mb-6">
-                      “{testimonial.quote}”
+                      "{testimonial.quote}"
                     </p>
                     <div className="pt-5 border-t border-brand-purple/10">
                       <div>
@@ -95,18 +125,20 @@ export function LoveNotesPage() {
           <ScrollReveal
             direction="up"
             className="mt-32 text-center pt-16 border-t border-brand-gray/20">
-            
+
             <a
               href="https://share.google/92zTFeUMHWdWSJW2o"
               target="_blank"
-              rel="noreferrer"
-              className="inline-block text-sm tracking-widest uppercase text-brand-purple hover:text-brand-pink transition-colors border-b border-brand-purple pb-1 hover:border-brand-pink">
-              
-              Read More Reviews on Google
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-full border border-brand-purple text-brand-purple hover:bg-brand-purple hover:text-white transition-colors">
+
+              <span className="text-sm uppercase tracking-[0.14em] font-medium">
+                See All Reviews
+              </span>
             </a>
           </ScrollReveal>
         </div>
       </section>
-    </div>);
-
+    </div>
+  );
 }

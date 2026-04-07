@@ -1,8 +1,9 @@
 import { google } from 'googleapis';
+import type { CalendarBooking, CalendarEvent } from '@/src/types';
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar'];
 
-export async function createCalendarEvent(booking: any) {
+export async function createCalendarEvent(booking: CalendarBooking): Promise<CalendarEvent> {
   try {
     // Decode the base64 encoded private key from environment variable
     const privateKey = process.env.GOOGLE_CALENDAR_PRIVATE_KEY?.replace(/\\n/g, '\n');
@@ -21,7 +22,8 @@ export async function createCalendarEvent(booking: any) {
     // Calculate end time (1 hour consultation)
     const endTime = new Date(consultationDateTime.getTime() + 60 * 60 * 1000);
 
-    const event = {
+    const event: CalendarEvent = {
+      id: '', // Will be set by Google Calendar API
       summary: `Consultation: ${booking.first_name} ${booking.last_name}`,
       description: `
 Consultation Details:
@@ -30,7 +32,7 @@ Consultation Details:
 - Phone: ${booking.phone}
 ${booking.event_date ? `- Event Date: ${new Date(booking.event_date).toLocaleDateString()}` : ''}
 ${booking.event_location ? `- Event Location: ${booking.event_location}` : ''}
-${booking.event_types?.length ? `- Event Types: ${booking.event_types.join(', ')}` : ''}
+${booking.event_types && booking.event_types.length ? `- Event Types: ${booking.event_types.join(', ')}` : ''}
 ${booking.budget ? `- Budget: ${booking.budget}` : ''}
 ${booking.guests ? `- Guests: ${booking.guests}` : ''}
 ${booking.how_did_you_hear ? `- How did they hear: ${booking.how_did_you_hear}` : ''}
@@ -53,7 +55,7 @@ ${booking.additional_details ? `- Additional Details: ${booking.additional_detai
       },
       attendees: [
         { email: booking.email },
-        { email: process.env.NEXT_PUBLIC_CALENDAR_EMAIL },
+        { email: process.env.NEXT_PUBLIC_CALENDAR_EMAIL || '' },
       ],
     };
 
@@ -65,11 +67,9 @@ ${booking.additional_details ? `- Additional Details: ${booking.additional_detai
       sendUpdates: 'all', // Send invitations to attendees
     });
 
-    console.log('Calendar event created:', response.data.id);
-    return response.data;
+    return response.data as CalendarEvent;
 
   } catch (error) {
-    console.error('Error creating calendar event:', error);
     throw error;
   }
 }

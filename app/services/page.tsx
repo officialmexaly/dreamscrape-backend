@@ -1,5 +1,7 @@
 import { ServicesPage } from '@/src/components/pages/ServicesPage';
+import { getPublishedServicesCached } from '@/src/lib/cached-services';
 
-export default function Page() {
-  return <ServicesPage />;
+export default async function Page() {
+  const items = await getPublishedServicesCached();
+  return <ServicesPage initialServices={items ?? []} />;
 }
