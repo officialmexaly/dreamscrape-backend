@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SECRET_KEY || '';
-const supabaseFetchTimeoutMs = Number(process.env.SUPABASE_FETCH_TIMEOUT_MS || 5000);
+const supabaseFetchTimeoutMs = Number(process.env.SUPABASE_FETCH_TIMEOUT_MS || 15000);
 
 function createTimeoutFetch(timeoutMs: number) {
   return async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -39,17 +39,13 @@ export function supabaseAdmin() {
   if (!adminClient) {
     adminClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
-      // Add additional options for better Node.js compatibility
       // @ts-ignore - Supabase type issue with db schema option
       db: { schema: 'public' },
       global: {
-        headers: {
-          'Connection': 'keep-alive'
-        },
         fetch: createTimeoutFetch(
           Number.isFinite(supabaseFetchTimeoutMs) && supabaseFetchTimeoutMs > 0
             ? supabaseFetchTimeoutMs
-            : 5000
+            : 15000
         ),
       }
     });

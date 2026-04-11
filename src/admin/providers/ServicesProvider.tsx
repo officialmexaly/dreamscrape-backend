@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { useAuth } from './AuthProvider';
 
 export type ServiceItem = {
   id: string;
@@ -33,8 +34,11 @@ const ServicesContext = createContext<ServicesContextValue | null>(null);
 export function ServicesProvider({ children }: { children: React.ReactNode }) {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { isAuthenticated } = useAuth();
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
+    if (!isAuthenticated) return;
+
     setIsLoading(true);
     try {
       const res = await fetch('/api/admin/services', { cache: 'no-store' });
@@ -45,11 +49,13 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    refresh();
-  }, []);
+    if (isAuthenticated) {
+      void refresh();
+    }
+  }, [isAuthenticated, refresh]);
 
   const createService = async (payload: Partial<ServiceItem>) => {
     const res = await fetch('/api/admin/services', {
@@ -92,7 +98,7 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<ServicesContextValue>(
     () => ({ services, isLoading, refresh, createService, updateService, deleteService }),
-    [services, isLoading]
+    [services, isLoading, refresh]
   );
 
   return <ServicesContext.Provider value={value}>{children}</ServicesContext.Provider>;

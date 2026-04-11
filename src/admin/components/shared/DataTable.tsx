@@ -100,11 +100,11 @@ export function DataTable<T>({
   return (
     <div className="space-y-4">
       {selectable && bulkActions && selectedItems.length > 0 && (
-        <div className="flex items-center justify-between rounded-lg border border-border/70 bg-muted/40 px-4 py-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-lg border border-border/70 bg-muted/40 px-4 py-3">
           <div className="text-sm text-foreground">
             {selectedItems.length} {selectedItems.length === 1 ? 'item' : 'items'} selected
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
             {bulkActions(selectedItems)}
           </div>
         </div>
@@ -116,12 +116,13 @@ export function DataTable<T>({
           className
         )}
       >
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[680px] text-left text-sm">
+        <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+          <div className="min-w-[600px] sm:min-w-0">
+            <table className="w-full text-left text-sm">
             <thead className="bg-muted/40">
               <tr className="border-b border-border/60 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 {selectable && (
-                  <th className="w-12 px-4 py-3 align-middle">
+                  <th className="w-12 px-3 sm:px-4 py-3 align-middle">
                     <Checkbox
                       checked={allSelected}
                       onCheckedChange={handleSelectAll}
@@ -135,7 +136,7 @@ export function DataTable<T>({
                     key={column.key}
                     scope="col"
                     className={cn(
-                      'px-4 py-3 align-middle',
+                      'px-3 sm:px-4 py-3 align-middle',
                       column.className
                     )}
                   >
@@ -149,7 +150,7 @@ export function DataTable<T>({
                 <tr>
                   <td
                     colSpan={tableColumns.length}
-                    className="px-4 py-10 text-center text-sm text-muted-foreground"
+                    className="px-3 sm:px-4 py-8 sm:py-10 text-center text-sm text-muted-foreground"
                   >
                     {loadingMessage}
                   </td>
@@ -158,7 +159,7 @@ export function DataTable<T>({
                 <tr>
                   <td
                     colSpan={tableColumns.length}
-                    className="px-4 py-10 text-center text-sm text-muted-foreground"
+                    className="px-3 sm:px-4 py-8 sm:py-10 text-center text-sm text-muted-foreground"
                   >
                     {emptyMessage}
                   </td>
@@ -178,7 +179,7 @@ export function DataTable<T>({
                       )}
                     >
                       {selectable && (
-                        <td className="w-12 px-4 py-4 align-middle" onClick={(e) => e.stopPropagation()}>
+                        <td className="w-12 px-3 sm:px-4 py-3 sm:py-4 align-middle" onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={(checked) => handleSelectRow(id, checked === true)}
@@ -189,7 +190,7 @@ export function DataTable<T>({
                       {columns.map((column) => (
                         <td
                           key={column.key}
-                          className={cn('px-4 py-4 align-middle', column.className)}
+                          className={cn('px-3 sm:px-4 py-3 sm:py-4 align-middle', column.className)}
                         >
                           {column.cell(item)}
                         </td>
@@ -200,6 +201,7 @@ export function DataTable<T>({
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </Card>
     </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Plus, Trash2, Pencil, AlertCircle } from 'lucide-react'
+import { Plus, Trash2, Pencil, AlertCircle, RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useMedia } from '../providers/MediaProvider'
@@ -10,8 +10,9 @@ import { formatAdminDate } from '@/src/admin/utils/formatDate'
 
 export function MediaPage() {
   const router = useRouter()
-  const { media, deleteMedia, isLoading, error } = useMedia()
+  const { media, deleteMedia, isLoading, error, refresh } = useMedia()
   const { toast } = useToast()
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Delete this media item?')) return
@@ -28,6 +29,23 @@ export function MediaPage() {
     }
   }
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await refresh()
+      toast({ title: 'Refreshed', variant: 'success', duration: 1500 })
+    } catch (err) {
+      toast({
+        title: 'Failed to refresh',
+        description: err instanceof Error ? err.message : 'Unknown error',
+        variant: 'error',
+        duration: 3000,
+      })
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
   if (error) {
     return (
       <div className="space-y-6">
@@ -35,10 +53,21 @@ export function MediaPage() {
           <div className="font-serif text-2xl font-semibold text-foreground">
             Media Library
           </div>
-          <Button onClick={() => router.push('/admin/media/new')}>
-            <Plus size={16} />
-            Add Media
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              title="Refresh"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button onClick={() => router.push('/admin/media/new')}>
+              <Plus size={16} />
+              Add Media
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-col items-center gap-4 rounded-xl border border-destructive/20 bg-destructive/5 p-8 text-center">
@@ -47,7 +76,7 @@ export function MediaPage() {
             <div className="font-semibold text-foreground">Failed to load media</div>
             <div className="text-sm text-muted-foreground">{error}</div>
           </div>
-          <Button variant="outline" onClick={() => window.location.reload()}>
+          <Button variant="outline" onClick={handleRefresh}>
             Try Again
           </Button>
         </div>
@@ -62,10 +91,21 @@ export function MediaPage() {
           <div className="font-serif text-2xl font-semibold text-foreground">
             Media Library
           </div>
-          <Button onClick={() => router.push('/admin/media/new')}>
-            <Plus size={16} />
-            Add Media
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={true}
+              title="Refresh"
+            >
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            </Button>
+            <Button onClick={() => router.push('/admin/media/new')}>
+              <Plus size={16} />
+              Add Media
+            </Button>
+          </div>
         </div>
 
         <div className="text-sm text-muted-foreground">Loading media library…</div>
@@ -84,10 +124,21 @@ export function MediaPage() {
             {media.length} {media.length === 1 ? 'item' : 'items'}
           </div>
         </div>
-        <Button onClick={() => router.push('/admin/media/new')}>
-          <Plus size={16} />
-          Add Media
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isLoading || isRefreshing}
+            title="Refresh"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading || isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button onClick={() => router.push('/admin/media/new')}>
+            <Plus size={16} />
+            Add Media
+          </Button>
+        </div>
       </div>
 
       {media.length === 0 ? (

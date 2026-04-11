@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { useAuth } from './AuthProvider';
 
 type SettingsContextValue = {
   settings: any;
@@ -13,8 +14,9 @@ const SettingsContext = createContext<SettingsContextValue | null>(null);
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
   const mapFromDb = (row: any) => {
     const social = row?.social_links || {};
@@ -33,7 +35,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
+    if (!isAuthenticated) return;
+
     setIsLoading(true);
     try {
       const res = await fetch('/api/admin/site-settings', { cache: 'no-store' });
@@ -56,11 +60,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    void refresh();
-  }, []);
+    if (isAuthenticated) {
+      void refresh();
+    }
+  }, [isAuthenticated, refresh]);
 
   const saveSettings: SettingsContextValue['saveSettings'] = async (next) => {
     const payload = {
@@ -91,7 +97,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<SettingsContextValue>(
     () => ({ settings, isLoading, refresh, saveSettings }),
-    [settings, isLoading]
+    [settings, isLoading, refresh]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

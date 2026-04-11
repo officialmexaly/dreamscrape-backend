@@ -9,6 +9,7 @@ import {
   Image as ImageIcon,
   MessageSquare,
   Plus,
+  RefreshCw,
   Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -22,13 +23,38 @@ import { useInquiries } from '@/src/admin/providers/InquiriesProvider'
 import { useEvents } from '@/src/admin/providers/EventsProvider'
 import { useBlogPosts } from '@/src/admin/providers/BlogPostsProvider'
 import { useMedia } from '@/src/admin/providers/MediaProvider'
+import { useToast } from '@/src/admin/toast/ToastProvider'
 
 export function DashboardPage() {
   const router = useRouter()
-  const { inquiries } = useInquiries()
-  const { events } = useEvents()
-  const { posts } = useBlogPosts()
-  const { media } = useMedia()
+  const { inquiries, refresh: refreshInquiries } = useInquiries()
+  const { events, refresh: refreshEvents } = useEvents()
+  const { posts, refresh: refreshPosts } = useBlogPosts()
+  const { media, refresh: refreshMedia } = useMedia()
+  const { toast } = useToast()
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await Promise.all([
+        refreshInquiries(),
+        refreshEvents(),
+        refreshPosts(),
+        refreshMedia(),
+      ])
+      toast({ title: 'Dashboard refreshed', variant: 'success', duration: 1500 })
+    } catch (error) {
+      toast({
+        title: 'Failed to refresh',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'error',
+        duration: 3000,
+      })
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   const recentInquiries = (Array.isArray(inquiries) ? inquiries : []).slice(0, 5)
   const [now, setNow] = React.useState<Date | null>(null)
@@ -113,6 +139,15 @@ export function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            title="Refresh dashboard"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
           <Button variant="outline" onClick={() => router.push('/admin/blog')}>
             Manage Blog
           </Button>

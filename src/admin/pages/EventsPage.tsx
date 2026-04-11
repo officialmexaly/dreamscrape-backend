@@ -1,24 +1,42 @@
 'use client'
 
 import * as React from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEvents } from '../providers/EventsProvider'
 import { formatAdminDate } from '@/src/admin/utils/formatDate'
-import { PageHeader } from '../components/shared'
 import { DataTable } from '../components/shared/DataTable'
 import { StatusBadge } from '../components/shared'
 import { ActionButtons } from '../components/shared'
 import { useToast } from '@/src/admin/toast/ToastProvider'
+import { Button } from '@/components/ui/button'
 
 export function EventsPage() {
   const router = useRouter()
-  const { events, deleteEvent, isLoading } = useEvents()
+  const { events, deleteEvent, isLoading, refresh } = useEvents()
   const { toast } = useToast()
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
 
   const handleDelete = async (id: string) => {
     await deleteEvent(id)
     toast({ title: 'Event deleted', variant: 'info', duration: 2000 })
+  }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await refresh()
+      toast({ title: 'Refreshed', variant: 'success', duration: 1500 })
+    } catch (error) {
+      toast({
+        title: 'Failed to refresh',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'error',
+        duration: 3000,
+      })
+    } finally {
+      setIsRefreshing(false)
+    }
   }
 
   const columns = [
@@ -77,14 +95,32 @@ export function EventsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Events"
-        action={{
-          label: 'Add Event',
-          onClick: () => router.push('/admin/events/new'),
-          icon: Plus,
-        }}
-      />
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="font-serif text-2xl font-semibold text-foreground">
+            Events
+          </div>
+          <div className="mt-1 text-sm text-muted-foreground">
+            Manage your events calendar
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isLoading || isRefreshing}
+            title="Refresh"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading || isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button onClick={() => router.push('/admin/events/new')}>
+            <Plus size={16} />
+            Add Event
+          </Button>
+        </div>
+      </div>
 
       <DataTable
         data={events}

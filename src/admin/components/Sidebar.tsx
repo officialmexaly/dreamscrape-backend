@@ -34,22 +34,104 @@ interface SidebarProps {
   onLogout: () => void
   isCollapsed?: boolean
   onToggleCollapsed?: () => void
+  isMobileOpen?: boolean
+  onCloseMobile?: () => void
 }
 
 export function Sidebar({
   onLogout,
   isCollapsed = false,
   onToggleCollapsed,
+  isMobileOpen = false,
+  onCloseMobile,
 }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <aside
-      className={cn(
-        'fixed left-0 top-0 z-20 flex h-screen flex-col border-r border-border/70 bg-background/75 shadow-[0_10px_34px_rgba(15,23,42,0.08)] backdrop-blur',
-        isCollapsed ? 'w-20' : 'w-[260px]'
-      )}
-    >
+    <>
+      {/* Mobile Sidebar - Overlay */}
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-40 w-[280px] flex-col border-r border-border/70 bg-background shadow-xl md:hidden transition-transform duration-300',
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
+        <div className="relative border-b border-border/70 p-6">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="font-serif text-xl font-bold text-primary">
+                Dreamscape
+              </div>
+              <div className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                Admin Portal
+              </div>
+            </div>
+            <button
+              type="button"
+              aria-label="Close sidebar"
+              onClick={onCloseMobile}
+              className="lg:hidden -mr-2 ml-2 inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+          {NAV_ITEMS.map((item) => {
+            const isActive =
+              pathname === item.path ||
+              (item.path === '/admin/blog' && pathname.startsWith('/admin/blog/'))
+
+            const Icon = item.icon
+
+            return (
+              <Link
+                key={item.name}
+                href={item.path}
+                onClick={onCloseMobile}
+                className={cn(
+                  'group flex items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-sm font-medium transition min-h-12',
+                  isActive
+                    ? 'border-primary/15 bg-[linear-gradient(135deg,rgba(64,21,63,0.12)_0%,rgba(201,168,76,0.10)_100%)] text-primary'
+                    : 'text-foreground/80 hover:bg-muted hover:text-foreground'
+                )}
+              >
+                <span
+                  className={cn(
+                    'grid h-[34px] w-[34px] place-items-center rounded-lg bg-muted text-foreground/80 transition group-hover:text-primary',
+                    isActive && 'bg-background/80 text-primary'
+                  )}
+                >
+                  <Icon size={18} />
+                </span>
+                <span className="truncate">{item.name}</span>
+              </Link>
+            )
+          })}
+        </nav>
+
+        <div className="p-4">
+          <div className="mb-4 h-px w-full bg-border/70" />
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full justify-start gap-3 rounded-xl bg-muted text-foreground/80 hover:bg-destructive/10 hover:text-destructive min-h-12"
+            onClick={onLogout}
+          >
+            <LogOut size={18} />
+            Log Out
+          </Button>
+        </div>
+      </aside>
+
+      {/* Desktop Sidebar - Fixed */}
+      <aside
+        className={cn(
+          'fixed left-0 top-0 z-20 hidden md:flex h-screen flex-col border-r border-border/70 bg-background/75 shadow-[0_10px_34px_rgba(15,23,42,0.08)] backdrop-blur',
+          isCollapsed ? 'w-20' : 'w-[260px]'
+        )}
+      >
       <div className={cn('relative border-b border-border/70 p-6', isCollapsed && 'px-4')}>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -126,5 +208,6 @@ export function Sidebar({
         </Button>
       </div>
     </aside>
+    </>
   )
 }

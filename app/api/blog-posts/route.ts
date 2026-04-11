@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       .from('portfolio_items')
       .select('*')
       .eq('status', 'published')
-      ..order('event_date', { ascending: false }), { ascending: false });
+      .order('event_date', { ascending: false });
 
     if (error) {
       console.error('❌ Error fetching blog posts:', error);

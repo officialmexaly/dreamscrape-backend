@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { useAuth } from './AuthProvider';
 
 type SiteContent = any;
 
@@ -40,9 +41,12 @@ const DEFAULT_CONTENT = {
 
 export function SiteContentProvider({ children }: { children: React.ReactNode }) {
   const [siteContent, setSiteContentState] = useState<SiteContent>(DEFAULT_CONTENT);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const { isAuthenticated } = useAuth();
 
-  const fetchContent = async () => {
+  const fetchContent = useCallback(async () => {
+    if (!isAuthenticated) return;
+
     setIsLoading(true);
     try {
       const res = await fetch('/api/site-content', { cache: 'no-store' });
@@ -77,11 +81,13 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    fetchContent();
-  }, []);
+    if (isAuthenticated) {
+      void fetchContent();
+    }
+  }, [isAuthenticated, fetchContent]);
 
   const setSiteContent = async (next: SiteContent) => {
     setSiteContentState(next);
@@ -100,7 +106,7 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
       refreshContent: fetchContent,
       isLoading
     }),
-    [siteContent, isLoading]
+    [siteContent, isLoading, fetchContent]
   );
 
   return <SiteContentContext.Provider value={value}>{children}</SiteContentContext.Provider>;

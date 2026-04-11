@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { useAuth } from './AuthProvider';
 
 type BlogPost = any;
 
@@ -18,8 +19,9 @@ const BlogPostsContext = createContext<BlogPostsContextValue | null>(null);
 
 export function BlogPostsProvider({ children }: { children: React.ReactNode }) {
   const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
   const mapFromDb = (row: any) => {
     // Map database rows to blog post format with content blocks
@@ -67,7 +69,9 @@ export function BlogPostsProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
+    if (!isAuthenticated) return;
+
     setIsLoading(true);
     try {
       const res = await fetch('/api/admin/portfolio-items', { cache: 'no-store' });
@@ -89,11 +93,13 @@ export function BlogPostsProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    void refresh();
-  }, []);
+    if (isAuthenticated) {
+      void refresh();
+    }
+  }, [isAuthenticated]);
 
   const getPost: BlogPostsContextValue['getPost'] = async (idOrSlug) => {
     const key = (idOrSlug || '').trim().replace(/\s+/g, '');
@@ -182,7 +188,7 @@ export function BlogPostsProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<BlogPostsContextValue>(
     () => ({ posts, isLoading, error, refresh, getPost, savePost, deletePost }),
-    [posts, isLoading, error]
+    [posts, isLoading, error, refresh]
   );
 
   return <BlogPostsContext.Provider value={value}>{children}</BlogPostsContext.Provider>;

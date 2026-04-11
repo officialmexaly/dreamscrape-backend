@@ -3,13 +3,15 @@
 /* eslint-disable @next/next/no-img-element */
 
 import * as React from 'react'
-import { ArrowLeft, Eye, Save, ImagePlus, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
+import { ArrowLeft, Eye, Save, ImagePlus, Plus, Trash2, ArrowUp, ArrowDown, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { cn } from '@/src/lib/utils'
 import { useToast } from '@/src/admin/toast/ToastProvider'
 import { MediaPickerModal } from '../components/MediaPickerModal'
 import { useDisclosure } from '@/src/admin/hooks/useDisclosure'
@@ -101,6 +103,7 @@ export function BlogEditorPage({
   const [post, setPost] = React.useState<EditorPost>(emptyPost)
   const [mounted, setMounted] = React.useState(false)
   const [isFetching, setIsFetching] = React.useState(false)
+  const [isSaving, setIsSaving] = React.useState(false)
 
   const mediaModal = useDisclosure(false)
   const [mediaTarget, setMediaTarget] = React.useState<
@@ -268,6 +271,8 @@ export function BlogEditorPage({
         return
       }
 
+      setIsSaving(true)
+
       const toSave = {
         ...post,
         contentBlocks: Array.isArray(post.contentBlocks) ? post.contentBlocks : [],
@@ -289,19 +294,34 @@ export function BlogEditorPage({
         variant: 'error',
         duration: 4500,
       })
+    } finally {
+      setIsSaving(false)
     }
   }
 
   if (isFetching) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         <p className="text-muted-foreground">Loading post…</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Loading overlay */}
+      {isSaving && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 rounded-xl border border-border/70 bg-background p-8 shadow-lg">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <div className="text-center">
+              <p className="font-semibold">Saving...</p>
+              <p className="text-sm text-muted-foreground">Please wait while we save your changes</p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.push('/admin/blog')}>
@@ -316,382 +336,412 @@ export function BlogEditorPage({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" onClick={() => router.push('/admin/blog')}>
+          <Button type="button" variant="outline" onClick={() => router.push('/admin/blog')} disabled={isSaving}>
             Cancel
           </Button>
           <Button
             type="button"
             variant="outline"
             onClick={() => router.push(`/admin/blog/${routeId}/preview`)}
-            disabled={isNew}
+            disabled={isNew || isSaving}
           >
             <Eye className="mr-2 h-4 w-4" />
             Preview
           </Button>
-          <Button onClick={handleSave}>
-            <Save className="mr-2 h-4 w-4" />
-            Save
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </>
+            )}
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_520px]">
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={post.title}
-                  onChange={(e) => setPost({ ...post, title: e.target.value })}
-                  placeholder="Post title"
-                />
-              </div>
+      <Tabs defaultValue="basic" className={cn("space-y-6", isSaving && "pointer-events-none opacity-50")}>
+        <TabsList className="w-full md:w-auto">
+          <TabsTrigger value="basic">Basic Information</TabsTrigger>
+          <TabsTrigger value="story">Story Blocks</TabsTrigger>
+        </TabsList>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <select
-                    id="status"
-                    value={post.status}
-                    onChange={(e) =>
-                      setPost({ ...post, status: e.target.value as 'Draft' | 'Published' })
-                    }
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        <TabsContent value="basic" className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Basic Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      value={post.title}
+                      onChange={(e) => setPost({ ...post, title: e.target.value })}
+                      placeholder="Post title"
+                    />
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status</Label>
+                      <select
+                        id="status"
+                        value={post.status}
+                        onChange={(e) =>
+                          setPost({ ...post, status: e.target.value as 'Draft' | 'Published' })
+                        }
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="Draft">Draft</option>
+                        <option value="Published">Published</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="date">Date</Label>
+                      <Input
+                        id="date"
+                        type="date"
+                        value={post.date}
+                        onChange={(e) => setPost({ ...post, date: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Input
+                      id="category"
+                      value={post.category}
+                      onChange={(e) => setPost({ ...post, category: e.target.value })}
+                      placeholder="e.g., Wedding, Celebration"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      value={post.location}
+                      onChange={(e) => setPost({ ...post, location: e.target.value })}
+                      placeholder="e.g., Toronto, Ontario"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="author">Author</Label>
+                    <Input
+                      id="author"
+                      value={post.author}
+                      onChange={(e) => setPost({ ...post, author: e.target.value })}
+                      placeholder="Author name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="subtitle">Subtitle</Label>
+                    <Textarea
+                      id="subtitle"
+                      value={post.subtitle}
+                      onChange={(e) => setPost({ ...post, subtitle: e.target.value })}
+                      rows={2}
+                      placeholder="Brief subtitle or description"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="excerpt">Excerpt</Label>
+                    <Textarea
+                      id="excerpt"
+                      value={post.excerpt}
+                      onChange={(e) => setPost({ ...post, excerpt: e.target.value })}
+                      rows={3}
+                      placeholder="Short excerpt for previews"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Featured Image</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {post.image ? (
+                    <div className="aspect-video overflow-hidden rounded-lg bg-muted">
+                      <img src={post.image} alt="Featured" className="h-full w-full object-cover" />
+                    </div>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setMediaTarget({ kind: 'featured' })
+                      mediaModal.onOpen()
+                    }}
                   >
-                    <option value="Draft">Draft</option>
-                    <option value="Published">Published</option>
-                  </select>
+                    <ImagePlus className="mr-2 h-4 w-4" />
+                    {post.image ? 'Change Image' : 'Select Image'}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Stats</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Content Blocks</span>
+                    <span className="font-medium">{post.contentBlocks.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Status</span>
+                    <span className="font-medium">{post.status}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="story" className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+            <Card>
+              <CardHeader>
+                <CardTitle>Story Blocks</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setPost((prev) => ({
+                        ...prev,
+                        contentBlocks: [...prev.contentBlocks, createBlock('text')],
+                      }))
+                    }
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Text
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setPost((prev) => ({
+                        ...prev,
+                        contentBlocks: [...prev.contentBlocks, createBlock('heading')],
+                      }))
+                    }
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Heading
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setPost((prev) => ({
+                        ...prev,
+                        contentBlocks: [...prev.contentBlocks, createBlock('quote')],
+                      }))
+                    }
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Quote
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setPost((prev) => ({
+                        ...prev,
+                        contentBlocks: [...prev.contentBlocks, createBlock('image')],
+                      }))
+                    }
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Image
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={post.date}
-                    onChange={(e) => setPost({ ...post, date: e.target.value })}
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  value={post.category}
-                  onChange={(e) => setPost({ ...post, category: e.target.value })}
-                  placeholder="e.g., Wedding, Celebration"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  value={post.location}
-                  onChange={(e) => setPost({ ...post, location: e.target.value })}
-                  placeholder="e.g., Toronto, Ontario"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="author">Author</Label>
-                <Input
-                  id="author"
-                  value={post.author}
-                  onChange={(e) => setPost({ ...post, author: e.target.value })}
-                  placeholder="Author name"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="subtitle">Subtitle</Label>
-                <Textarea
-                  id="subtitle"
-                  value={post.subtitle}
-                  onChange={(e) => setPost({ ...post, subtitle: e.target.value })}
-                  rows={2}
-                  placeholder="Brief subtitle or description"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="excerpt">Excerpt</Label>
-                <Textarea
-                  id="excerpt"
-                  value={post.excerpt}
-                  onChange={(e) => setPost({ ...post, excerpt: e.target.value })}
-                  rows={3}
-                  placeholder="Short excerpt for previews"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Story Blocks</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setPost((prev) => ({
-                      ...prev,
-                      contentBlocks: [...prev.contentBlocks, createBlock('text')],
-                    }))
-                  }
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Text
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setPost((prev) => ({
-                      ...prev,
-                      contentBlocks: [...prev.contentBlocks, createBlock('heading')],
-                    }))
-                  }
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Heading
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setPost((prev) => ({
-                      ...prev,
-                      contentBlocks: [...prev.contentBlocks, createBlock('quote')],
-                    }))
-                  }
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Quote
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setPost((prev) => ({
-                      ...prev,
-                      contentBlocks: [...prev.contentBlocks, createBlock('image')],
-                    }))
-                  }
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Image
-                </Button>
-              </div>
-
-              {post.contentBlocks.length ? (
-                <div className="space-y-3">
-                  {post.contentBlocks.map((block, index) => (
-                    <div key={block.id} className="rounded-xl border border-border/70 bg-background p-4">
-                      <div className="mb-3 flex items-center justify-between gap-2">
-                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                          {block.type}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => moveBlock(index, index - 1)}
-                            disabled={index === 0}
-                            aria-label="Move up"
-                          >
-                            <ArrowUp className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => moveBlock(index, index + 1)}
-                            disabled={index === post.contentBlocks.length - 1}
-                            aria-label="Move down"
-                          >
-                            <ArrowDown className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => deleteBlock(index)}
-                            aria-label="Delete block"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      {block.type === 'heading' ? (
-                        <div className="space-y-2">
-                          <Label>Heading</Label>
-                          <Input
-                            value={block.content}
-                            onChange={(e) => updateBlock(index, { content: e.target.value })}
-                            placeholder="Heading text"
-                          />
-                          <div className="grid gap-2 md:grid-cols-2">
-                            <div className="space-y-2">
-                              <Label>Level</Label>
-                              <select
-                                value={(block.level || 'h2') as any}
-                                onChange={(e) =>
-                                  updateBlock(index, { level: e.target.value as any } as any)
-                                }
-                                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                              >
-                                <option value="h2">H2</option>
-                                <option value="h3">H3</option>
-                              </select>
-                            </div>
+                {post.contentBlocks.length ? (
+                  <div className="space-y-3">
+                    {post.contentBlocks.map((block, index) => (
+                      <div key={block.id} className="rounded-xl border border-border/70 bg-background p-4">
+                        <div className="mb-3 flex items-center justify-between gap-2">
+                          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                            {block.type}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => moveBlock(index, index - 1)}
+                              disabled={index === 0}
+                              aria-label="Move up"
+                            >
+                              <ArrowUp className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => moveBlock(index, index + 1)}
+                              disabled={index === post.contentBlocks.length - 1}
+                              aria-label="Move down"
+                            >
+                              <ArrowDown className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deleteBlock(index)}
+                              aria-label="Delete block"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
-                      ) : block.type === 'quote' ? (
-                        <div className="space-y-2">
-                          <Label>Quote</Label>
-                          <Textarea
-                            value={block.content}
-                            onChange={(e) => updateBlock(index, { content: e.target.value })}
-                            rows={3}
-                            placeholder="Quote text"
-                          />
-                        </div>
-                      ) : block.type === 'image' ? (
-                        <div className="space-y-3">
+
+                        {block.type === 'heading' ? (
                           <div className="space-y-2">
-                            <Label>Image URL</Label>
+                            <Label>Heading</Label>
                             <Input
                               value={block.content}
                               onChange={(e) => updateBlock(index, { content: e.target.value })}
-                              placeholder="https://..."
+                              placeholder="Heading text"
+                            />
+                            <div className="grid gap-2 md:grid-cols-2">
+                              <div className="space-y-2">
+                                <Label>Level</Label>
+                                <select
+                                  value={(block.level || 'h2') as any}
+                                  onChange={(e) =>
+                                    updateBlock(index, { level: e.target.value as any } as any)
+                                  }
+                                  className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                >
+                                  <option value="h2">H2</option>
+                                  <option value="h3">H3</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        ) : block.type === 'quote' ? (
+                          <div className="space-y-2">
+                            <Label>Quote</Label>
+                            <Textarea
+                              value={block.content}
+                              onChange={(e) => updateBlock(index, { content: e.target.value })}
+                              rows={3}
+                              placeholder="Quote text"
                             />
                           </div>
-                          {block.content ? (
-                            <div className="aspect-video overflow-hidden rounded-lg bg-muted">
-                              <img
-                                src={block.content}
-                                alt={block.caption || 'Block image'}
-                                className="h-full w-full object-cover"
+                        ) : block.type === 'image' ? (
+                          <div className="space-y-3">
+                            <div className="space-y-2">
+                              <Label>Image URL</Label>
+                              <Input
+                                value={block.content}
+                                onChange={(e) => updateBlock(index, { content: e.target.value })}
+                                placeholder="https://..."
                               />
                             </div>
-                          ) : null}
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setMediaTarget({ kind: 'block', index })
-                              mediaModal.onOpen()
-                            }}
-                          >
-                            <ImagePlus className="mr-2 h-4 w-4" />
-                            Select from Media Library
-                          </Button>
+                            {block.content ? (
+                              <div className="aspect-video overflow-hidden rounded-lg bg-muted">
+                                <img
+                                  src={block.content}
+                                  alt={block.caption || 'Block image'}
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                            ) : null}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                setMediaTarget({ kind: 'block', index })
+                                mediaModal.onOpen()
+                              }}
+                            >
+                              <ImagePlus className="mr-2 h-4 w-4" />
+                              Select from Media Library
+                            </Button>
+                            <div className="space-y-2">
+                              <Label>Caption (optional)</Label>
+                              <Input
+                                value={(block.caption || '') as any}
+                                onChange={(e) => updateBlock(index, { caption: e.target.value } as any)}
+                                placeholder="Caption text"
+                              />
+                            </div>
+                          </div>
+                        ) : (
                           <div className="space-y-2">
-                            <Label>Caption (optional)</Label>
-                            <Input
-                              value={(block.caption || '') as any}
-                              onChange={(e) => updateBlock(index, { caption: e.target.value } as any)}
-                              placeholder="Caption text"
+                            <Label>Text</Label>
+                            <Textarea
+                              value={block.content}
+                              onChange={(e) => updateBlock(index, { content: e.target.value })}
+                              rows={5}
+                              placeholder="Write paragraph text…"
                             />
                           </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Label>Text</Label>
-                          <Textarea
-                            value={block.content}
-                            onChange={(e) => updateBlock(index, { content: e.target.value })}
-                            rows={5}
-                            placeholder="Write paragraph text…"
-                          />
-                        </div>
-                      )}
+                        )}
 
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <Button type="button" variant="secondary" size="sm" onClick={() => insertBlockAfter(index, 'text')}>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Text below
-                        </Button>
-                        <Button type="button" variant="secondary" size="sm" onClick={() => insertBlockAfter(index, 'image')}>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Image below
-                        </Button>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <Button type="button" variant="secondary" size="sm" onClick={() => insertBlockAfter(index, 'text')}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Text below
+                          </Button>
+                          <Button type="button" variant="secondary" size="sm" onClick={() => insertBlockAfter(index, 'image')}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Image below
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
-                  Add blocks above to build your story. Images can go between text blocks.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
+                    Add blocks above to build your story. Images can go between text blocks.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Featured Image</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {post.image ? (
-                <div className="aspect-video overflow-hidden rounded-lg bg-muted">
-                  <img src={post.image} alt="Featured" className="h-full w-full object-cover" />
+            <Card>
+              <CardHeader>
+                <CardTitle>Live Preview</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="rounded-xl border border-border/70 bg-muted/10">
+                  <div className="max-h-[62vh] overflow-auto pointer-events-none">
+                    <BlogStoryPage post={publicPreviewPost} />
+                  </div>
                 </div>
-              ) : null}
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setMediaTarget({ kind: 'featured' })
-                  mediaModal.onOpen()
-                }}
-              >
-                <ImagePlus className="mr-2 h-4 w-4" />
-                {post.image ? 'Change Image' : 'Select Image'}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Live Preview</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Blocks</span>
-                <span className="font-medium">{post.contentBlocks.length}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Status</span>
-                <span className="font-medium">{post.status}</span>
-              </div>
-              <div className="rounded-xl border border-border/70 bg-muted/10">
-                <div className="max-h-[62vh] overflow-auto pointer-events-none">
-                  <BlogStoryPage post={publicPreviewPost} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <MediaPickerModal
         isOpen={mediaModal.isOpen}

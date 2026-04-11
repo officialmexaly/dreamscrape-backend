@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { useAuth } from './AuthProvider';
 
 type EventItem = any;
 
@@ -23,28 +24,31 @@ const EventsContext = createContext<EventsContextValue | null>(null);
 
 export function EventsProvider({ children }: { children: React.ReactNode }) {
   const [events, setEvents] = useState<EventItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
+    if (!isAuthenticated) return;
+
     setIsLoading(true);
     setError(null);
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-      
-      const res = await fetch('/api/admin/events', { 
+
+      const res = await fetch('/api/admin/events', {
         cache: 'no-store',
         signal: controller.signal
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || 'Failed to load events');
       setEvents(json.items || []);
     } catch (err) {
-      const message = err instanceof Error 
+      const message = err instanceof Error
         ? (err.name === 'AbortError' ? 'Request timeout - please try again' : err.message)
         : 'Unknown error';
       console.error('Error loading events:', message);
@@ -54,11 +58,13 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    void refresh();
-  }, []);
+    if (isAuthenticated) {
+      void refresh();
+    }
+  }, [isAuthenticated, refresh]);
 
   const createEvent = async (draft: {
     title: string;
@@ -94,7 +100,7 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       createEvent,
       deleteEvent,
     }),
-    [events, isLoading, error]
+    [events, isLoading, error, refresh]
   );
 
   return <EventsContext.Provider value={value}>{children}</EventsContext.Provider>;

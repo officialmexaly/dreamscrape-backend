@@ -1,22 +1,41 @@
 'use client'
 
 import * as React from 'react'
-import { Mail, Plus } from 'lucide-react'
+import { Mail, Plus, RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/src/admin/toast/ToastProvider'
 import { useInquiries } from '../providers/InquiriesProvider'
 import { formatAdminDate } from '@/src/admin/utils/formatDate'
-import { ActionButtons, DataTable, PageHeader, StatusBadge } from '@/src/admin/components/shared'
+import { ActionButtons, DataTable, StatusBadge } from '@/src/admin/components/shared'
+import { Button } from '@/components/ui/button'
 
 export function InquiriesPage() {
   const router = useRouter()
-  const { inquiries, deleteInquiry, isLoading } = useInquiries()
+  const { inquiries, deleteInquiry, isLoading, refresh } = useInquiries()
   const { toast } = useToast()
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Delete this inquiry?')) return
     await deleteInquiry(id)
     toast({ title: 'Inquiry deleted', variant: 'info', duration: 2000 })
+  }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await refresh()
+      toast({ title: 'Refreshed', variant: 'success', duration: 1500 })
+    } catch (error) {
+      toast({
+        title: 'Failed to refresh',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'error',
+        duration: 3000,
+      })
+    } finally {
+      setIsRefreshing(false)
+    }
   }
 
   const columns = [
@@ -73,14 +92,32 @@ export function InquiriesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Consultation Inquiries"
-        action={{
-          label: 'Add Inquiry',
-          onClick: () => router.push('/admin/inquiries/new'),
-          icon: Plus,
-        }}
-      />
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="font-serif text-2xl font-semibold text-foreground">
+            Consultation Inquiries
+          </div>
+          <div className="mt-1 text-sm text-muted-foreground">
+            Manage client inquiries and bookings
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isLoading || isRefreshing}
+            title="Refresh"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading || isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button onClick={() => router.push('/admin/inquiries/new')}>
+            <Plus size={16} />
+            Add Inquiry
+          </Button>
+        </div>
+      </div>
 
       <DataTable
         data={inquiries}

@@ -1,8 +1,9 @@
 'use client'
 
 import * as React from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
 import { useToast } from '@/src/admin/toast/ToastProvider'
 import { useServices } from '../providers/ServicesProvider'
 import { formatAdminDate } from '@/src/admin/utils/formatDate'
@@ -10,8 +11,9 @@ import { ActionButtons, DataTable, PageHeader, StatusBadge } from '@/src/admin/c
 
 export function ServicesPage() {
   const router = useRouter()
-  const { services, deleteService, isLoading } = useServices()
+  const { services, deleteService, isLoading, refresh } = useServices()
   const { toast } = useToast()
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Delete this service?')) return
@@ -24,6 +26,23 @@ export function ServicesPage() {
         variant: 'error',
         duration: 2000,
       })
+    }
+  }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await refresh()
+      toast({ title: 'Refreshed', variant: 'success', duration: 1500 })
+    } catch (error) {
+      toast({
+        title: 'Failed to refresh',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'error',
+        duration: 3000,
+      })
+    } finally {
+      setIsRefreshing(false)
     }
   }
 
@@ -75,14 +94,32 @@ export function ServicesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Service Offerings"
-        action={{
-          label: 'Add Service',
-          onClick: () => router.push('/admin/services/new'),
-          icon: Plus,
-        }}
-      />
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="font-serif text-2xl font-semibold text-foreground">
+            Service Offerings
+          </div>
+          <div className="mt-1 text-sm text-muted-foreground">
+            Manage your service packages
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isLoading || isRefreshing}
+            title="Refresh"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading || isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button onClick={() => router.push('/admin/services/new')}>
+            <Plus size={16} />
+            Add Service
+          </Button>
+        </div>
+      </div>
 
       <DataTable
         data={services}

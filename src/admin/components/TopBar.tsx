@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { usePathname } from 'next/navigation'
-import { Bell, LogOut, Search } from 'lucide-react'
+import { Bell, LogOut, Search, Menu } from 'lucide-react'
 import { signOut, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,7 +25,11 @@ function getPageTitle(pathname: string) {
   return labels[section] || section.charAt(0).toUpperCase() + section.slice(1)
 }
 
-export function TopBar() {
+interface TopBarProps {
+  onMobileMenuToggle?: () => void
+}
+
+export function TopBar({ onMobileMenuToggle }: TopBarProps) {
   const pathname = usePathname()
   const { data: session } = useSession()
   const { toast } = useToast()
@@ -44,18 +48,30 @@ export function TopBar() {
 
   return (
     <header className="sticky top-0 z-10 border-b border-border/70 bg-background/70 backdrop-blur">
-      <div className="flex h-[72px] items-center justify-between px-5 md:px-8">
-        <div className="min-w-0">
-          <div className="truncate font-serif text-xl font-semibold text-foreground">
-            {getPageTitle(pathname)}
-          </div>
-          <div className="mt-1 hidden truncate text-xs text-muted-foreground md:block">
-            {userName} • {userEmail}
+      <div className="flex h-16 md:h-[72px] items-center justify-between px-4 md:px-8">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Toggle menu"
+            className="md:hidden rounded-full flex-shrink-0"
+            onClick={onMobileMenuToggle}
+          >
+            <Menu size={20} />
+          </Button>
+          <div className="min-w-0">
+            <div className="truncate font-serif text-lg md:text-xl font-semibold text-foreground">
+              {getPageTitle(pathname)}
+            </div>
+            <div className="mt-0.5 hidden truncate text-xs text-muted-foreground md:block">
+              {userName} • {userEmail}
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 md:gap-4">
-          <div className="relative hidden w-[320px] md:block">
+        <div className="flex items-center gap-2 md:gap-4">
+          <div className="relative hidden w-[240px] lg:w-[320px] lg:block">
             <Search
               size={16}
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
@@ -72,7 +88,7 @@ export function TopBar() {
             variant="ghost"
             size="icon"
             aria-label="Notifications"
-            className="rounded-full"
+            className="rounded-full h-10 w-10 md:h-auto md:w-auto"
           >
             <Bell size={18} />
           </Button>
@@ -82,7 +98,7 @@ export function TopBar() {
             variant="ghost"
             size="icon"
             aria-label="Log out"
-            className="rounded-full"
+            className="rounded-full h-10 w-10 md:h-auto md:w-auto"
             onClick={handleLogout}
           >
             <LogOut size={18} />

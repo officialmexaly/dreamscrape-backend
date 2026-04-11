@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { useAuth } from './AuthProvider';
 
 type MediaItem = any;
 
@@ -43,10 +44,13 @@ const MediaContext = createContext<MediaContextValue | null>(null);
 
 export function MediaProvider({ children }: { children: React.ReactNode }) {
   const [media, setMedia] = useState<MediaItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
+    if (!isAuthenticated) return;
+
     setIsLoading(true);
     setError(null);
     try {
@@ -62,11 +66,13 @@ export function MediaProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    void refresh();
-  }, []);
+    if (isAuthenticated) {
+      void refresh();
+    }
+  }, [isAuthenticated, refresh]);
 
   const createMedia: MediaContextValue['createMedia'] = async (draft) => {
     const res = await fetch('/api/admin/media-library', {
@@ -101,7 +107,7 @@ export function MediaProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<MediaContextValue>(
     () => ({ media, isLoading, error, refresh, createMedia, updateMedia, deleteMedia }),
-    [media, isLoading, error]
+    [media, isLoading, error, refresh]
   );
 
   return <MediaContext.Provider value={value}>{children}</MediaContext.Provider>;

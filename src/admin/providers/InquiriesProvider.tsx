@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { useAuth } from './AuthProvider';
 
 type InquiryItem = any;
 
@@ -16,9 +17,12 @@ const InquiriesContext = createContext<InquiriesContextValue | null>(null);
 
 export function InquiriesProvider({ children }: { children: React.ReactNode }) {
   const [inquiries, setInquiries] = useState<InquiryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const { isAuthenticated } = useAuth();
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
+    if (!isAuthenticated) return;
+
     setIsLoading(true);
     try {
       const res = await fetch('/api/admin/bookings', { cache: 'no-store' });
@@ -45,11 +49,13 @@ export function InquiriesProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    void refresh();
-  }, []);
+    if (isAuthenticated) {
+      void refresh();
+    }
+  }, [isAuthenticated, refresh]);
 
   const deleteInquiry: InquiriesContextValue['deleteInquiry'] = async (id) => {
     const res = await fetch(`/api/admin/bookings/${id}`, { method: 'DELETE' });
@@ -60,7 +66,7 @@ export function InquiriesProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<InquiriesContextValue>(
     () => ({ inquiries, setInquiries, isLoading, refresh, deleteInquiry }),
-    [inquiries, setInquiries, isLoading]
+    [inquiries, setInquiries, isLoading, refresh]
   );
 
   return <InquiriesContext.Provider value={value}>{children}</InquiriesContext.Provider>;
