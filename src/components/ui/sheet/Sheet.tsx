@@ -70,29 +70,53 @@ const sideStyles = {
 const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
   ({ className, children, side = "right", showCloseButton = true, ...props }, ref) => {
     const { open, setOpen } = React.useContext(SheetContext);
-    if (!open) return null;
+    const [isVisible, setIsVisible] = React.useState(false);
+
+    React.useEffect(() => {
+      if (open) {
+        setIsVisible(true);
+      } else {
+        const timer = setTimeout(() => setIsVisible(false), 300);
+        return () => clearTimeout(timer);
+      }
+    }, [open]);
+
+    if (!isVisible) return null;
+
+    const slideAnimations = {
+      right: "animate-in slide-in-from-right",
+      left: "animate-in slide-in-from-left",
+      top: "animate-in slide-in-from-top",
+      bottom: "animate-in slide-in-from-bottom"
+    };
 
     return (
       <>
-        <div className="fixed inset-0 z-50 bg-black/10 supports-[backdrop-filter]:backdrop-blur-[2px]" onClick={() => setOpen(false)} />
+        <div
+          className={`fixed inset-0 z-50 bg-black/20 supports-[backdrop-filter]:backdrop-blur-sm transition-opacity duration-300 ${
+            open ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={() => setOpen(false)}
+        />
         <div
           ref={ref}
           data-slot="sheet-content"
           data-side={side}
           className={cn(
-            "fixed z-50 flex flex-col gap-4 bg-background text-sm shadow-lg",
+            "fixed z-50 flex flex-col gap-4 bg-background text-sm shadow-xl transition-transform duration-300 ease-out",
             sideStyles[side],
+            open ? slideAnimations[side] : `animate-out slide-out-to-${side}`,
             className
           )}
           {...props}>
-          
+
           {children}
           {showCloseButton &&
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="absolute top-3 right-3 inline-flex size-7 items-center justify-center rounded-md hover:bg-muted">
-            
+            className="absolute top-4 right-4 inline-flex size-8 items-center justify-center rounded-full transition-all duration-200 hover:bg-muted/80 active:scale-95">
+
               <X className="size-4" />
               <span className="sr-only">Close</span>
             </button>
