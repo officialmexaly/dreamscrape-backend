@@ -1,4 +1,4 @@
-import { ConsultationEditorialPage } from '@/src/components/pages/ConsultationEditorialPage';
+import ConsultationEditorialPage from '@/app/_client/ConsultationEditorialPageClient';
 
 export default function Page() {
   return <ConsultationEditorialPage />;

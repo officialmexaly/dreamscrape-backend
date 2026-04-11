@@ -171,7 +171,7 @@ export async function POST() {
     ];
 
     const { data, error } = await supabaseAdmin()
-      .from('blog_posts')
+      .from('portfolio_items')
       // @ts-ignore - Supabase type inference issue with insert
       .insert(samplePosts)
       .select();

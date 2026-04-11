@@ -1,45 +1,31 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import {
-  Box,
-  Button,
-  Flex,
-  FormControl,
-  FormLabel,
-  Input,
-  Text,
-  VStack,
-  useToast,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
-  Heading,
-} from '@chakra-ui/react'
+import * as React from 'react'
 import { motion } from 'framer-motion'
+import { Button } from '@/src/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/src/components/ui/card'
+import { Input } from '@/src/components/ui/input'
+import { Label } from '@/src/components/ui/label'
+import { useToast } from '@/src/admin/toast/ToastProvider'
 
 export default function SetupPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [name, setName] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [needsSetup, setNeedsSetup] = useState(true)
-  const toast = useToast()
+  const [email, setEmail] = React.useState('')
+  const [password, setPassword] = React.useState('')
+  const [confirmPassword, setConfirmPassword] = React.useState('')
+  const [name, setName] = React.useState('')
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [needsSetup, setNeedsSetup] = React.useState(true)
+  const { toast } = useToast()
 
-  useEffect(() => {
-    checkSetupStatus()
+  React.useEffect(() => {
+    void checkSetupStatus()
   }, [])
 
   const checkSetupStatus = async () => {
     try {
       const response = await fetch('/api/admin/setup')
       const data = await response.json()
-
-      if (!data.needsSetup) {
-        setNeedsSetup(false)
-      }
+      if (!data.needsSetup) setNeedsSetup(false)
     } catch (error) {
       console.error('Error checking setup status:', error)
     }
@@ -50,39 +36,28 @@ export default function SetupPage() {
 
     if (!email || !password || !name) {
       toast({
-        title: 'Error',
-        description: 'Please fill in all fields',
-        status: 'error',
+        title: 'Please fill in all fields',
+        variant: 'error',
         duration: 3000,
-        isClosable: true,
       })
       return
     }
 
     if (password !== confirmPassword) {
-      toast({
-        title: 'Error',
-        description: 'Passwords do not match',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      })
+      toast({ title: 'Passwords do not match', variant: 'error', duration: 3000 })
       return
     }
 
     if (password.length < 8) {
       toast({
-        title: 'Error',
-        description: 'Password must be at least 8 characters long',
-        status: 'error',
+        title: 'Password must be at least 8 characters',
+        variant: 'error',
         duration: 3000,
-        isClosable: true,
       })
       return
     }
 
     setIsLoading(true)
-
     try {
       const response = await fetch('/api/admin/setup', {
         method: 'POST',
@@ -91,35 +66,31 @@ export default function SetupPage() {
       })
 
       const data = await response.json()
-
       if (response.ok && data.success) {
         toast({
-          title: 'Setup complete!',
-          description: 'Admin user created. Redirecting to login...',
-          status: 'success',
+          title: 'Setup complete',
+          description: 'Admin user created. Redirecting to login…',
+          variant: 'success',
           duration: 2000,
-          isClosable: true,
         })
 
-        setTimeout(() => {
+        window.setTimeout(() => {
           window.location.href = '/admin/login'
         }, 2000)
       } else {
         toast({
-          title: 'Error',
+          title: 'Setup failed',
           description: data.error || 'Setup failed',
-          status: 'error',
+          variant: 'error',
           duration: 5000,
-          isClosable: true,
         })
       }
-    } catch (error) {
+    } catch {
       toast({
-        title: 'Error',
-        description: 'Network error. Please try again.',
-        status: 'error',
+        title: 'Network error',
+        description: 'Please try again.',
+        variant: 'error',
         duration: 5000,
-        isClosable: true,
       })
     } finally {
       setIsLoading(false)
@@ -128,180 +99,110 @@ export default function SetupPage() {
 
   if (!needsSetup) {
     return (
-      <Flex
-        minH="100vh"
-        align="center"
-        justify="center"
-        bg="gray.50"
-      >
-        <Box maxW="md" w="full" p={8}>
-          <Alert status="info">
-            <AlertIcon />
-            <Box>
-              <AlertTitle>Setup Already Complete</AlertTitle>
-              <AlertDescription>
-                The application has already been set up. You can now{' '}
-                <a href="/admin/login" style={{ textDecoration: 'underline' }}>
-                  log in
-                </a>
-                .
-              </AlertDescription>
-            </Box>
-          </Alert>
-        </Box>
-      </Flex>
+      <div className="grid min-h-screen place-items-center bg-muted/20 p-4">
+        <Card className="w-full max-w-md border-border/70">
+          <CardHeader>
+            <CardTitle className="font-serif text-lg">Setup Complete</CardTitle>
+            <CardDescription>
+              The application has already been set up.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <a
+              href="/admin/login"
+              className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
+            >
+              Go to login
+            </a>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
   return (
-    <Flex
-      minH="100vh"
-      align="center"
-      justify="center"
-      bgGradient="radial(circle at 20% 10%, rgba(123,45,110,0.14) 0%, rgba(123,45,110,0) 45%), radial(circle at 85% 30%, rgba(201,168,76,0.14) 0%, rgba(201,168,76,0) 45%), linear-gradient(180deg, #F7FAFC 0%, #FFFFFF 100%)"
-    >
+    <div className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_20%_10%,rgba(64,21,63,0.16)_0%,rgba(64,21,63,0)_45%),radial-gradient(circle_at_85%_30%,rgba(201,168,76,0.14)_0%,rgba(201,168,76,0)_45%),linear-gradient(180deg,#F7FAFC_0%,#FFFFFF_100%)] p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
+        className="w-full max-w-lg"
       >
-        <Box
-          bg="rgba(255,255,255,0.9)"
-          backdropFilter="blur(14px)"
-          p={10}
-          borderRadius="2xl"
-          boxShadow="soft"
-          w={{ base: '90vw', sm: '500px' }}
-          border="1px solid"
-          borderColor="surface.border"
-        >
-          <VStack spacing={8} align="stretch">
-            <Box textAlign="center">
-              <Text
-                fontFamily="heading"
-                fontSize="3xl"
-                fontWeight="bold"
-                color="brand.primary"
-              >
-                Dreamscape
-              </Text>
-              <Text
-                color="gray.500"
-                fontSize="sm"
-                mt={2}
-                letterSpacing="wide"
-                textTransform="uppercase"
-              >
-                Initial Setup
-              </Text>
-            </Box>
+        <Card className="border-border/70 bg-background/85 shadow-[0_30px_90px_rgba(2,6,23,0.22)] backdrop-blur">
+          <CardHeader>
+            <CardTitle className="font-serif text-2xl text-primary">
+              Dreamscape
+            </CardTitle>
+            <CardDescription className="text-xs font-semibold uppercase tracking-[0.22em]">
+              Initial Setup
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
+              <div className="text-sm font-semibold">Create Admin Account</div>
+              <div className="mt-1 text-xs opacity-80">
+                This creates the first administrator account. Use a strong password.
+              </div>
+            </div>
 
-            <Alert status="warning" borderRadius="md">
-              <AlertIcon />
-              <Box>
-                <AlertTitle fontSize="sm">Create Admin Account</AlertTitle>
-                <AlertDescription fontSize="xs">
-                  This will create the first administrator account. Make sure to use a strong password.
-                </AlertDescription>
-              </Box>
-            </Alert>
+            <form onSubmit={handleSetup} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Full Name</Label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="John Doe"
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email Address</Label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@dreamscape.com"
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Password</Label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Confirm Password</Label>
+                <Input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="h-10"
+                />
+              </div>
 
-            <form onSubmit={handleSetup}>
-              <VStack spacing={5}>
-                <FormControl isRequired>
-                  <FormLabel fontSize="sm" fontWeight="600" color="gray.700">
-                    Full Name
-                  </FormLabel>
-                  <Input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="John Doe"
-                    size="lg"
-                    fontSize="sm"
-                    bg="white"
-                    borderColor="surface.border"
-                    _focus={{ boxShadow: 'outline' }}
-                  />
-                </FormControl>
+              <div className="rounded-xl border border-border/70 bg-muted/15 p-4 text-xs text-muted-foreground">
+                <div className="font-semibold text-foreground">Password hints</div>
+                <ul className="mt-2 list-disc space-y-1 pl-4">
+                  <li>At least 8 characters</li>
+                  <li>Use a mix of letters + numbers</li>
+                  <li>Add a symbol if possible</li>
+                </ul>
+              </div>
 
-                <FormControl isRequired>
-                  <FormLabel fontSize="sm" fontWeight="600" color="gray.700">
-                    Email Address
-                  </FormLabel>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@dreamscape.com"
-                    size="lg"
-                    fontSize="sm"
-                    bg="white"
-                    borderColor="surface.border"
-                    _focus={{ boxShadow: 'outline' }}
-                  />
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel fontSize="sm" fontWeight="600" color="gray.700">
-                    Password
-                  </FormLabel>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    size="lg"
-                    fontSize="sm"
-                    bg="white"
-                    borderColor="surface.border"
-                    _focus={{ boxShadow: 'outline' }}
-                  />
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel fontSize="sm" fontWeight="600" color="gray.700">
-                    Confirm Password
-                  </FormLabel>
-                  <Input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    size="lg"
-                    fontSize="sm"
-                    bg="white"
-                    borderColor="surface.border"
-                    _focus={{ boxShadow: 'outline' }}
-                  />
-                </FormControl>
-
-                <Box fontSize="xs" color="gray.500">
-                  <Text fontWeight="600">Password requirements:</Text>
-                  <VStack align="start" spacing={1} mt={2}>
-                    <Text>• At least 8 characters</Text>
-                    <Text>• Uppercase and lowercase letters</Text>
-                    <Text>• At least one number</Text>
-                    <Text>• At least one special character</Text>
-                  </VStack>
-                </Box>
-
-                <Button
-                  type="submit"
-                  colorScheme="brand"
-                  size="lg"
-                  w="full"
-                  mt={4}
-                  isLoading={isLoading}
-                  loadingText="Creating account..."
-                >
-                  Create Admin Account
-                </Button>
-              </VStack>
+              <Button type="submit" className="h-10 w-full" disabled={isLoading}>
+                {isLoading ? 'Creating account…' : 'Create Admin Account'}
+              </Button>
             </form>
-          </VStack>
-        </Box>
+          </CardContent>
+        </Card>
       </motion.div>
-    </Flex>
+    </div>
   )
 }
+

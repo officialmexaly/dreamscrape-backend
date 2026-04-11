@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { ConsultationPage } from '@/src/components/pages/ConsultationPage';
+import ConsultationPage from '@/app/_client/ConsultationPageClient';
 import { getSiteContentPageCached } from '@/src/lib/cached-site-content';
 
 export default async function Page() {

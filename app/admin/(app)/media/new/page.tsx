@@ -1,188 +1,172 @@
-'use client';
+'use client'
 
-import {
-  Box,
-  Button,
-  Flex,
-  FormControl,
-  FormLabel,
-  Input,
-  Text,
-  useToast,
-  VStack,
-  Progress
-} from '@chakra-ui/react';
-import { useRouter } from 'next/navigation';
-import { useState, useRef } from 'react';
-import { ArrowLeft, Upload, X } from 'lucide-react';
-import { useMedia } from '@/src/admin/providers/MediaProvider';
+import * as React from 'react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Upload, X } from 'lucide-react'
+import { Button } from '@/src/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card'
+import { useMedia } from '@/src/admin/providers/MediaProvider'
+import { useToast } from '@/src/admin/toast/ToastProvider'
 
 export default function NewMediaPage() {
-  const router = useRouter();
-  const toast = useToast();
-  const { refresh } = useMedia();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter()
+  const { toast } = useToast()
+  const { refresh } = useMedia()
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null)
+  const [isUploading, setIsUploading] = React.useState(false)
+  const [uploadProgress, setUploadProgress] = React.useState(0)
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-    }
-  };
+    const file = e.target.files?.[0]
+    if (file) setSelectedFile(file)
+  }
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      toast({ title: 'Please select a file', status: 'error', duration: 2000 });
-      return;
+      toast({ title: 'Please select a file', variant: 'error', duration: 2000 })
+      return
     }
 
-    setIsUploading(true);
-    setUploadProgress(0);
+    setIsUploading(true)
+    setUploadProgress(0)
 
     try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
+      const formData = new FormData()
+      formData.append('file', selectedFile)
 
-      // Simulate progress
-      const progressInterval = setInterval(() => {
+      const progressInterval = window.setInterval(() => {
         setUploadProgress((prev) => {
           if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
+            window.clearInterval(progressInterval)
+            return 90
           }
-          return prev + 10;
-        });
-      }, 200);
+          return prev + 10
+        })
+      }, 200)
 
       const response = await fetch('/api/admin/media-library', {
         method: 'POST',
         body: formData,
-      });
+      })
 
-      clearInterval(progressInterval);
-      setUploadProgress(100);
+      window.clearInterval(progressInterval)
+      setUploadProgress(100)
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to upload file');
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to upload file')
       }
 
-      toast({ title: 'File uploaded successfully', status: 'success', duration: 2000 });
-      await refresh();
+      toast({ title: 'File uploaded', variant: 'success', duration: 2000 })
+      await refresh()
 
-      // Reset form
-      setSelectedFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      setSelectedFile(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
 
-      // Redirect back to media library after a short delay
-      setTimeout(() => {
-        router.push('/admin/media');
-      }, 500);
+      window.setTimeout(() => {
+        router.push('/admin/media')
+      }, 500)
     } catch (error: any) {
-      toast({ title: error?.message || 'Failed to upload file', status: 'error', duration: 2500 });
+      toast({
+        title: error?.message || 'Failed to upload file',
+        variant: 'error',
+        duration: 2500,
+      })
     } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
+      setIsUploading(false)
+      setUploadProgress(0)
     }
-  };
+  }
 
   const handleRemoveFile = () => {
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
+    setSelectedFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   return (
-    <Box maxW="800px">
-      <Flex justify="space-between" align="center" mb={6}>
-        <Flex align="center" gap={3}>
-          <Button leftIcon={<ArrowLeft size={16} />} variant="ghost" onClick={() => router.push('/admin/media')}>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={() => router.push('/admin/media')}>
+            <ArrowLeft size={16} />
             Back
           </Button>
-          <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="brand.dark">
+          <div className="font-serif text-2xl font-semibold text-foreground">
             Upload Media
-          </Text>
-        </Flex>
-        <Button
-          leftIcon={<Upload size={16} />}
-          colorScheme="brand"
-          onClick={handleUpload}
-          isLoading={isUploading}
-          isDisabled={!selectedFile}
-        >
-          Upload
+          </div>
+        </div>
+        <Button onClick={handleUpload} disabled={!selectedFile || isUploading}>
+          <Upload size={16} />
+          {isUploading ? 'Uploading…' : 'Upload'}
         </Button>
-      </Flex>
+      </div>
 
-      <VStack spacing={6} align="stretch">
-        {/* File Upload Area */}
-        <Box
-          border="2px dashed"
-          borderColor="gray.300"
-          borderRadius="lg"
-          p={8}
-          textAlign="center"
-          cursor="pointer"
-          onClick={() => fileInputRef.current?.click()}
-          _hover={{ borderColor: 'brand.primary', bg: 'gray.50' }}
-          transition="all 0.2s"
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,.pdf,.mp4,.webm"
-            onChange={handleFileSelect}
-            style={{ display: 'none' }}
-          />
-          <Upload size={48} color="gray.400" style={{ margin: '0 auto 16px' }} />
-          <Text color="gray.600" fontSize="lg" fontWeight="medium">
-            {selectedFile ? selectedFile.name : 'Click to select a file'}
-          </Text>
-          <Text color="gray.500" fontSize="sm" mt={2}>
-            Supports: Images (JPG, PNG, GIF, WebP), PDF, Videos (MP4, WebM)
-          </Text>
-        </Box>
+      <Card className="border-border/70">
+        <CardHeader>
+          <CardTitle className="font-serif text-lg">File</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <button
+            type="button"
+            className="w-full rounded-xl border-2 border-dashed border-border/80 bg-muted/10 p-8 text-center transition hover:border-primary/40 hover:bg-muted/20"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf,.mp4,.webm"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-muted text-muted-foreground">
+              <Upload size={24} />
+            </div>
+            <div className="text-base font-semibold text-foreground">
+              {selectedFile ? selectedFile.name : 'Click to select a file'}
+            </div>
+            <div className="mt-2 text-sm text-muted-foreground">
+              Supports: images, PDF, MP4, WebM
+            </div>
+          </button>
 
-        {/* Selected File Info */}
-        {selectedFile && (
-          <Box bg="gray.50" borderRadius="lg" p={4}>
-            <Flex justify="space-between" align="center">
-              <VStack align="start" spacing={1}>
-                <Text fontWeight="medium">{selectedFile.name}</Text>
-                <Text fontSize="sm" color="gray.500">
-                  {(selectedFile.size / 1024).toFixed(1)} KB • {selectedFile.type || 'Unknown type'}
-                </Text>
-              </VStack>
-              <Button
-                leftIcon={<X size={16} />}
-                size="sm"
-                variant="ghost"
-                colorScheme="red"
-                onClick={handleRemoveFile}
-              >
-                Remove
-              </Button>
-            </Flex>
-            {isUploading && (
-              <Progress
-                value={uploadProgress}
-                size="sm"
-                colorScheme="brand"
-                mt={3}
-                hasStripe
-                isAnimated
-              />
-            )}
-          </Box>
-        )}
-      </VStack>
-    </Box>
-  );
+          {selectedFile ? (
+            <div className="rounded-xl border border-border/70 bg-muted/15 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm font-semibold text-foreground">
+                    {selectedFile.name}
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {(selectedFile.size / 1024).toFixed(1)} KB •{' '}
+                    {selectedFile.type || 'Unknown type'}
+                  </div>
+                </div>
+                <Button variant="ghost" onClick={handleRemoveFile}>
+                  <X size={16} />
+                  Remove
+                </Button>
+              </div>
+
+              {isUploading ? (
+                <div className="mt-4">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full bg-primary transition-[width]"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {uploadProgress}%
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+    </div>
+  )
 }
+

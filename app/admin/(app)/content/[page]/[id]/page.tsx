@@ -1,160 +1,191 @@
-'use client';
+'use client'
 
-import React, { useEffect, useState } from 'react';
-import { Box, Text, VStack, HStack, Badge, Button, Code, Divider } from '@chakra-ui/react';
-import { ArrowLeft, Edit } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import * as React from 'react'
+import { ArrowLeft, Pencil } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/src/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card'
+import { Separator } from '@/src/components/ui/separator'
+import { formatAdminDateTime } from '@/src/admin/utils/formatDate'
 
-export default function ViewContentRoute({ paramsPromise }: { paramsPromise: Promise<{ page: string; id: string }> }) {
-  const router = useRouter();
-  const [params, setParams] = useState<{ page: string; id: string } | null>(null);
-  const [item, setItem] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export default function ViewContentRoute({
+  paramsPromise,
+}: {
+  paramsPromise: Promise<{ page: string; id: string }>
+}) {
+  const router = useRouter()
+  const [params, setParams] = React.useState<{ page: string; id: string } | null>(
+    null
+  )
+  const [item, setItem] = React.useState<any>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
 
-  useEffect(() => {
+  React.useEffect(() => {
     const getParams = async () => {
-      const p = await paramsPromise;
-      setParams(p);
-    };
-    getParams();
-  }, [paramsPromise]);
+      const p = await paramsPromise
+      setParams(p)
+    }
+    void getParams()
+  }, [paramsPromise])
 
-  useEffect(() => {
-    if (!params) return;
+  React.useEffect(() => {
+    if (!params) return
 
     const fetchItem = async () => {
       try {
-        const res = await fetch(`/api/admin/content/${params.id}`, { cache: 'no-store' });
-        const json = await res.json();
+        const res = await fetch(`/api/admin/content/${params.id}`, {
+          cache: 'no-store',
+        })
+        const json = await res.json()
 
-        if (!res.ok) {
-          throw new Error(json.error || 'Failed to load content');
-        }
-
-        setItem(json.item);
-      } catch (error: any) {
-        console.error('Error loading content:', error);
+        if (!res.ok) throw new Error(json.error || 'Failed to load content')
+        setItem(json.item)
+      } catch (error) {
+        console.error('Error loading content:', error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
+    }
 
-    fetchItem();
-  }, [params]);
+    void fetchItem()
+  }, [params])
 
   if (isLoading || !params) {
     return (
-      <Box display="flex" alignItems="center" justifyContent="center" minH="400px">
-        <Text color="gray.500">Loading...</Text>
-      </Box>
-    );
+      <div className="grid min-h-[320px] place-items-center">
+        <div className="text-sm text-muted-foreground">Loading…</div>
+      </div>
+    )
   }
 
   if (!item) {
     return (
-      <Box>
-        <Text>Content not found.</Text>
-        <Button mt={4} onClick={() => router.push(`/admin/content/${params.page}`)}>
+      <div className="space-y-4">
+        <div className="text-sm text-muted-foreground">Content not found.</div>
+        <Button variant="outline" onClick={() => router.push(`/admin/content/${params.page}`)}>
           Back
         </Button>
-      </Box>
-    );
+      </div>
+    )
   }
 
-  const pageTitle = params.page.charAt(0).toUpperCase() + params.page.slice(1);
+  const pageTitle = params.page.charAt(0).toUpperCase() + params.page.slice(1)
+
+  const typePill = (type: string) => {
+    switch (type) {
+      case 'text':
+        return 'bg-slate-50 text-slate-700 ring-slate-200'
+      case 'richtext':
+        return 'bg-sky-50 text-sky-800 ring-sky-200'
+      case 'image':
+        return 'bg-emerald-50 text-emerald-800 ring-emerald-200'
+      case 'json':
+        return 'bg-violet-50 text-violet-800 ring-violet-200'
+      case 'number':
+        return 'bg-amber-50 text-amber-900 ring-amber-200'
+      default:
+        return 'bg-slate-50 text-slate-700 ring-slate-200'
+    }
+  }
 
   return (
-    <Box maxW="800px">
-      <HStack justify="space-between" mb={6}>
-        <HStack spacing={3}>
-          <Button leftIcon={<ArrowLeft size={16} />} variant="ghost" onClick={() => router.push(`/admin/content/${params.page}`)}>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => router.push(`/admin/content/${params.page}`)}
+          >
+            <ArrowLeft size={16} />
             Back
           </Button>
-          <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="brand.dark">
+          <div className="font-serif text-2xl font-semibold text-foreground">
             {pageTitle} Content
-          </Text>
-        </HStack>
-        <Button
-          leftIcon={<Edit size={16} />}
-          colorScheme="brand"
-          onClick={() => router.push(`/admin/content/${params.page}/${params.id}/edit`)}
-        >
+          </div>
+        </div>
+
+        <Button onClick={() => router.push(`/admin/content/${params.page}/${params.id}/edit`)}>
+          <Pencil size={16} />
           Edit
         </Button>
-      </HStack>
+      </div>
 
-      <VStack align="stretch" spacing={6} bg="white" p={6} borderRadius="xl" shadow="sm" borderWidth="1px">
-        <HStack justify="space-between">
-          <Text fontSize="sm" color="gray.500">ID</Text>
-          <Code fontSize="sm">{item.id}</Code>
-        </HStack>
+      <Card className="border-border/70">
+        <CardHeader>
+          <CardTitle className="font-serif text-lg">Item</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-sm text-muted-foreground">ID</div>
+            <code className="rounded-md bg-muted px-2 py-1 text-xs">{item.id}</code>
+          </div>
 
-        <Divider />
+          <Separator />
 
-        <HStack justify="space-between">
-          <Text fontSize="sm" color="gray.500">Page</Text>
-          <Badge colorScheme="blue">{item.page}</Badge>
-        </HStack>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-sm text-muted-foreground">Page</div>
+              <span className="inline-flex rounded-full bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-inset ring-slate-200">
+                {item.page}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-sm text-muted-foreground">Section</div>
+              <div className="text-sm font-medium">{item.section}</div>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-sm text-muted-foreground">Content Key</div>
+              <code className="rounded-md bg-muted px-2 py-1 text-xs">{item.content_key}</code>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-sm text-muted-foreground">Type</div>
+              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${typePill(item.content_type)}`}>
+                {item.content_type}
+              </span>
+            </div>
+          </div>
 
-        <HStack justify="space-between">
-          <Text fontSize="sm" color="gray.500">Section</Text>
-          <Text fontWeight="medium">{item.section}</Text>
-        </HStack>
+          <Separator />
 
-        <HStack justify="space-between">
-          <Text fontSize="sm" color="gray.500">Content Key</Text>
-          <Code fontSize="sm">{item.content_key}</Code>
-        </HStack>
-
-        <HStack justify="space-between">
-          <Text fontSize="sm" color="gray.500">Type</Text>
-          <Badge colorScheme={
-            item.content_type === 'text' ? 'gray' :
-            item.content_type === 'richtext' ? 'blue' :
-            item.content_type === 'image' ? 'green' :
-            item.content_type === 'json' ? 'purple' :
-            'orange'
-          }>
-            {item.content_type}
-          </Badge>
-        </HStack>
-
-        <Divider />
-
-        <Box>
-          <Text fontSize="sm" color="gray.500" mb={2}>Value</Text>
-          {item.content_type === 'json' ? (
-            <Code p={4} borderRadius="md" display="block" whiteSpace="pre-wrap" fontSize="sm" bg="gray.50">
-              {JSON.stringify(item.content_json, null, 2)}
-            </Code>
-          ) : (
-            <Box p={4} bg="gray.50" borderRadius="md">
-              <Text fontFamily="mono" fontSize="sm" whiteSpace="pre-wrap">
+          <div>
+            <div className="mb-2 text-sm text-muted-foreground">Value</div>
+            {item.content_type === 'json' ? (
+              <pre className="overflow-auto rounded-xl bg-muted p-4 text-xs leading-relaxed">
+                {JSON.stringify(item.content_json, null, 2)}
+              </pre>
+            ) : (
+              <pre className="overflow-auto rounded-xl bg-muted p-4 text-xs leading-relaxed">
                 {item.content || item.content_number || '(empty)'}
-              </Text>
-            </Box>
-          )}
-        </Box>
+              </pre>
+            )}
+          </div>
 
-        <Divider />
+          <Separator />
 
-        <HStack justify="space-between">
-          <Text fontSize="sm" color="gray.500">Display Order</Text>
-          <Text>{item.display_order}</Text>
-        </HStack>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-sm text-muted-foreground">Display Order</div>
+              <div className="text-sm">{item.display_order}</div>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-sm text-muted-foreground">Status</div>
+              <span
+                className={
+                  item.is_active
+                    ? 'inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-inset ring-emerald-200'
+                    : 'inline-flex rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-800 ring-1 ring-inset ring-rose-200'
+                }
+              >
+                {item.is_active ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+          </div>
 
-        <HStack justify="space-between">
-          <Text fontSize="sm" color="gray.500">Status</Text>
-          <Badge colorScheme={item.is_active ? 'green' : 'red'}>
-            {item.is_active ? 'Active' : 'Inactive'}
-          </Badge>
-        </HStack>
-
-        <HStack justify="space-between">
-          <Text fontSize="sm" color="gray.500">Last Updated</Text>
-          <Text fontSize="sm">{new Date(item.updated_at).toLocaleString()}</Text>
-        </HStack>
-      </VStack>
-    </Box>
-  );
+          <div className="text-xs text-muted-foreground">
+            Last updated: {formatAdminDateTime(item.updated_at)}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }

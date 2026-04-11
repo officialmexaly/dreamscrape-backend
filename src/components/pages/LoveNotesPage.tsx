@@ -142,3 +142,5 @@ export function LoveNotesPage({ initialTestimonials }: { initialTestimonials?: T
     </div>
   );
 }
+
+export default LoveNotesPage;

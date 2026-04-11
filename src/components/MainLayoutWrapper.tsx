@@ -1,13 +1,14 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
 
 export function MainLayoutWrapper({
   children,
   footerConfig,
+  isAdminRoute,
 }: {
   children: React.ReactNode;
   footerConfig?: {
@@ -16,9 +17,14 @@ export function MainLayoutWrapper({
     connectLinks?: Array<{ label: string; href: string }>;
     copyright?: string;
   };
+  isAdminRoute?: boolean;
 }) {
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith('/admin');
+  const [isAdmin, setIsAdmin] = useState(Boolean(isAdminRoute));
+
+  useEffect(() => {
+    setIsAdmin(pathname.startsWith('/admin'));
+  }, [pathname]);
 
   // Remove browser extension attributes that cause hydration mismatches
   useEffect(() => {

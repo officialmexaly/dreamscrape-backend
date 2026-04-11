@@ -1,10 +1,6 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // Disable Turbopack to reduce RAM usage
-  turbo: undefined,
-
-  // Reduce RAM usage in development
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -41,10 +37,15 @@ const nextConfig: NextConfig = {
 
   // Headers for caching static assets
   async headers() {
+    // IMPORTANT:
+    // In development, Next.js chunk filenames are not content-hashed.
+    // Setting `immutable` caching for `*.js`/`*.css` will frequently cause
+    // ChunkLoadError / hydration weirdness due to stale cached bundles.
+    if (process.env.NODE_ENV !== 'production') return [];
+
     return [
       {
-        source: '/:all*(svg|jpg|jpeg|png|gif|webp|avif)',
-        locale: false,
+        source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
@@ -53,7 +54,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: '/:all*(js|css)',
+        source: '/:all*(svg|jpg|jpeg|png|gif|webp|avif)',
         locale: false,
         headers: [
           {

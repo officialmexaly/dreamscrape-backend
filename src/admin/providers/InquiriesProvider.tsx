@@ -22,8 +22,12 @@ export function InquiriesProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const res = await fetch('/api/admin/bookings', { cache: 'no-store' });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error || 'Failed to load bookings');
+      const json = await res.json().catch(() => ({} as any));
+      if (!res.ok) {
+        console.error('Failed to load bookings:', json?.error || res.statusText);
+        setInquiries([]);
+        return;
+      }
 
       const mapped = (json.items || []).map((b: any) => ({
         id: b.id,
@@ -35,6 +39,9 @@ export function InquiriesProvider({ children }: { children: React.ReactNode }) {
         raw: b,
       }));
       setInquiries(mapped);
+    } catch (error) {
+      console.error('Failed to load bookings:', error);
+      setInquiries([]);
     } finally {
       setIsLoading(false);
     }

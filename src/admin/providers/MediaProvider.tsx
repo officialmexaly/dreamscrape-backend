@@ -7,6 +7,7 @@ type MediaItem = any;
 type MediaContextValue = {
   media: MediaItem[];
   isLoading: boolean;
+  error: string | null;
   refresh: () => Promise<void>;
   createMedia: (draft: {
     name: string;
@@ -43,14 +44,21 @@ const MediaContext = createContext<MediaContextValue | null>(null);
 export function MediaProvider({ children }: { children: React.ReactNode }) {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const refresh = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const res = await fetch('/api/admin/media-library', { cache: 'no-store' });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || 'Failed to load media');
       setMedia(json.items || []);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Error loading media:', message);
+      setError(message);
+      setMedia([]);
     } finally {
       setIsLoading(false);
     }
@@ -92,8 +100,8 @@ export function MediaProvider({ children }: { children: React.ReactNode }) {
   };
 
   const value = useMemo<MediaContextValue>(
-    () => ({ media, isLoading, refresh, createMedia, updateMedia, deleteMedia }),
-    [media, isLoading]
+    () => ({ media, isLoading, error, refresh, createMedia, updateMedia, deleteMedia }),
+    [media, isLoading, error]
   );
 
   return <MediaContext.Provider value={value}>{children}</MediaContext.Provider>;
@@ -101,6 +109,17 @@ export function MediaProvider({ children }: { children: React.ReactNode }) {
 
 export function useMedia() {
   const ctx = useContext(MediaContext);
-  if (!ctx) throw new Error('useMedia must be used within MediaProvider');
+  if (!ctx) {
+    // Return default values instead of throwing to prevent crashes
+    return {
+      media: [],
+      isLoading: false,
+      error: null,
+      refresh: async () => {},
+      createMedia: async () => { throw new Error('MediaProvider not found'); },
+      updateMedia: async () => { throw new Error('MediaProvider not found'); },
+      deleteMedia: async () => { throw new Error('MediaProvider not found'); },
+    };
+  }
   return ctx;
 }

@@ -1,4 +1,4 @@
-import { ServicesPage } from '@/src/components/pages/ServicesPage';
+import ServicesPage from '@/app/_client/ServicesPageClient';
 import { getPublishedServicesCached } from '@/src/lib/cached-services';
 
 export default async function Page() {

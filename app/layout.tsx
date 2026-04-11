@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { MainLayoutWrapper } from '@/src/components/MainLayoutWrapper';
 import { getSiteContentSectionCached } from '@/src/lib/cached-site-content';
+import { headers } from 'next/headers';
 
 export const metadata: Metadata = {
   title: 'Dreamscape Curated Events',
@@ -34,6 +35,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const requestHeaders = await headers();
+  const pathname =
+    requestHeaders.get('x-pathname') ||
+    requestHeaders.get('next-url') ||
+    '';
+  const isAdminRoute = pathname.startsWith('/admin');
+
   let footerConfig:
     | {
         exploreLinks?: Array<{ label: string; href: string }>;
@@ -59,7 +67,9 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-brand-light" suppressHydrationWarning>
-        <MainLayoutWrapper footerConfig={footerConfig}>{children}</MainLayoutWrapper>
+        <MainLayoutWrapper footerConfig={footerConfig} isAdminRoute={isAdminRoute}>
+          {children}
+        </MainLayoutWrapper>
       </body>
     </html>
   );

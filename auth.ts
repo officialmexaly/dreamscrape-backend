@@ -27,6 +27,9 @@ const credentialsSchema = z.object({
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+  trustHost:
+    process.env.AUTH_TRUST_HOST === 'true' ||
+    process.env.NODE_ENV !== 'production',
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days

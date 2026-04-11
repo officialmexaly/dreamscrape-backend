@@ -1,73 +1,47 @@
-'use client';
+'use client'
 
-import React from 'react';
-import {
-  Card,
-  CardBody,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
-  Flex,
-  Box } from
-'@chakra-ui/react';
-import { LucideIcon } from 'lucide-react';
+import * as React from 'react'
+import type { LucideIcon } from 'lucide-react'
+import { Card } from '@/components/ui/card'
+import { cn } from '@/src/lib/utils'
+
 interface StatCardProps {
-  title: string;
-  value: string | number;
-  helpText?: string;
-  icon: LucideIcon;
-  trend?: 'up' | 'down' | 'neutral';
+  title: string
+  value: string | number
+  helpText?: string
+  icon: LucideIcon
+  trend?: 'up' | 'down' | 'neutral'
 }
+
 export function StatCard({
   title,
   value,
   helpText,
   icon: Icon,
-  trend
+  trend = 'neutral',
 }: StatCardProps) {
-  return (
-    <Card
-      shadow="sm"
-      border="1px solid"
-      borderColor="gray.100"
-      borderRadius="xl">
-      
-      <CardBody>
-        <Flex justifyContent="space-between" alignItems="flex-start">
-          <Stat>
-            <StatLabel
-              color="gray.500"
-              fontSize="sm"
-              fontWeight="medium"
-              mb={1}>
-              
-              {title}
-            </StatLabel>
-            <StatNumber fontSize="3xl" fontWeight="bold" color="brand.dark">
-              {value}
-            </StatNumber>
-            {helpText &&
-            <StatHelpText
-              color={
-              trend === 'up' ?
-              'green.500' :
-              trend === 'down' ?
-              'red.500' :
-              'gray.500'
-              }
-              mt={2}
-              mb={0}>
-              
-                {helpText}
-              </StatHelpText>
-            }
-          </Stat>
-          <Box p={3} bg="brand.gray" borderRadius="lg" color="brand.primary">
-            <Icon size={24} />
-          </Box>
-        </Flex>
-      </CardBody>
-    </Card>);
+  const trendClass =
+    trend === 'up'
+      ? 'text-emerald-600'
+      : trend === 'down'
+        ? 'text-rose-600'
+        : 'text-muted-foreground'
 
+  return (
+    <Card className="border-border/70 p-5 transition hover:-translate-y-0.5 hover:shadow-[0_14px_40px_rgba(16,24,40,0.12)]">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-muted-foreground">{title}</div>
+          <div className="mt-1 text-3xl font-bold text-foreground">{value}</div>
+          {helpText ? (
+            <div className={cn('mt-2 text-sm', trendClass)}>{helpText}</div>
+          ) : null}
+        </div>
+        <div className="grid h-11 w-11 place-items-center rounded-xl bg-muted text-primary">
+          <Icon size={20} />
+        </div>
+      </div>
+    </Card>
+  )
 }
+

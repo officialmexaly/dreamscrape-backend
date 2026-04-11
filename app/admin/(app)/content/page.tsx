@@ -1,99 +1,184 @@
-'use client';
+'use client'
 
-import React from 'react';
-import { Box, Text, SimpleGrid, Card, CardBody, Flex, Badge, Button, VStack } from '@chakra-ui/react';
-import { useRouter } from 'next/navigation';
-import { Home, User, Briefcase, Mail, Settings, ChevronRight, BookOpen, Heart, Calendar, FileText } from 'lucide-react';
+import * as React from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  Home,
+  User,
+  Briefcase,
+  Mail,
+  Settings,
+  ChevronRight,
+  Heart,
+  Calendar,
+  FileText,
+} from 'lucide-react'
+import { Card, CardContent } from '@/src/components/ui/card'
+import { cn } from '@/src/lib/utils'
 
 const pages = [
-  { id: 'home', label: 'Home', icon: Home, description: 'Hero slides, brand intro, statistics, services preview', color: 'purple' },
-  { id: 'about', label: 'About', icon: User, description: 'Story, philosophy, team information', color: 'blue' },
-  { id: 'services', label: 'Services', icon: Briefcase, description: 'Services page content and introduction', color: 'green' },
-  { id: 'contact', label: 'Contact', icon: Mail, description: 'Contact information and forms', color: 'orange' },
-  { id: 'love_notes', label: 'Love Notes', icon: Heart, description: 'Client testimonials and reviews', color: 'red' },
-  { id: 'consultation', label: 'Consultation', icon: Calendar, description: 'Consultation booking configuration', color: 'teal' },
-  { id: 'consultation_editorial', label: 'Consultation Editorial', icon: FileText, description: 'Consultation options and editorial content', color: 'cyan' },
-];
+  {
+    id: 'home',
+    label: 'Home',
+    icon: Home,
+    description: 'Hero slides, brand intro, statistics, services preview',
+    tone: 'violet',
+  },
+  {
+    id: 'about',
+    label: 'About',
+    icon: User,
+    description: 'Story, philosophy, team information',
+    tone: 'sky',
+  },
+  {
+    id: 'services',
+    label: 'Services',
+    icon: Briefcase,
+    description: 'Services page content and introduction',
+    tone: 'emerald',
+  },
+  {
+    id: 'contact',
+    label: 'Contact',
+    icon: Mail,
+    description: 'Contact information and forms',
+    tone: 'amber',
+  },
+  {
+    id: 'love_notes',
+    label: 'Love Notes',
+    icon: Heart,
+    description: 'Client testimonials and reviews',
+    tone: 'rose',
+  },
+  {
+    id: 'consultation',
+    label: 'Consultation',
+    icon: Calendar,
+    description: 'Consultation booking configuration',
+    tone: 'teal',
+  },
+  {
+    id: 'consultation_editorial',
+    label: 'Consultation Editorial',
+    icon: FileText,
+    description: 'Consultation options and editorial content',
+    tone: 'cyan',
+  },
+] as const
+
+function toneClasses(tone: string) {
+  switch (tone) {
+    case 'violet':
+      return 'bg-violet-50 text-violet-700 ring-violet-200'
+    case 'sky':
+      return 'bg-sky-50 text-sky-700 ring-sky-200'
+    case 'emerald':
+      return 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+    case 'amber':
+      return 'bg-amber-50 text-amber-800 ring-amber-200'
+    case 'rose':
+      return 'bg-rose-50 text-rose-700 ring-rose-200'
+    case 'teal':
+      return 'bg-teal-50 text-teal-700 ring-teal-200'
+    case 'cyan':
+      return 'bg-cyan-50 text-cyan-700 ring-cyan-200'
+    default:
+      return 'bg-slate-50 text-slate-700 ring-slate-200'
+  }
+}
 
 export default function ContentRoute() {
-  const router = useRouter();
+  const router = useRouter()
 
   return (
-    <Box>
-      <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="brand.dark" mb={2}>
-        Site Content
-      </Text>
-      <Text color="gray.600" mb={6}>Edit all website content with easy-to-use forms</Text>
+    <div className="space-y-6">
+      <div>
+        <div className="font-serif text-2xl font-semibold text-foreground">
+          Site Content
+        </div>
+        <div className="mt-1 text-sm text-muted-foreground">
+          Edit website content in structured sections.
+        </div>
+      </div>
 
-      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+      <div className="grid gap-4 md:grid-cols-2">
         {pages.map((page) => {
-          const Icon = page.icon;
+          const Icon = page.icon
           return (
             <Card
               key={page.id}
-              variant="outline"
-              borderWidth="2px"
-              borderColor="gray.100"
-              _hover={{ borderColor: `${page.color}.200`, shadow: 'lg', transform: 'translateY(-2px)' }}
-              transition="all 0.2s"
-              cursor="pointer"
+              className="cursor-pointer border-border/70 transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_18px_50px_rgba(64,21,63,0.08)]"
               onClick={() => router.push(`/admin/content/${page.id}`)}
             >
-              <CardBody>
-                <Flex align="flex-start" gap={4}>
-                  <Box p={3} borderRadius="lg" bg={`${page.color}.50`}>
-                    <Icon size={24} className={`text-${page.color}-600`} />
-                  </Box>
-                  <Box flex={1}>
-                    <Flex justify="space-between" align="center" mb={2}>
-                      <Text fontSize="lg" fontWeight="bold" color="brand.dark">
+              <CardContent className="p-5">
+                <div className="flex items-start gap-4">
+                  <div
+                    className={cn(
+                      'grid h-11 w-11 place-items-center rounded-xl ring-1 ring-inset',
+                      toneClasses(page.tone)
+                    )}
+                  >
+                    <Icon size={18} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="truncate text-base font-semibold text-foreground">
                         {page.label} Page
-                      </Text>
-                      <ChevronRight size={20} className="text-gray-400" />
-                    </Flex>
-                    <Text fontSize="sm" color="gray.600" mb={3}>
+                      </div>
+                      <ChevronRight size={18} className="text-muted-foreground" />
+                    </div>
+                    <div className="mt-1 text-sm text-muted-foreground">
                       {page.description}
-                    </Text>
-                    <Badge colorScheme={page.color}>Easy Editor</Badge>
-                  </Box>
-                </Flex>
-              </CardBody>
+                    </div>
+                    <div className="mt-3">
+                      <span
+                        className={cn(
+                          'inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset',
+                          toneClasses(page.tone)
+                        )}
+                      >
+                        Easy editor
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
-          );
+          )
         })}
 
-        {/* Advanced: Table View Option */}
         <Card
-          variant="outline"
-          borderWidth="2px"
-          borderColor="gray.200"
-          borderStyle="dashed"
-          _hover={{ borderColor: 'gray.300', bg: 'gray.50' }}
-          transition="all 0.2s"
-          cursor="pointer"
+          className="cursor-pointer border-dashed border-border/70 transition hover:-translate-y-0.5 hover:bg-muted/20"
           onClick={() => router.push('/admin/content/advanced')}
         >
-          <CardBody>
-            <Flex align="flex-start" gap={4}>
-              <Box p={3} borderRadius="lg" bg="gray.100">
-                <Settings size={24} className="text-gray-600" />
-              </Box>
-              <Box flex={1}>
-                <Flex justify="space-between" align="center" mb={2}>
-                  <Text fontSize="lg" fontWeight="bold" color="brand.dark">
+          <CardContent className="p-5">
+            <div className="flex items-start gap-4">
+              <div className="grid h-11 w-11 place-items-center rounded-xl bg-muted text-muted-foreground ring-1 ring-inset ring-border">
+                <Settings size={18} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="truncate text-base font-semibold text-foreground">
                     Advanced View
-                  </Text>
-                  <ChevronRight size={20} className="text-gray-400" />
-                </Flex>
-                <Text fontSize="sm" color="gray.600">
-                  Table-based editing for all content items
-                </Text>
-                <Badge colorScheme="gray" mt={2}>For Advanced Users</Badge>
-              </Box>
-            </Flex>
-          </CardBody>
+                  </div>
+                  <ChevronRight size={18} className="text-muted-foreground" />
+                </div>
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Table-based editing for all content items.
+                </div>
+                <div className="mt-3">
+                  <span className="inline-flex rounded-full bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-inset ring-slate-200">
+                    For advanced users
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
         </Card>
-      </SimpleGrid>
-    </Box>
-  );
+      </div>
+    </div>
+  )
 }
+

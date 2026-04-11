@@ -1,45 +1,66 @@
-'use client';
+'use client'
 
-import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Flex,
-  Button,
-  Input,
-  Textarea,
-  Select,
-  Text,
-  IconButton,
-  VStack,
-  HStack,
-  Badge,
-  useToast,
-  Divider,
-  Image,
-  FormControl,
-  FormLabel,
-  useDisclosure,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel } from
-'@chakra-ui/react';
-import {
-  ArrowLeft,
-  Save,
-  Eye,
-  Type,
-  ImagePlus,
-  Quote,
-  ArrowUp,
-  ArrowDown,
-  Trash2 } from
-'lucide-react';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MediaPickerModal } from '../components/MediaPickerModal';
-import { useBlogPosts } from '../providers/BlogPostsProvider';
+/* eslint-disable @next/next/no-img-element */
+
+import * as React from 'react'
+import { ArrowLeft, Eye, Save, ImagePlus, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/src/admin/toast/ToastProvider'
+import { MediaPickerModal } from '../components/MediaPickerModal'
+import { useDisclosure } from '@/src/admin/hooks/useDisclosure'
+import { useBlogPosts } from '../providers/BlogPostsProvider'
+import type { BlogPost as PublicPost } from '@/src/lib/blog-posts'
+import { BlogStoryPage } from '@/src/components/pages/BlogStoryPage'
+
+type EditorBlock =
+  | { id: string; type: 'text'; content: string }
+  | { id: string; type: 'heading'; content: string; level?: 'h2' | 'h3' }
+  | { id: string; type: 'quote'; content: string }
+  | { id: string; type: 'image'; content: string; caption?: string }
+
+type EditorPost = {
+  id: string
+  title: string
+  subtitle: string
+  author: string
+  date: string
+  status: 'Draft' | 'Published'
+  category: string
+  location: string
+  excerpt: string
+  image: string
+  contentBlocks: EditorBlock[]
+  __raw?: any
+}
+
+function safeBlocks(blocks: unknown): EditorBlock[] {
+  return Array.isArray(blocks) ? (blocks as any) : []
+}
+
+function makeId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
+  return `b_${Date.now()}_${Math.random().toString(16).slice(2)}`
+}
+
+function createBlock(type: EditorBlock['type']): EditorBlock {
+  const id = makeId()
+  switch (type) {
+    case 'heading':
+      return { id, type: 'heading', level: 'h2', content: '' }
+    case 'quote':
+      return { id, type: 'quote', content: '' }
+    case 'image':
+      return { id, type: 'image', content: '', caption: '' }
+    case 'text':
+    default:
+      return { id, type: 'text', content: '' }
+  }
+}
 
 export function BlogEditorPage({
   mode = 'create',
@@ -48,685 +69,647 @@ export function BlogEditorPage({
   mode?: 'create' | 'edit'
   postId?: string
 }) {
-  const id = postId || 'new'
-  const router = useRouter();
-  const { posts, savePost } = useBlogPosts();
-  const toast = useToast();
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [activeBlockIndex, setActiveBlockIndex] = useState<number | null>(null);
-  const normalizedId = (id || '').trim().replace(/\s+/g, '');
-  const [post, setPost] = useState<any>(() => {
-    if (initialPost) return initialPost;
-    return {
+  const router = useRouter()
+  const { toast } = useToast()
+  const { posts, savePost, getPost } = useBlogPosts()
+
+  const normalizedId = (postId || 'new').trim().replace(/\s+/g, '')
+  const isNew = mode === 'create' || normalizedId === 'new'
+
+  const existing = React.useMemo(() => {
+    if (isNew) return null
+    return posts.find((p: any) => p.id === normalizedId || p.__raw?.slug === normalizedId) || null
+  }, [posts, normalizedId, isNew])
+
+  const emptyPost = React.useMemo<EditorPost>(
+    () => ({
       id: '',
       title: '',
       subtitle: '',
-      author: 'Eleanor Vance',
-      date: new Date().toISOString().split('T')[0],
+      author: 'Dreamscape Team',
+      date: '',
       status: 'Draft',
       category: 'Wedding',
       location: '',
       excerpt: '',
       image: '',
       contentBlocks: [],
-    };
-  });
+    }),
+    []
+  )
 
-  useEffect(() => {
-    if (initialPost) setPost(initialPost);
-  }, [initialPost]);
+  const [post, setPost] = React.useState<EditorPost>(emptyPost)
+  const [mounted, setMounted] = React.useState(false)
+  const [isFetching, setIsFetching] = React.useState(false)
 
-  // If we didn't get an initial post (or it was stale), try to hydrate from in-memory list.
-  useEffect(() => {
-    if (normalizedId && normalizedId !== 'new' && (!post?.id || post?.id === '')) {
-      const existing = posts.find(
-        (p: any) => p.id === normalizedId || p.__raw?.slug === normalizedId
-      );
-      if (existing) setPost(existing);
+  const mediaModal = useDisclosure(false)
+  const [mediaTarget, setMediaTarget] = React.useState<
+    { kind: 'featured' } | { kind: 'block'; index: number } | null
+  >(null)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  React.useEffect(() => {
+    if (isNew) return
+    if (existing) return
+    if (!normalizedId || normalizedId === 'new') return
+
+    let cancelled = false
+    const load = async () => {
+      setIsFetching(true)
+      try {
+        const loaded = await getPost(normalizedId)
+        if (cancelled || !loaded) return
+        setPost((prev) => ({
+          ...prev,
+          id: loaded.id || '',
+          title: loaded.title || '',
+          subtitle: loaded.subtitle || '',
+          author: loaded.author || 'Dreamscape Team',
+          date: loaded.date || '',
+          status: loaded.status === 'Published' ? 'Published' : 'Draft',
+          category: loaded.category || 'Wedding',
+          location: loaded.location || '',
+          excerpt: loaded.excerpt || '',
+          image: loaded.image || '',
+          contentBlocks: safeBlocks(loaded.contentBlocks),
+          __raw: loaded.__raw,
+        }))
+      } catch (e: any) {
+        if (!cancelled) {
+          toast({
+            title: 'Failed to load post',
+            description: e?.message,
+            variant: 'error',
+            duration: 3500,
+          })
+        }
+      } finally {
+        if (!cancelled) setIsFetching(false)
+      }
     }
-  }, [normalizedId, posts, post?.id]);
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [existing, getPost, isNew, normalizedId, toast])
+
+  React.useEffect(() => {
+    if (!existing) {
+      setPost((prev) => {
+        const base = { ...emptyPost, id: prev.id || '' }
+        if (!mounted) return base
+        if (base.date) return base
+        return { ...base, date: new Date().toISOString().slice(0, 10) }
+      })
+      return
+    }
+
+    const next: EditorPost = {
+      id: existing.id || '',
+      title: existing.title || '',
+      subtitle: existing.subtitle || '',
+      author: existing.author || 'Dreamscape Team',
+      date: existing.date || '',
+      status: existing.status === 'Published' ? 'Published' : 'Draft',
+      category: existing.category || 'Wedding',
+      location: existing.location || '',
+      excerpt: existing.excerpt || '',
+      image: existing.image || '',
+      contentBlocks: safeBlocks(existing.contentBlocks),
+      __raw: existing.__raw,
+    }
+    setPost(next)
+  }, [existing, emptyPost, mounted])
+
+  const updateBlock = React.useCallback((index: number, next: Partial<EditorBlock>) => {
+    setPost((prev) => {
+      const blocks = prev.contentBlocks.slice()
+      const current = blocks[index]
+      if (!current) return prev
+      blocks[index] = { ...(current as any), ...(next as any) }
+      return { ...prev, contentBlocks: blocks }
+    })
+  }, [])
+
+  const deleteBlock = React.useCallback((index: number) => {
+    setPost((prev) => ({
+      ...prev,
+      contentBlocks: prev.contentBlocks.filter((_, i) => i !== index),
+    }))
+  }, [])
+
+  const moveBlock = React.useCallback((from: number, to: number) => {
+    setPost((prev) => {
+      const blocks = prev.contentBlocks.slice()
+      if (from < 0 || from >= blocks.length) return prev
+      if (to < 0 || to >= blocks.length) return prev
+      const [item] = blocks.splice(from, 1)
+      blocks.splice(to, 0, item)
+      return { ...prev, contentBlocks: blocks }
+    })
+  }, [])
+
+  const insertBlockAfter = React.useCallback((index: number, type: EditorBlock['type']) => {
+    setPost((prev) => {
+      const blocks = prev.contentBlocks.slice()
+      blocks.splice(index + 1, 0, createBlock(type))
+      return { ...prev, contentBlocks: blocks }
+    })
+  }, [])
+
+  const routeId = (post.__raw?.slug || post.id || normalizedId || 'new').trim()
+
+  const publicPreviewPost = React.useMemo<PublicPost>(() => {
+    const blocks = Array.isArray(post.contentBlocks) ? post.contentBlocks : []
+    const heroImage =
+      post.image ||
+      blocks.find((b) => b.type === 'image' && String((b as any).content || '').trim())?.content ||
+      ''
+
+    const fullStory = blocks
+      .filter((b) => b.type === 'text' || b.type === 'heading' || b.type === 'quote')
+      .map((b) => b.content)
+      .filter(Boolean) as string[]
+
+    const gallery = blocks
+      .filter((b) => b.type === 'image' && String((b as any).content || '').trim())
+      .map((b: any) => b.content)
+      .filter(Boolean) as string[]
+
+    const firstText = blocks.find((b) => b.type === 'text' && String(b.content || '').trim())?.content || ''
+
+    return {
+      id: routeId || 'new',
+      title: post.title || 'Untitled Post',
+      location: post.location || '',
+      category: post.category || 'Wedding',
+      date: post.date || '',
+      img: heroImage,
+      desc: post.excerpt || post.subtitle || firstText || '',
+      fullStory,
+      gallery,
+      contentBlocks: blocks as any,
+    }
+  }, [post, routeId])
 
   const handleSave = async () => {
-    if (!post.title) {
-      toast({
-        title: 'Title is required',
-        status: 'error',
-        duration: 2000
-      });
-      return;
-    }
     try {
-      const saved = await savePost(post, normalizedId === 'new' ? 'create' : 'update');
-      setPost(saved);
-      toast({
-        title: 'Post saved successfully',
-        status: 'success',
-        duration: 2000
-      });
-      if (normalizedId === 'new') {
-        router.replace(`/admin/blog/editor/${saved.id}`);
+      if (!post.title.trim()) {
+        toast({
+          title: 'Missing title',
+          description: 'Please add a title before saving.',
+          variant: 'error',
+          duration: 3000,
+        })
+        return
       }
-    } catch (error: any) {
-      toast({ title: error?.message || 'Failed to save post', status: 'error', duration: 2500 });
-    }
-  };
-  const addBlock = (index: number, type: string) => {
-    const newBlock = {
-      id: `b_${Date.now()}`,
-      type,
-      content: '',
-      ...(type === 'heading' ?
-      {
-        level: 'h2'
-      } :
-      {})
-    };
-    const newBlocks = [...post.contentBlocks];
-    newBlocks.splice(index + 1, 0, newBlock);
-    setPost({
-      ...post,
-      contentBlocks: newBlocks
-    });
-  };
-  const addBlockAt = (index: number, type: string) => {
-    const newBlock = {
-      id: `b_${Date.now()}`,
-      type,
-      content: '',
-      ...(type === 'heading' ? { level: 'h2' } : {})
-    };
-    const newBlocks = [...post.contentBlocks];
-    const safeIndex = Math.max(0, Math.min(index, newBlocks.length));
-    newBlocks.splice(safeIndex, 0, newBlock);
-    setPost({ ...post, contentBlocks: newBlocks });
-  };
-  const updateBlock = (blockId: string, updates: any) => {
-    setPost({
-      ...post,
-      contentBlocks: post.contentBlocks.map((b: any) =>
-      b.id === blockId ?
-      {
-        ...b,
-        ...updates
-      } :
-      b
-      )
-    });
-  };
-  const moveBlock = (index: number, direction: 'up' | 'down') => {
-    if (
-    direction === 'up' && index === 0 ||
-    direction === 'down' && index === post.contentBlocks.length - 1)
 
-    return;
-    const newBlocks = [...post.contentBlocks];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    const temp = newBlocks[index];
-    newBlocks[index] = newBlocks[targetIndex];
-    newBlocks[targetIndex] = temp;
-    setPost({
-      ...post,
-      contentBlocks: newBlocks
-    });
-  };
-  const deleteBlock = (blockId: string) => {
-    setPost({
-      ...post,
-      contentBlocks: post.contentBlocks.filter((b: any) => b.id !== blockId)
-    });
-  };
-  const openMediaPicker = (index: number) => {
-    setActiveBlockIndex(index);
-    onOpen();
-  };
-  const handleMediaSelect = (url: string) => {
-    if (activeBlockIndex === -1) {
-      setPost({
+      const toSave = {
         ...post,
-        image: url
-      });
-    } else if (activeBlockIndex !== null) {
-      const block = post.contentBlocks[activeBlockIndex];
-      updateBlock(block.id, {
-        content: url
-      });
+        contentBlocks: Array.isArray(post.contentBlocks) ? post.contentBlocks : [],
+      }
+
+      const saved = await savePost(toSave, isNew ? 'create' : 'update')
+      toast({
+        title: isNew ? 'Post created' : 'Post updated',
+        variant: 'success',
+        duration: 2500,
+      })
+      if (isNew) {
+        router.push(`/admin/blog/${saved.id}/edit`)
+      }
+    } catch (error) {
+      toast({
+        title: 'Failed to save post',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'error',
+        duration: 4500,
+      })
     }
-  };
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  }
 
-  const moveBlockToIndex = (from: number, to: number) => {
-    if (from === to) return;
-    const newBlocks = [...post.contentBlocks];
-    const [moved] = newBlocks.splice(from, 1);
-    newBlocks.splice(to, 0, moved);
-    setPost({ ...post, contentBlocks: newBlocks });
-  };
-
-  const handleDragStart = (index: number, event?: React.DragEvent) => {
-    setDragIndex(index);
-    if (event) {
-      event.dataTransfer.setData('block-index', String(index));
-    }
-  };
-
-  const handleDragOver = (index: number) => {
-    setDragOverIndex(index);
-  };
-
-  const handleDrop = (index: number, event: React.DragEvent) => {
-    const draggedType = event.dataTransfer.getData('block-type');
-    if (draggedType) {
-      addBlockAt(index, draggedType);
-      setDragIndex(null);
-      setDragOverIndex(null);
-      return;
-    }
-    if (dragIndex === null) return;
-    moveBlockToIndex(dragIndex, index);
-    setDragIndex(null);
-    setDragOverIndex(null);
-  };
-
-  const handlePaletteDragStart = (type: string, event: React.DragEvent) => {
-    event.dataTransfer.setData('block-type', type);
-  };
+  if (isFetching) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-muted-foreground">Loading post…</p>
+      </div>
+    )
+  }
 
   return (
-    <Box h="calc(100vh - 72px)" display="flex" flexDirection="column" m={-8}>
-      {/* Editor Top Bar */}
-      <Flex
-        bg="white"
-        p={4}
-        borderBottom="1px solid"
-        borderColor="gray.200"
-        justify="space-between"
-        align="center"
-        zIndex={2}>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.push('/admin/blog')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-semibold">{isNew ? 'New Blog Post' : 'Edit Blog Post'}</h1>
+            <p className="text-sm text-muted-foreground">
+              {isNew ? 'Create a new blog post' : 'Edit existing blog post'}
+            </p>
+          </div>
+        </div>
 
-        <HStack spacing={4}>
-          <IconButton
-            aria-label="Back"
-            icon={<ArrowLeft size={18} />}
-            variant="ghost"
-            onClick={() => router.push('/admin/blog')} />
-
-          <Text fontWeight="bold" color="brand.dark">
-            {post.title || 'Untitled Post'}
-          </Text>
-          <Badge colorScheme={post.status === 'Published' ? 'green' : 'gray'}>
-            {post.status}
-          </Badge>
-        </HStack>
-        <HStack spacing={3}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" onClick={() => router.push('/admin/blog')}>
+            Cancel
+          </Button>
           <Button
-            leftIcon={<Eye size={16} />}
+            type="button"
             variant="outline"
-            onClick={() => router.push(`/admin/blog/preview/${post.__raw?.slug || post.id}`)}
-            isDisabled={normalizedId === 'new'}>
-            
+            onClick={() => router.push(`/admin/blog/${routeId}/preview`)}
+            disabled={isNew}
+          >
+            <Eye className="mr-2 h-4 w-4" />
             Preview
           </Button>
-          <Button
-            leftIcon={<Save size={16} />}
-            colorScheme="brand"
-            onClick={handleSave}>
-            
-            Save Post
+          <Button onClick={handleSave}>
+            <Save className="mr-2 h-4 w-4" />
+            Save
           </Button>
-        </HStack>
-      </Flex>
+        </div>
+      </div>
 
-      <Tabs
-        colorScheme="brand"
-        size="md"
-        variant="soft-rounded"
-        h="full"
-        display="flex"
-        flexDirection="column">
-        <TabList px={8} pt={4} pb={2} gap={2} borderBottom="1px solid" borderColor="gray.200">
-          <Tab
-            px={5}
-            py={2}
-            fontSize="sm"
-            fontWeight="semibold"
-            borderRadius="full"
-            _selected={{ bg: 'brand.primary', color: 'white' }}>
-            Post Settings
-          </Tab>
-          <Tab
-            px={5}
-            py={2}
-            fontSize="sm"
-            fontWeight="semibold"
-            borderRadius="full"
-            _selected={{ bg: 'brand.primary', color: 'white' }}>
-            Content Builder
-          </Tab>
-        </TabList>
-        <Box bg="white" p={8} flex="1" overflow="hidden">
-          <Box w="full" maxW="none" h="full">
-            <TabPanels h="full" pt={0}>
-              <TabPanel p={0} h="full" overflowY="auto" pr={2}>
-                <Box maxW="1100px">
-                  <Flex gap={8} wrap="wrap">
-                    <Box flex="1 1 420px" minW="320px">
-                      <VStack spacing={5} align="stretch">
-                        <Text fontFamily="heading" fontSize="lg" fontWeight="bold" color="brand.dark">
-                          Essentials
-                        </Text>
-                  <FormControl isRequired>
-                    <FormLabel fontSize="sm">Title</FormLabel>
-                    <Input
-                      value={post.title}
-                      onChange={(e) => setPost({ ...post, title: e.target.value })}
-                      placeholder="Post title"
-                    />
-                  </FormControl>
+      <div className="grid gap-6 lg:grid-cols-[1fr_520px]">
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Basic Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={post.title}
+                  onChange={(e) => setPost({ ...post, title: e.target.value })}
+                  placeholder="Post title"
+                />
+              </div>
 
-                  <FormControl>
-                    <FormLabel fontSize="sm">Subtitle</FormLabel>
-                    <Textarea
-                      value={post.subtitle}
-                      onChange={(e) => setPost({ ...post, subtitle: e.target.value })}
-                      placeholder="A brief subtitle..."
-                      rows={3}
-                    />
-                  </FormControl>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <select
+                    id="status"
+                    value={post.status}
+                    onChange={(e) =>
+                      setPost({ ...post, status: e.target.value as 'Draft' | 'Published' })
+                    }
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="Draft">Draft</option>
+                    <option value="Published">Published</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="date">Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={post.date}
+                    onChange={(e) => setPost({ ...post, date: e.target.value })}
+                  />
+                </div>
+              </div>
 
-                  <FormControl>
-                    <FormLabel fontSize="sm">Featured Image</FormLabel>
-                    <HStack mb={2}>
-                      <Input
-                        value={post.image}
-                        onChange={(e) => setPost({ ...post, image: e.target.value })}
-                        placeholder="Image URL"
-                        fontSize="sm"
-                      />
-                      <IconButton
-                        aria-label="Browse"
-                        icon={<ImagePlus size={16} />}
-                        onClick={() => {
-                          setActiveBlockIndex(-1);
-                          onOpen();
-                        }}
-                      />
-                    </HStack>
-                    {post.image && (
-                      <Image
-                        src={post.image}
-                        borderRadius="md"
-                        h="120px"
-                        w="full"
-                        objectFit="cover"
-                      />
-                    )}
-                  </FormControl>
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Input
+                  id="category"
+                  value={post.category}
+                  onChange={(e) => setPost({ ...post, category: e.target.value })}
+                  placeholder="e.g., Wedding, Celebration"
+                />
+              </div>
 
-                  <Flex gap={4}>
-                    <FormControl>
-                      <FormLabel fontSize="sm">Category</FormLabel>
-                      <Select
-                        value={post.category}
-                        onChange={(e) => setPost({ ...post, category: e.target.value })}>
-                        <option value="Wedding">Wedding</option>
-                        <option value="Corporate">Corporate</option>
-                        <option value="Private Events">Private Events</option>
-                        <option value="Design">Design</option>
-                      </Select>
-                    </FormControl>
-                    <FormControl>
-                      <FormLabel fontSize="sm">Status</FormLabel>
-                      <Select
-                        value={post.status}
-                        onChange={(e) => setPost({ ...post, status: e.target.value })}>
-                        <option value="Draft">Draft</option>
-                        <option value="Scheduled">Scheduled</option>
-                        <option value="Published">Published</option>
-                      </Select>
-                    </FormControl>
-                  </Flex>
-                      </VStack>
-                    </Box>
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  value={post.location}
+                  onChange={(e) => setPost({ ...post, location: e.target.value })}
+                  placeholder="e.g., Toronto, Ontario"
+                />
+              </div>
 
-                    <Box flex="1 1 420px" minW="320px">
-                      <VStack spacing={5} align="stretch">
-                        <Text fontFamily="heading" fontSize="lg" fontWeight="bold" color="brand.dark">
-                          Details
-                        </Text>
-                        <Flex gap={4}>
-                          <FormControl>
-                            <FormLabel fontSize="sm">Date</FormLabel>
-                            <Input
-                              type="date"
-                              value={post.date}
-                              onChange={(e) => setPost({ ...post, date: e.target.value })}
-                            />
-                          </FormControl>
-                          <FormControl>
-                            <FormLabel fontSize="sm">Location</FormLabel>
-                            <Input
-                              value={post.location}
-                              onChange={(e) => setPost({ ...post, location: e.target.value })}
-                              placeholder="e.g. Dallas, TX"
-                            />
-                          </FormControl>
-                        </Flex>
+              <div className="space-y-2">
+                <Label htmlFor="author">Author</Label>
+                <Input
+                  id="author"
+                  value={post.author}
+                  onChange={(e) => setPost({ ...post, author: e.target.value })}
+                  placeholder="Author name"
+                />
+              </div>
 
-                        <FormControl>
-                          <FormLabel fontSize="sm">Author</FormLabel>
-                          <Input value={post.author} onChange={(e) => setPost({ ...post, author: e.target.value })} />
-                        </FormControl>
+              <div className="space-y-2">
+                <Label htmlFor="subtitle">Subtitle</Label>
+                <Textarea
+                  id="subtitle"
+                  value={post.subtitle}
+                  onChange={(e) => setPost({ ...post, subtitle: e.target.value })}
+                  rows={2}
+                  placeholder="Brief subtitle or description"
+                />
+              </div>
 
-                        <FormControl>
-                          <FormLabel fontSize="sm">Excerpt</FormLabel>
-                          <Textarea
-                            value={post.excerpt}
-                            onChange={(e) => setPost({ ...post, excerpt: e.target.value })}
-                            rows={6}
-                            placeholder="Brief summary for blog listing..."
-                          />
-                        </FormControl>
-                      </VStack>
-                    </Box>
-                  </Flex>
-                </Box>
-              </TabPanel>
+              <div className="space-y-2">
+                <Label htmlFor="excerpt">Excerpt</Label>
+                <Textarea
+                  id="excerpt"
+                  value={post.excerpt}
+                  onChange={(e) => setPost({ ...post, excerpt: e.target.value })}
+                  rows={3}
+                  placeholder="Short excerpt for previews"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-              <TabPanel p={0} h="full">
-                <Flex h="full" minH="0" gap={6}>
-                  <Box
-                    w="280px"
-                    minW="260px"
-                    border="1px solid"
-                    borderColor="gray.200"
-                    borderRadius="xl"
-                    p={4}
-                    bg="gray.50"
-                    h="full"
-                    overflowY="auto">
-                    <Text fontWeight="semibold" color="brand.dark" mb={3}>
-                      Add Blocks
-                    </Text>
-                    <VStack spacing={2} align="stretch">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        draggable
-                        onDragStart={(e) => handlePaletteDragStart('text', e)}
-                        onClick={() => addBlock(-1, 'text')}>
-                        Text
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        draggable
-                        onDragStart={(e) => handlePaletteDragStart('heading', e)}
-                        onClick={() => addBlock(-1, 'heading')}>
-                        Heading
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        draggable
-                        onDragStart={(e) => handlePaletteDragStart('quote', e)}
-                        onClick={() => addBlock(-1, 'quote')}>
-                        Quote
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        draggable
-                        onDragStart={(e) => handlePaletteDragStart('image', e)}
-                        onClick={() => addBlock(-1, 'image')}>
-                        Image
-                      </Button>
-                    </VStack>
-                    <Divider my={4} />
-                    <HStack justify="space-between" mb={2}>
-                      <Text fontWeight="semibold" color="brand.dark">Blocks</Text>
-                      <Badge colorScheme="gray">{post.contentBlocks.length}</Badge>
-                    </HStack>
-                    <VStack align="stretch" spacing={2}>
-                      {post.contentBlocks.map((block: any, index: number) => (
-                        <Flex
-                          key={block.id}
-                          align="center"
-                          justify="space-between"
-                          border="1px solid"
-                          borderColor={dragOverIndex === index ? 'brand.primary' : 'gray.200'}
-                          borderRadius="md"
-                          bg="white"
-                          px={3}
-                          py={2}
-                          draggable
-                          onDragStart={(e) => handleDragStart(index, e)}
-                          onDragOver={(e) => { e.preventDefault(); handleDragOver(index); }}
-                          onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(index, e); }}
-                          onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+          <Card>
+            <CardHeader>
+              <CardTitle>Story Blocks</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setPost((prev) => ({
+                      ...prev,
+                      contentBlocks: [...prev.contentBlocks, createBlock('text')],
+                    }))
+                  }
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Text
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setPost((prev) => ({
+                      ...prev,
+                      contentBlocks: [...prev.contentBlocks, createBlock('heading')],
+                    }))
+                  }
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Heading
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setPost((prev) => ({
+                      ...prev,
+                      contentBlocks: [...prev.contentBlocks, createBlock('quote')],
+                    }))
+                  }
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Quote
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setPost((prev) => ({
+                      ...prev,
+                      contentBlocks: [...prev.contentBlocks, createBlock('image')],
+                    }))
+                  }
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Image
+                </Button>
+              </div>
+
+              {post.contentBlocks.length ? (
+                <div className="space-y-3">
+                  {post.contentBlocks.map((block, index) => (
+                    <div key={block.id} className="rounded-xl border border-border/70 bg-background p-4">
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          {block.type}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => moveBlock(index, index - 1)}
+                            disabled={index === 0}
+                            aria-label="Move up"
                           >
-                          <HStack spacing={2} color="gray.600" minW={0}>
-                            {block.type === 'text' && <Type size={14} />}
-                            {block.type === 'image' && <ImagePlus size={14} />}
-                            {block.type === 'heading' && <Type size={14} />}
-                            {block.type === 'quote' && <Quote size={14} />}
-                            <Text fontSize="xs" fontWeight="semibold" textTransform="capitalize" noOfLines={1}>
-                              {block.type}
-                            </Text>
-                          </HStack>
-                          <HStack spacing={1}>
-                            <IconButton
-                              aria-label="Move Up"
-                              icon={<ArrowUp size={12} />}
-                              size="xs"
-                              variant="ghost"
-                              onClick={() => moveBlock(index, 'up')}
-                              isDisabled={index === 0}
+                            <ArrowUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => moveBlock(index, index + 1)}
+                            disabled={index === post.contentBlocks.length - 1}
+                            aria-label="Move down"
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteBlock(index)}
+                            aria-label="Delete block"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {block.type === 'heading' ? (
+                        <div className="space-y-2">
+                          <Label>Heading</Label>
+                          <Input
+                            value={block.content}
+                            onChange={(e) => updateBlock(index, { content: e.target.value })}
+                            placeholder="Heading text"
+                          />
+                          <div className="grid gap-2 md:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label>Level</Label>
+                              <select
+                                value={(block.level || 'h2') as any}
+                                onChange={(e) =>
+                                  updateBlock(index, { level: e.target.value as any } as any)
+                                }
+                                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                              >
+                                <option value="h2">H2</option>
+                                <option value="h3">H3</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      ) : block.type === 'quote' ? (
+                        <div className="space-y-2">
+                          <Label>Quote</Label>
+                          <Textarea
+                            value={block.content}
+                            onChange={(e) => updateBlock(index, { content: e.target.value })}
+                            rows={3}
+                            placeholder="Quote text"
+                          />
+                        </div>
+                      ) : block.type === 'image' ? (
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <Label>Image URL</Label>
+                            <Input
+                              value={block.content}
+                              onChange={(e) => updateBlock(index, { content: e.target.value })}
+                              placeholder="https://..."
                             />
-                            <IconButton
-                              aria-label="Move Down"
-                              icon={<ArrowDown size={12} />}
-                              size="xs"
-                              variant="ghost"
-                              onClick={() => moveBlock(index, 'down')}
-                              isDisabled={index === post.contentBlocks.length - 1}
+                          </div>
+                          {block.content ? (
+                            <div className="aspect-video overflow-hidden rounded-lg bg-muted">
+                              <img
+                                src={block.content}
+                                alt={block.caption || 'Block image'}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          ) : null}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setMediaTarget({ kind: 'block', index })
+                              mediaModal.onOpen()
+                            }}
+                          >
+                            <ImagePlus className="mr-2 h-4 w-4" />
+                            Select from Media Library
+                          </Button>
+                          <div className="space-y-2">
+                            <Label>Caption (optional)</Label>
+                            <Input
+                              value={(block.caption || '') as any}
+                              onChange={(e) => updateBlock(index, { caption: e.target.value } as any)}
+                              placeholder="Caption text"
                             />
-                          </HStack>
-                        </Flex>
-                      ))}
-                      {post.contentBlocks.length === 0 && (
-                        <Flex
-                          direction="column"
-                          align="center"
-                          justify="center"
-                          p={6}
-                          border="2px dashed"
-                          borderColor="gray.300"
-                          borderRadius="lg"
-                          color="gray.500"
-                          textAlign="center">
-                          <Type size={26} opacity={0.5} />
-                          <Text mt={3} fontSize="sm">
-                            Add a block to start building.
-                          </Text>
-                        </Flex>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Label>Text</Label>
+                          <Textarea
+                            value={block.content}
+                            onChange={(e) => updateBlock(index, { content: e.target.value })}
+                            rows={5}
+                            placeholder="Write paragraph text…"
+                          />
+                        </div>
                       )}
-                    </VStack>
-                  </Box>
 
-                  <Box
-                    flex="1"
-                    minW="0"
-                    h="full"
-                    overflowY="auto"
-                    pr={2}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      if (e.currentTarget !== e.target) return;
-                      const draggedType = e.dataTransfer.getData('block-type');
-                      if (draggedType) {
-                        addBlockAt(post.contentBlocks.length, draggedType);
-                      }
-                    }}>
-                    <AnimatePresence>
-                      {post.contentBlocks.map((block: any, index: number) =>
-                        <motion.div
-                          key={block.id}
-                          layout
-                          initial={{ opacity: 0, y: 16 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.98 }}
-                          transition={{ duration: 0.2 }}>
-                          
-                          <Box
-                            bg="white"
-                            p={4}
-                            borderRadius="xl"
-                            shadow="sm"
-                            border="1px solid"
-                            borderColor={dragOverIndex === index ? 'brand.primary' : 'gray.200'}
-                            mb={4}
-                            draggable
-                            onDragStart={(e) => handleDragStart(index, e)}
-                            onDragOver={(e) => { e.preventDefault(); handleDragOver(index); }}
-                            onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(index, e); }}
-                            onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
-                            _active={{ cursor: 'grabbing' }}
-                            cursor="grab">
-                            
-                            <Flex align="center" justify="space-between" mb={3}>
-                              <HStack color="gray.500" spacing={2}>
-                                {block.type === 'text' && <Type size={16} />}
-                                {block.type === 'image' && <ImagePlus size={16} />}
-                                {block.type === 'heading' && <Type size={16} />}
-                                {block.type === 'quote' && <Quote size={16} />}
-                                <Text fontSize="sm" fontWeight="semibold" textTransform="capitalize">
-                                  {block.type}
-                                </Text>
-                              </HStack>
-                              <HStack spacing={1}>
-                                <IconButton
-                                  aria-label="Delete"
-                                  icon={<Trash2 size={14} />}
-                                  size="xs"
-                                  variant="ghost"
-                                  colorScheme="red"
-                                  onClick={() => deleteBlock(block.id)}
-                                />
-                              </HStack>
-                            </Flex>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <Button type="button" variant="secondary" size="sm" onClick={() => insertBlockAfter(index, 'text')}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Text below
+                        </Button>
+                        <Button type="button" variant="secondary" size="sm" onClick={() => insertBlockAfter(index, 'image')}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Image below
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
+                  Add blocks above to build your story. Images can go between text blocks.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-                            {block.type === 'text' && (
-                              <Textarea
-                                value={block.content}
-                                onChange={(e) => updateBlock(block.id, { content: e.target.value })}
-                                placeholder="Write your paragraph here..."
-                                minH="120px"
-                                border="1px solid"
-                                borderColor="gray.200"
-                              />
-                            )}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Featured Image</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {post.image ? (
+                <div className="aspect-video overflow-hidden rounded-lg bg-muted">
+                  <img src={post.image} alt="Featured" className="h-full w-full object-cover" />
+                </div>
+              ) : null}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setMediaTarget({ kind: 'featured' })
+                  mediaModal.onOpen()
+                }}
+              >
+                <ImagePlus className="mr-2 h-4 w-4" />
+                {post.image ? 'Change Image' : 'Select Image'}
+              </Button>
+            </CardContent>
+          </Card>
 
-                            {block.type === 'heading' && (
-                              <HStack>
-                                <Select
-                                  w="110px"
-                                  size="sm"
-                                  value={block.level}
-                                  onChange={(e) => updateBlock(block.id, { level: e.target.value })}>
-                                  <option value="h2">H2</option>
-                                  <option value="h3">H3</option>
-                                </Select>
-                                <Input
-                                  value={block.content}
-                                  onChange={(e) => updateBlock(block.id, { content: e.target.value })}
-                                  placeholder="Heading text..."
-                                  fontFamily="heading"
-                                  fontSize="xl"
-                                  fontWeight="bold"
-                                />
-                              </HStack>
-                            )}
-
-                            {block.type === 'quote' && (
-                              <Textarea
-                                value={block.content}
-                                onChange={(e) => updateBlock(block.id, { content: e.target.value })}
-                                placeholder="Pull quote text..."
-                                minH="100px"
-                                fontStyle="italic"
-                                border="1px solid"
-                                borderColor="gray.200"
-                              />
-                            )}
-
-                            {block.type === 'image' && (
-                              <VStack align="stretch" spacing={3}>
-                                <HStack>
-                                  <Input
-                                    size="sm"
-                                    value={block.content}
-                                    onChange={(e) => updateBlock(block.id, { content: e.target.value })}
-                                    placeholder="Image URL"
-                                  />
-                                  <Button size="sm" onClick={() => openMediaPicker(index)}>
-                                    Browse
-                                  </Button>
-                                </HStack>
-                                {block.content && (
-                                  <Image
-                                    src={block.content}
-                                    borderRadius="md"
-                                    maxH="300px"
-                                    objectFit="cover"
-                                    w="full"
-                                  />
-                                )}
-                                <Input
-                                  size="sm"
-                                  variant="flushed"
-                                  value={block.caption || ''}
-                                  onChange={(e) => updateBlock(block.id, { caption: e.target.value })}
-                                  placeholder="Image caption (optional)"
-                                  textAlign="center"
-                                  color="gray.500"
-                                />
-                              </VStack>
-                            )}
-                          </Box>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                    {post.contentBlocks.length === 0 && (
-                      <Flex
-                        direction="column"
-                        align="center"
-                        justify="center"
-                        p={12}
-                        border="2px dashed"
-                        borderColor="gray.300"
-                        borderRadius="xl"
-                        color="gray.500">
-                        <Type size={32} opacity={0.5} />
-                        <Text mt={4}>
-                          Add a block to begin writing your post.
-                        </Text>
-                      </Flex>
-                    )}
-                  </Box>
-                </Flex>
-              </TabPanel>
-            </TabPanels>
-          </Box>
-        </Box>
-      </Tabs>
+          <Card>
+            <CardHeader>
+              <CardTitle>Live Preview</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Blocks</span>
+                <span className="font-medium">{post.contentBlocks.length}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Status</span>
+                <span className="font-medium">{post.status}</span>
+              </div>
+              <div className="rounded-xl border border-border/70 bg-muted/10">
+                <div className="max-h-[62vh] overflow-auto pointer-events-none">
+                  <BlogStoryPage post={publicPreviewPost} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       <MediaPickerModal
-        isOpen={isOpen}
-        onClose={onClose}
-        onSelect={handleMediaSelect} />
-      
-    </Box>);
-
+        isOpen={mediaModal.isOpen}
+        onClose={() => {
+          mediaModal.onClose()
+          setMediaTarget(null)
+        }}
+        onSelect={(url) => {
+          if (!mediaTarget) return
+          if (mediaTarget.kind === 'featured') {
+            setPost((prev) => ({ ...prev, image: url }))
+            return
+          }
+          if (mediaTarget.kind === 'block') {
+            updateBlock(mediaTarget.index, { content: url })
+          }
+        }}
+      />
+    </div>
+  )
 }

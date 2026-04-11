@@ -26,7 +26,8 @@ export async function getSession() {
 export async function getAdminUser(): Promise<AdminUser | null> {
   const session = await auth()
 
-  if (!session?.user || session.user.role !== 'admin') {
+  const role = session?.user?.role
+  if (!session?.user || (role !== 'admin' && role !== 'super_admin')) {
     return null
   }
 

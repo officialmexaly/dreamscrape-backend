@@ -92,6 +92,7 @@ export function Footer({ config }: { config?: FooterConfig }) {
                   src="/logo.png"
                   alt="Dreamscape Curated Events"
                   fill
+                  sizes="(min-width: 768px) 208px, 176px"
                   className="object-contain"
                 />
               </div>

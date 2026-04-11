@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/src/lib/supabase-admin';
+import { protectAdminRoute } from '@/src/lib/server-auth';
 
 export async function GET() {
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
+
   const { data, error } = await supabaseAdmin()
     .from('portfolio_items')
     .select('*')
@@ -16,6 +20,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
+
   const body = await request.json();
 
   const insert = {
@@ -51,4 +58,3 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ item: data }, { status: 201 });
 }
-

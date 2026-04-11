@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { ScrollReveal } from '../ScrollReveal';
-import { BLOG_POSTS, type BlogPost } from '@/src/lib/blog-posts';
+import type { BlogPost } from '@/src/lib/blog-posts';
 import { mapPortfolioItemToPublicPost } from '@/src/lib/public-posts';
 
 type PortfolioStoryPageProps = {
@@ -14,10 +14,7 @@ type PortfolioStoryPageProps = {
 
 export function PortfolioStoryPage({ slug, post: initialPost }: PortfolioStoryPageProps) {
   const [post, setPost] = useState<BlogPost | null>(initialPost ?? null);
-  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>(() => {
-    if (!initialPost) return BLOG_POSTS.slice(0, 3);
-    return BLOG_POSTS.filter((item) => item.id !== initialPost.id).slice(0, 3);
-  });
+  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(!initialPost);
   const [isNotFound, setIsNotFound] = useState(false);
 
@@ -34,12 +31,6 @@ export function PortfolioStoryPage({ slug, post: initialPost }: PortfolioStoryPa
         ]);
 
         if (itemRes.status === 404) {
-          const fallback = BLOG_POSTS.find((p) => p.id === slug);
-          if (fallback) {
-            setPost(fallback);
-            setRelatedPosts(BLOG_POSTS.filter((item) => item.id !== fallback.id).slice(0, 3));
-            return;
-          }
           setIsNotFound(true);
           return;
         }
@@ -58,7 +49,7 @@ export function PortfolioStoryPage({ slug, post: initialPost }: PortfolioStoryPa
           setRelatedPosts(mapped.filter((p) => p.id !== slug).slice(0, 3));
         }
       } catch {
-        // ignore, keep fallback
+        setIsNotFound(true);
       } finally {
         setIsLoading(false);
       }
@@ -92,8 +83,7 @@ export function PortfolioStoryPage({ slug, post: initialPost }: PortfolioStoryPa
   const heroImage =
     post?.img ||
     post?.contentBlocks?.find((b) => b.type === 'image')?.content ||
-    post?.gallery?.[0] ||
-    BLOG_POSTS[0]?.img;
+    post?.gallery?.[0];
 
   if (isNotFound) {
     return (
@@ -126,11 +116,13 @@ export function PortfolioStoryPage({ slug, post: initialPost }: PortfolioStoryPa
   return (
     <div className="min-h-screen w-full bg-[#fcf8f7] pb-24">
       <section className="relative min-h-[38svh] overflow-hidden pt-24 md:min-h-[44svh] md:pt-36">
-        <img
-          src={heroImage}
-          alt={post.title}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        {heroImage ? (
+          <img
+            src={heroImage}
+            alt={post.title}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(16,12,20,0.68)_0%,rgba(16,12,20,0.7)_24%,rgba(16,12,20,0.78)_58%,rgba(16,12,20,0.88)_100%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05),transparent_34%)]" />
         <div className="relative mx-auto flex min-h-[38svh] max-w-[1360px] items-end px-4 pb-8 sm:px-6 md:min-h-[44svh] md:px-10 md:pb-24">
@@ -237,7 +229,7 @@ export function PortfolioStoryPage({ slug, post: initialPost }: PortfolioStoryPa
                 Related Articles
               </p>
               <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3">
-                {relatedPosts.map((item) => (
+                {relatedPosts.length ? relatedPosts.map((item) => (
                   <Link
                     key={item.id}
                     href={`/portfolio/${item.id}`}
@@ -256,7 +248,11 @@ export function PortfolioStoryPage({ slug, post: initialPost }: PortfolioStoryPa
                       {item.date}
                     </p>
                   </Link>
-                ))}
+                )) : (
+                  <div className="rounded-2xl border border-brand-purple/10 bg-white px-6 py-6 text-sm text-brand-gray sm:col-span-2 xl:col-span-3">
+                    No related articles.
+                  </div>
+                )}
               </div>
             </div>
           </ScrollReveal>
@@ -265,3 +261,5 @@ export function PortfolioStoryPage({ slug, post: initialPost }: PortfolioStoryPa
     </div>
   );
 }
+
+export default PortfolioStoryPage;

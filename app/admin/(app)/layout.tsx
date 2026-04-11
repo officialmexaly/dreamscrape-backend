@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Layout } from '@/src/admin/components/Layout';
 import { useAuth } from '@/src/admin/providers/AuthProvider';
@@ -8,6 +8,11 @@ import { useAuth } from '@/src/admin/providers/AuthProvider';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { isAuthenticated, isLoading, logout } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     // Only redirect if we're not loading and user is not authenticated
@@ -16,13 +21,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, isLoading, router]);
 
-  // Show loading state while checking authentication
-  if (isLoading) {
+  // Ensure SSR + first client render match to avoid hydration flicker/mismatch.
+  if (!mounted || isLoading) {
     return (
-      <div className="min-h-screen bg-brand-light flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-purple border-t-transparent"></div>
-          <p className="mt-4 text-brand-gray">Loading...</p>
+      <div className="grid min-h-screen place-items-center" suppressHydrationWarning>
+        <div className="text-center" suppressHydrationWarning>
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-primary/25 border-t-primary" suppressHydrationWarning />
+          <div className="mt-4 text-sm text-muted-foreground" suppressHydrationWarning>Loading…</div>
         </div>
       </div>
     );
@@ -31,6 +36,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Don't render if not authenticated
   if (!isAuthenticated) return null;
 
-  return <Layout onLogout={logout}>{children}</Layout>;
+  return (
+    <div suppressHydrationWarning>
+      <Layout onLogout={logout}>{children}</Layout>
+    </div>
+  );
 }
-

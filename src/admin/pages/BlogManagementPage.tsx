@@ -1,257 +1,237 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import {
-  Box,
-  Button,
-  Flex,
-  Heading,
-  Text,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  useToast,
-  VStack,
-  HStack,
-  Badge,
-  IconButton,
-  Input,
-  Select,
-} from '@chakra-ui/react'
-import { Plus, Edit, Eye, Trash2, Search } from 'lucide-react'
+import * as React from 'react'
+import { Plus, Search, RefreshCw, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-
-interface BlogPost {
-  id: string
-  title: string
-  slug: string
-  excerpt: string
-  content: string
-  author: string
-  published: boolean
-  publishedAt?: string
-  createdAt: string
-  updatedAt: string
-  coverImage?: string
-  category?: string
-  tags?: string[]
-}
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useToast } from '@/src/admin/toast/ToastProvider'
+import { useBlogPosts } from '../providers/BlogPostsProvider'
+import { formatAdminDate } from '@/src/admin/utils/formatDate'
+import { DataTable } from '../components/shared/DataTable'
+import { StatusBadge } from '../components/shared'
+import { ActionButtons } from '../components/shared'
+import { Badge } from '@/components/ui/badge'
 
 export function BlogManagementPage() {
-  const [posts, setPosts] = useState<BlogPost[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterStatus, setFilterStatus] = useState<'all' | 'published' | 'draft'>('all')
-  const toast = useToast()
+  const [searchQuery, setSearchQuery] = React.useState('')
+  const [filterStatus, setFilterStatus] = React.useState<'all' | 'published' | 'draft'>('all')
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
+  const { toast } = useToast()
   const router = useRouter()
+  const { posts, isLoading, error, refresh, deletePost } = useBlogPosts()
 
-  useEffect(() => {
-    fetchPosts()
-  }, [])
-
-  const fetchPosts = async () => {
+  const handleDelete = async (id: string, title: string) => {
     try {
-      const response = await fetch('/api/admin/blog-posts')
-      const data = await response.json()
-
-      if (data.success) {
-        setPosts(data.posts || [])
-      } else {
-        throw new Error(data.error || 'Failed to fetch posts')
-      }
+      await deletePost(id)
+      toast({ title: 'Post deleted', variant: 'success', duration: 2500 })
+      void refresh()
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to fetch blog posts',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        title: 'Failed to delete post',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'error',
+        duration: 4500,
       })
-    } finally {
-      setIsLoading(false)
     }
   }
 
-  const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`Are you sure you want to delete "${title}"?`)) return
+  const handleBulkDelete = async (selectedPosts: any[]) => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedPosts.length} ${selectedPosts.length === 1 ? 'post' : 'posts'}?`)) {
+      return
+    }
 
     try {
-      const response = await fetch(`/api/admin/blog-posts/${id}`, {
-        method: 'DELETE',
+      await Promise.all(selectedPosts.map(post => deletePost(post.id)))
+      toast({
+        title: `${selectedPosts.length} ${selectedPosts.length === 1 ? 'post' : 'posts'} deleted`,
+        variant: 'success',
+        duration: 2500
       })
-
-      const data = await response.json()
-
-      if (data.success) {
-        toast({
-          title: 'Post deleted successfully',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        })
-        fetchPosts()
-      } else {
-        throw new Error(data.error || 'Failed to delete post')
-      }
+      setSelectedIds(new Set())
+      void refresh()
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to delete post',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        title: 'Failed to delete posts',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'error',
+        duration: 4500,
+      })
+    }
+  }
+
+  const handleRefresh = async () => {
+    try {
+      await refresh()
+      toast({ title: 'Refreshed', variant: 'success', duration: 1500 })
+    } catch (error) {
+      toast({
+        title: 'Failed to refresh',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'error',
+        duration: 3000,
       })
     }
   }
 
   const filteredPosts = posts
     .filter((post) => {
-      if (filterStatus === 'published') return post.published
-      if (filterStatus === 'draft') return !post.published
+      const status = post.__raw?.status === 'published' ? 'published' : 'draft'
+      if (filterStatus === 'published') return status === 'published'
+      if (filterStatus === 'draft') return status === 'draft'
       return true
     })
     .filter(
       (post) =>
         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.slug.toLowerCase().includes(searchQuery.toLowerCase())
+        (post.__raw?.slug || '').toLowerCase().includes(searchQuery.toLowerCase())
     )
 
+  const columns = [
+    {
+      key: 'title',
+      header: 'Title',
+      cell: (post: any) => (
+        <div>
+          <div className="font-medium text-foreground">{post.title}</div>
+          <div className="mt-1 text-xs text-muted-foreground">/{post.__raw?.slug}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (post: any) => <StatusBadge status={post.__raw?.status || 'draft'} />,
+    },
+    {
+      key: 'category',
+      header: 'Category',
+      cell: (post: any) =>
+        post.category ? (
+          <Badge variant="outline" className="bg-sky-50 text-sky-800 border-sky-200 hover:bg-sky-100">
+            {post.category}
+          </Badge>
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        ),
+    },
+    {
+      key: 'date',
+      header: 'Date',
+      cell: (post: any) => formatAdminDate(post.__raw?.created_at),
+    },
+    {
+      key: 'actions',
+      header: '',
+      className: 'text-right',
+      cell: (post: any) => {
+        return (
+          <ActionButtons
+            onDelete={() => handleDelete(post.id, post.title)}
+            deleteConfirmMessage={`Are you sure you want to delete "${post.title}"?`}
+          />
+        )
+      },
+    },
+  ]
+
+  const emptyMessage = searchQuery || filterStatus !== 'all'
+    ? 'No posts match your filters.'
+    : 'No blog posts yet. Create your first post!'
+
   return (
-    <Box p={8}>
-      <Flex justify="space-between" align="center" mb={6}>
-        <Box>
-          <Heading size="lg" color="brand.dark">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="font-serif text-2xl font-semibold text-foreground">
             Blog Posts
-          </Heading>
-          <Text color="gray.500" mt={1}>
+          </div>
+          <div className="mt-1 text-sm text-muted-foreground">
             Manage your blog content
-          </Text>
-        </Box>
+            {!error && (
+              <span className="ml-2 text-muted-foreground/70">
+                ({filteredPosts.length} {filteredPosts.length === 1 ? 'post' : 'posts'})
+              </span>
+            )}
+          </div>
+        </div>
 
-        <Button
-          leftIcon={<Plus size={18} />}
-          colorScheme="brand"
-          onClick={() => router.push('/admin/blog/new')}
-        >
-          New Post
-        </Button>
-      </Flex>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            title="Refresh"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button onClick={() => router.push('/admin/blog/new')}>
+            <Plus size={16} />
+            New Post
+          </Button>
+        </div>
+      </div>
 
-      <Box mb={6}>
-        <HStack spacing={4}>
+      {error && (
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
+          <span>⚠️ {error}</span>
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            Try Again
+          </Button>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-sm">
+          <Search
+            size={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
-            placeholder="Search posts..."
+            placeholder="Search posts…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            maxW="300px"
-            leftElement={<Search size={18} color="gray.400" />}
+            className="h-10 pl-9"
           />
-          <Select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as any)}
-            maxW="200px"
-          >
-            <option value="all">All Posts</option>
-            <option value="published">Published</option>
-            <option value="draft">Drafts</option>
-          </Select>
-        </HStack>
-      </Box>
+        </div>
 
-      <Box bg="white" borderRadius="xl" shadow="sm" overflow="hidden">
-        {isLoading ? (
-          <Box p={8} textAlign="center" color="gray.500">
-            Loading posts...
-          </Box>
-        ) : filteredPosts.length === 0 ? (
-          <Box p={8} textAlign="center">
-            <Text color="gray.500">
-              {searchQuery || filterStatus !== 'all'
-                ? 'No posts match your filters'
-                : 'No blog posts yet. Create your first post!'}
-            </Text>
-          </Box>
-        ) : (
-          <Table variant="simple">
-            <Thead bg="gray.50">
-              <Tr>
-                <Th>Title</Th>
-                <Th>Status</Th>
-                <Th>Category</Th>
-                <Th>Date</Th>
-                <Th textAlign="right">Actions</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {filteredPosts.map((post) => (
-                <Tr key={post.id}>
-                  <Td>
-                    <VStack align="start" spacing={1}>
-                      <Text fontWeight="medium">{post.title}</Text>
-                      <Text fontSize="xs" color="gray.500">
-                        /{post.slug}
-                      </Text>
-                    </VStack>
-                  </Td>
-                  <Td>
-                    <Badge
-                      colorScheme={post.published ? 'green' : 'gray'}
-                    >
-                      {post.published ? 'Published' : 'Draft'}
-                    </Badge>
-                  </Td>
-                  <Td>
-                    {post.category ? (
-                      <Badge variant="outline" colorScheme="blue">
-                        {post.category}
-                      </Badge>
-                    ) : (
-                      <Text fontSize="sm" color="gray.400">
-                        -
-                      </Text>
-                    )}
-                  </Td>
-                  <Td>
-                    <Text fontSize="sm">
-                      {new Date(post.createdAt).toLocaleDateString()}
-                    </Text>
-                  </Td>
-                  <Td textAlign="right">
-                    <HStack spacing={2} justify="flex-end">
-                      <IconButton
-                        aria-label="View"
-                        icon={<Eye size={16} />}
-                        size="sm"
-                        variant="ghost"
-                        colorScheme="blue"
-                        onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
-                      />
-                      <IconButton
-                        aria-label="Edit"
-                        icon={<Edit size={16} />}
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => router.push(`/admin/blog/${post.id}/edit`)}
-                      />
-                      <IconButton
-                        aria-label="Delete"
-                        icon={<Trash2 size={16} />}
-                        size="sm"
-                        variant="ghost"
-                        colorScheme="red"
-                        onClick={() => handleDelete(post.id, post.title)}
-                      />
-                    </HStack>
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+        <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
+          <SelectTrigger className="w-full sm:w-[220px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Posts</SelectItem>
+            <SelectItem value="published">Published</SelectItem>
+            <SelectItem value="draft">Drafts</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <DataTable
+        data={filteredPosts}
+        columns={columns}
+        keyExtractor={(post) => post.id}
+        isLoading={isLoading}
+        selectable={true}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+        onRowClick={(post) => router.push(`/admin/blog/${post.__raw?.id || post.id}/edit`)}
+        bulkActions={(selectedPosts) => (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => handleBulkDelete(selectedPosts)}
+          >
+            <Trash2 size={14} className="mr-2" />
+            Delete {selectedPosts.length} {selectedPosts.length === 1 ? 'post' : 'posts'}
+          </Button>
         )}
-      </Box>
-    </Box>
+        emptyMessage={emptyMessage}
+        loadingMessage="Loading posts…"
+      />
+    </div>
   )
 }

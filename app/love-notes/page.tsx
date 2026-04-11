@@ -1,4 +1,4 @@
-import { LoveNotesPage } from '@/src/components/pages/LoveNotesPage';
+import LoveNotesPage from '@/app/_client/LoveNotesPageClient';
 import { getSiteContentSectionCached } from '@/src/lib/cached-site-content';
 
 export default async function Page() {

@@ -7,7 +7,9 @@ type BlogPost = any;
 type BlogPostsContextValue = {
   posts: BlogPost[];
   isLoading: boolean;
+  error?: string | null;
   refresh: () => Promise<void>;
+  getPost: (idOrSlug: string) => Promise<BlogPost | null>;
   savePost: (post: BlogPost, mode: 'create' | 'update') => Promise<BlogPost>;
   deletePost: (id: string) => Promise<void>;
 };
@@ -17,6 +19,7 @@ const BlogPostsContext = createContext<BlogPostsContextValue | null>(null);
 export function BlogPostsProvider({ children }: { children: React.ReactNode }) {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const mapFromDb = (row: any) => {
     // Map database rows to blog post format with content blocks
@@ -67,10 +70,22 @@ export function BlogPostsProvider({ children }: { children: React.ReactNode }) {
   const refresh = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/portfolio-items', { cache: 'no-store' });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error || 'Failed to load posts');
+      const res = await fetch('/api/admin/portfolio-items', { cache: 'no-store' });
+      const json = await res.json().catch(() => ({} as any));
+      if (!res.ok) {
+        const message = json?.error || res.statusText || 'Failed to load posts';
+        console.error('Failed to load posts:', message);
+        setError(message);
+        setPosts([]);
+        return;
+      }
+      setError(null);
       setPosts((json.items || []).map(mapFromDb));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load posts';
+      console.error('Failed to load posts:', message);
+      setError(message);
+      setPosts([]);
     } finally {
       setIsLoading(false);
     }
@@ -79,6 +94,29 @@ export function BlogPostsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     void refresh();
   }, []);
+
+  const getPost: BlogPostsContextValue['getPost'] = async (idOrSlug) => {
+    const key = (idOrSlug || '').trim().replace(/\s+/g, '');
+    if (!key) return null;
+
+    try {
+      const res = await fetch(`/api/admin/portfolio-items/${encodeURIComponent(key)}`, { cache: 'no-store' });
+      const json = await res.json().catch(() => ({} as any));
+      if (!res.ok) {
+        throw new Error(json?.error || res.statusText || 'Failed to load post');
+      }
+      const mapped = mapFromDb(json.item);
+      setPosts((prev) => {
+        const exists = prev.some((p: any) => p.id === mapped.id);
+        if (exists) return prev.map((p: any) => (p.id === mapped.id ? mapped : p));
+        return [mapped, ...prev];
+      });
+      return mapped;
+    } catch (e) {
+      console.error('Failed to load post:', e);
+      return null;
+    }
+  };
 
   const savePost: BlogPostsContextValue['savePost'] = async (post, mode) => {
     const slugBase =
@@ -114,7 +152,9 @@ export function BlogPostsProvider({ children }: { children: React.ReactNode }) {
 
     const routeKey = post?.id || post?.__raw?.id || post?.__raw?.slug || slug;
     const endpoint =
-      mode === 'create' ? '/api/portfolio-items' : `/api/portfolio-items/${routeKey}`;
+      mode === 'create'
+        ? '/api/admin/portfolio-items'
+        : `/api/admin/portfolio-items/${encodeURIComponent(routeKey)}`;
     const method = mode === 'create' ? 'POST' : 'PUT';
 
     const res = await fetch(endpoint, {
@@ -134,15 +174,15 @@ export function BlogPostsProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deletePost: BlogPostsContextValue['deletePost'] = async (id) => {
-    const res = await fetch(`/api/portfolio-items/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/admin/portfolio-items/${encodeURIComponent(id)}`, { method: 'DELETE' });
     const json = await res.json();
     if (!res.ok) throw new Error(json?.error || 'Failed to delete post');
     setPosts((prev) => prev.filter((p: any) => p.id !== id));
   };
 
   const value = useMemo<BlogPostsContextValue>(
-    () => ({ posts, isLoading, refresh, savePost, deletePost }),
-    [posts, isLoading]
+    () => ({ posts, isLoading, error, refresh, getPost, savePost, deletePost }),
+    [posts, isLoading, error]
   );
 
   return <BlogPostsContext.Provider value={value}>{children}</BlogPostsContext.Provider>;

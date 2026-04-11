@@ -1,32 +1,23 @@
 'use client'
 
-import React, { useState } from 'react'
-import {
-  Box,
-  Button,
-  Flex,
-  FormControl,
-  FormLabel,
-  Input,
-  Text,
-  VStack,
-  HStack,
-  Link,
-  useToast,
-} from '@chakra-ui/react'
-import { motion } from 'framer-motion'
+import * as React from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useToast } from '@/src/admin/toast/ToastProvider'
 
 interface LoginPageProps {
   callbackUrl?: string
 }
 
 export function LoginPage({ callbackUrl = '/admin/dashboard' }: LoginPageProps) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const toast = useToast()
+  const [email, setEmail] = React.useState('')
+  const [password, setPassword] = React.useState('')
+  const [isLoading, setIsLoading] = React.useState(false)
+  const { toast } = useToast()
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -34,155 +25,95 @@ export function LoginPage({ callbackUrl = '/admin/dashboard' }: LoginPageProps) 
 
     if (!email || !password) {
       toast({
-        title: 'Error',
+        title: 'Missing details',
         description: 'Please enter both email and password.',
-        status: 'error',
+        variant: 'error',
         duration: 3000,
-        isClosable: true,
-        position: 'top',
       })
       return
     }
 
     setIsLoading(true)
-
     try {
-      // Let NextAuth handle the redirect automatically
       const result = await signIn('credentials', {
         email,
         password,
         callbackUrl,
-        redirect: true, // Let NextAuth handle redirect
+        redirect: true,
       })
 
-      // If redirect doesn't happen (shouldn't occur with redirect: true)
-      if (result?.error) {
-        throw new Error(result.error)
-      }
-    } catch (error: any) {
+      if (result?.error) throw new Error(result.error)
+    } catch (err: any) {
       setIsLoading(false)
       toast({
         title: 'Authentication failed',
-        description: error?.message || 'Invalid email or password',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-        position: 'top',
+        description: err?.message || 'Invalid email or password',
+        variant: 'error',
+        duration: 4500,
       })
     }
   }
 
   return (
-    <Flex
-      minH="100vh"
-      align="center"
-      justify="center"
-      bgGradient="radial(circle at 20% 10%, rgba(123,45,110,0.14) 0%, rgba(123,45,110,0) 45%), radial(circle at 85% 30%, rgba(201,168,76,0.14) 0%, rgba(201,168,76,0) 45%), linear-gradient(180deg, #F7FAFC 0%, #FFFFFF 100%)"
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Box
-          bg="rgba(255,255,255,0.9)"
-          backdropFilter="blur(14px)"
-          p={10}
-          borderRadius="2xl"
-          boxShadow="soft"
-          w={{ base: '90vw', sm: '400px' }}
-          border="1px solid"
-          borderColor="surface.border"
-        >
-          <VStack spacing={8} align="stretch">
-            <Box textAlign="center">
-              <Text
-                fontFamily="heading"
-                fontSize="3xl"
-                fontWeight="bold"
-                color="brand.primary"
+    <div className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_20%_10%,rgba(64,21,63,0.16)_0%,rgba(64,21,63,0)_45%),radial-gradient(circle_at_85%_30%,rgba(201,168,76,0.14)_0%,rgba(201,168,76,0)_45%),linear-gradient(180deg,#F7FAFC_0%,#FFFFFF_100%)] p-4">
+      <Card className="w-full max-w-md bg-background/85 shadow-[0_30px_90px_rgba(2,6,23,0.22)] backdrop-blur">
+        <CardHeader>
+          <CardTitle className="font-serif text-2xl text-primary">
+            Dreamscape
+          </CardTitle>
+          <CardDescription className="text-xs font-semibold uppercase tracking-[0.22em]">
+            Admin Portal
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@dreamscape.com"
+                className="h-10"
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="h-10"
+                autoComplete="current-password"
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                onClick={() => router.push('/admin/forgot-password')}
               >
-                Dreamscape
-              </Text>
-              <Text
-                color="gray.500"
-                fontSize="sm"
-                mt={2}
-                letterSpacing="wide"
-                textTransform="uppercase"
-              >
-                Admin Portal
-              </Text>
-            </Box>
+                Forgot password?
+              </button>
+            </div>
 
-            <form onSubmit={handleLogin}>
-              <VStack spacing={5}>
-                <FormControl isRequired>
-                  <FormLabel fontSize="sm" fontWeight="600" color="gray.700">
-                    Email Address
-                  </FormLabel>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@dreamscape.com"
-                    size="lg"
-                    fontSize="sm"
-                    bg="white"
-                    borderColor="surface.border"
-                    _focus={{ boxShadow: 'outline' }}
-                  />
-                </FormControl>
+            <Button type="submit" className="h-10 w-full" disabled={isLoading}>
+              {isLoading ? 'Signing in…' : 'Sign In'}
+            </Button>
 
-                <FormControl isRequired>
-                  <FormLabel fontSize="sm" fontWeight="600" color="gray.700">
-                    Password
-                  </FormLabel>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    size="lg"
-                    fontSize="sm"
-                    bg="white"
-                    borderColor="surface.border"
-                    _focus={{ boxShadow: 'outline' }}
-                  />
-                </FormControl>
-
-                <HStack justify="flex-end" w="full">
-                  <Link
-                    href="/admin/forgot-password"
-                    fontSize="sm"
-                    color="brand.primary"
-                    fontWeight="500"
-                    _hover={{ color: 'brand.gold', textDecoration: 'underline' }}
-                  >
-                    Forgot password?
-                  </Link>
-                </HStack>
-
-                <Button
-                  type="submit"
-                  colorScheme="brand"
-                  size="lg"
-                  w="full"
-                  mt={4}
-                  isLoading={isLoading}
-                  loadingText="Signing in..."
-                >
-                  Sign In
-                </Button>
-
-                <Text fontSize="xs" color="gray.400" textAlign="center">
-                  Secure admin portal
-                </Text>
-              </VStack>
-            </form>
-          </VStack>
-        </Box>
-      </motion.div>
-    </Flex>
+            <div className="text-center text-xs text-muted-foreground">
+              Secure admin portal
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
+

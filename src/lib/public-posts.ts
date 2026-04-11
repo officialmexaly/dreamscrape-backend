@@ -110,8 +110,21 @@ export function mapPortfolioItemToPublicPost(row: PortfolioItemRow | any): BlogP
   const category = safeString(row?.event_type);
   const img = safeString(row?.featured_image);
 
-  const imagesValue = parseMaybeJson(row?.images);
-  const contentBlocks = normalizeContentBlocks(imagesValue);
+  // Parse description as JSON first (new format with subtitle, contentBlocks)
+  const descriptionObject = parseMaybeJson(row?.description);
+  const descriptionContent =
+    typeof descriptionObject === 'object' && descriptionObject !== null
+      ? (descriptionObject as any)
+      : null;
+  
+  // Get contentBlocks from description JSON first, then fall back to images field
+  let contentBlocks = descriptionContent?.contentBlocks 
+    ? normalizeContentBlocks(descriptionContent.contentBlocks)
+    : normalizeContentBlocks(parseMaybeJson(row?.images));
+
+  // Get subtitle from description JSON if available
+  const subtitle = safeString(descriptionContent?.subtitle);
+  const contentImage = safeString(descriptionContent?.image);
 
   const storySource = safeString(row?.description);
   const fullStory = contentBlocks.length
@@ -121,6 +134,7 @@ export function mapPortfolioItemToPublicPost(row: PortfolioItemRow | any): BlogP
     : splitParagraphs(storySource);
 
   const desc =
+    subtitle ||
     safeString(row?.excerpt) ||
     safeString(row?.meta_description) ||
     fullStory.find(Boolean) ||
@@ -129,6 +143,7 @@ export function mapPortfolioItemToPublicPost(row: PortfolioItemRow | any): BlogP
   const gallery =
     safeStringArray(row?.gallery_images).filter((u) => u.trim().length > 0) ||
     [];
+  const imagesValue = parseMaybeJson(row?.images);
   const galleryFromImages = normalizeGalleryFromImagesField(imagesValue);
   const mergedGallery = Array.from(new Set([...gallery, ...galleryFromImages])).filter(Boolean);
 
@@ -140,14 +155,13 @@ export function mapPortfolioItemToPublicPost(row: PortfolioItemRow | any): BlogP
     location,
     category,
     date,
-    img: img || mergedGallery[0] || '',
+    img: img || contentImage || mergedGallery[0] || '',
     desc,
     fullStory: fullStory.length ? fullStory : desc ? [desc] : [],
     gallery: mergedGallery,
     contentBlocks: contentBlocks.length ? contentBlocks : undefined
   };
 }
-
 export function mapBlogRowToPublicPost(row: BlogPostRow | any): BlogPost {
   const slug = safeString(row?.slug);
   const id = slug || safeString(row?.id);

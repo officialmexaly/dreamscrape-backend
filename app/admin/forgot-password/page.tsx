@@ -1,28 +1,19 @@
 'use client'
 
-import React, { useState } from 'react'
-import {
-  Box,
-  Button,
-  Flex,
-  FormControl,
-  FormLabel,
-  Input,
-  Text,
-  VStack,
-  Link,
-  useToast,
-  Alert,
-  AlertIcon,
-} from '@chakra-ui/react'
+import * as React from 'react'
 import { motion } from 'framer-motion'
+import { Button } from '@/src/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/src/components/ui/card'
+import { Input } from '@/src/components/ui/input'
+import { Label } from '@/src/components/ui/label'
+import { useToast } from '@/src/admin/toast/ToastProvider'
 import { useRouter } from 'next/navigation'
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const toast = useToast()
+  const [email, setEmail] = React.useState('')
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [isSuccess, setIsSuccess] = React.useState(false)
+  const { toast } = useToast()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,55 +21,45 @@ export default function ForgotPasswordPage() {
 
     if (!email) {
       toast({
-        title: 'Error',
-        description: 'Please enter your email address.',
-        status: 'error',
+        title: 'Please enter your email address',
+        variant: 'error',
         duration: 3000,
-        isClosable: true,
-        position: 'top',
       })
       return
     }
 
     setIsLoading(true)
-
     try {
       const response = await fetch('/api/admin/password-reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
-
       const data = await response.json()
 
       if (response.ok) {
         setIsSuccess(true)
         toast({
           title: 'Reset email sent',
-          description: 'If an account exists with this email, you will receive a password reset link.',
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-          position: 'top',
+          description:
+            'If an account exists with this email, you will receive a password reset link.',
+          variant: 'success',
+          duration: 4500,
         })
       } else {
         toast({
-          title: 'Error',
-          description: data.error || 'Failed to send reset email',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-          position: 'top',
+          title: 'Failed to send reset email',
+          description: data.error || 'Please try again.',
+          variant: 'error',
+          duration: 4500,
         })
       }
-    } catch (error) {
+    } catch {
       toast({
-        title: 'Error',
-        description: 'Network error. Please try again.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-        position: 'top',
+        title: 'Network error',
+        description: 'Please try again.',
+        variant: 'error',
+        duration: 4500,
       })
     } finally {
       setIsLoading(false)
@@ -86,115 +67,69 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <Flex
-      minH="100vh"
-      align="center"
-      justify="center"
-      bgGradient="radial(circle at 20% 10%, rgba(123,45,110,0.14) 0%, rgba(123,45,110,0) 45%), radial(circle at 85% 30%, rgba(201,168,76,0.14) 0%, rgba(201,168,76,0) 45%), linear-gradient(180deg, #F7FAFC 0%, #FFFFFF 100%)"
-    >
+    <div className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_20%_10%,rgba(64,21,63,0.16)_0%,rgba(64,21,63,0)_45%),radial-gradient(circle_at_85%_30%,rgba(201,168,76,0.14)_0%,rgba(201,168,76,0)_45%),linear-gradient(180deg,#F7FAFC_0%,#FFFFFF_100%)] p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
       >
-        <Box
-          bg="rgba(255,255,255,0.9)"
-          backdropFilter="blur(14px)"
-          p={10}
-          borderRadius="2xl"
-          boxShadow="soft"
-          w={{ base: '90vw', sm: '450px' }}
-          border="1px solid"
-          borderColor="surface.border"
-        >
-          <VStack spacing={8} align="stretch">
-            <Box textAlign="center">
-              <Text
-                fontFamily="heading"
-                fontSize="3xl"
-                fontWeight="bold"
-                color="brand.primary"
-              >
-                Dreamscape
-              </Text>
-              <Text
-                color="gray.500"
-                fontSize="sm"
-                mt={2}
-                letterSpacing="wide"
-                textTransform="uppercase"
-              >
-                Forgot Password
-              </Text>
-            </Box>
-
+        <Card className="border-border/70 bg-background/85 shadow-[0_30px_90px_rgba(2,6,23,0.22)] backdrop-blur">
+          <CardHeader>
+            <CardTitle className="font-serif text-2xl text-primary">
+              Dreamscape
+            </CardTitle>
+            <CardDescription className="text-xs font-semibold uppercase tracking-[0.22em]">
+              Forgot Password
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             {isSuccess ? (
-              <Alert status="success" borderRadius="md">
-                <AlertIcon />
-                <Box>
-                  <Text fontWeight="bold">Check your email</Text>
-                  <Text fontSize="sm">
-                    If an account exists with <strong>{email}</strong>, you will receive a password reset link shortly.
-                  </Text>
-                </Box>
-              </Alert>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950">
+                <div className="text-sm font-semibold">Check your email</div>
+                <div className="mt-1 text-sm opacity-80">
+                  If an account exists with <strong>{email}</strong>, you’ll receive a password reset link shortly.
+                </div>
+              </div>
             ) : (
               <>
-                <Text fontSize="sm" color="gray.600" textAlign="center">
-                  Enter your email address and we'll send you a link to reset your password.
-                </Text>
+                <div className="mb-4 text-center text-sm text-muted-foreground">
+                  Enter your email address and we’ll send you a reset link.
+                </div>
 
-                <form onSubmit={handleSubmit}>
-                  <VStack spacing={5}>
-                    <FormControl isRequired>
-                      <FormLabel fontSize="sm" fontWeight="600" color="gray.700">
-                        Email Address
-                      </FormLabel>
-                      <Input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="admin@dreamscape.com"
-                        size="lg"
-                        fontSize="sm"
-                        bg="white"
-                        borderColor="surface.border"
-                        _focus={{ boxShadow: 'outline' }}
-                        disabled={isLoading}
-                      />
-                    </FormControl>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Email Address</Label>
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="admin@dreamscape.com"
+                      className="h-10"
+                      disabled={isLoading}
+                    />
+                  </div>
 
-                    <Button
-                      type="submit"
-                      colorScheme="brand"
-                      size="lg"
-                      w="full"
-                      mt={4}
-                      isLoading={isLoading}
-                      loadingText="Sending..."
-                      disabled={isSuccess}
-                    >
-                      Send Reset Link
-                    </Button>
-                  </VStack>
+                  <Button type="submit" className="h-10 w-full" disabled={isLoading}>
+                    {isLoading ? 'Sending…' : 'Send Reset Link'}
+                  </Button>
                 </form>
               </>
             )}
 
-            <VStack spacing={3}>
-              <Link
-                href="/admin/login"
-                fontSize="sm"
-                color="gray.600"
-                fontWeight="500"
-                _hover={{ color: 'brand.primary' }}
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                className="text-sm font-semibold text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+                onClick={() => router.push('/admin/login')}
               >
                 ← Back to login
-              </Link>
-            </VStack>
-          </VStack>
-        </Box>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
-    </Flex>
+    </div>
   )
 }
+

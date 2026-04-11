@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // If slug is provided, fetch single published post
     if (slug) {
       const key = slug.trim().replace(/\s+/g, '');
-      const query = supabaseAdmin().from('blog_posts').select('*').eq('status', 'published');
+      const query = supabaseAdmin().from('portfolio_items').select('*').eq('status', 'published');
       const { data, error } = isUuid(key)
         ? await query.eq('id', key).maybeSingle()
         : await query.eq('slug', key).maybeSingle();
@@ -35,10 +35,10 @@ export async function GET(request: NextRequest) {
 
     // Otherwise fetch all published posts
     const { data, error } = await supabaseAdmin()
-      .from('blog_posts')
+      .from('portfolio_items')
       .select('*')
       .eq('status', 'published')
-      .order('published_at', { ascending: false });
+      ..order('event_date', { ascending: false }), { ascending: false });
 
     if (error) {
       console.error('❌ Error fetching blog posts:', error);

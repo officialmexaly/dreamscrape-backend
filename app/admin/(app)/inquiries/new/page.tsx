@@ -1,92 +1,126 @@
-'use client';
+'use client'
 
-import {
-  Box,
-  Button,
-  Flex,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  Text,
-  useToast,
-  VStack
-} from '@chakra-ui/react';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { ArrowLeft, Save } from 'lucide-react';
-import { useInquiries } from '@/src/admin/providers/InquiriesProvider';
+import * as React from 'react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Save } from 'lucide-react'
+import { Button } from '@/src/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card'
+import { Input } from '@/src/components/ui/input'
+import { Label } from '@/src/components/ui/label'
+import { useToast } from '@/src/admin/toast/ToastProvider'
+import { useInquiries } from '@/src/admin/providers/InquiriesProvider'
 
 export default function NewInquiryPage() {
-  const router = useRouter();
-  const toast = useToast();
-  const { inquiries, setInquiries } = useInquiries();
+  const router = useRouter()
+  const { toast } = useToast()
+  const { inquiries, setInquiries } = useInquiries()
 
-  const [draft, setDraft] = useState<any>({
+  const [draft, setDraft] = React.useState<any>({
     name: '',
     email: '',
     eventType: 'Wedding',
-    date: new Date().toISOString().split('T')[0],
-    status: 'New'
-  });
+    date: '',
+    status: 'New',
+  })
+
+  React.useEffect(() => {
+    setDraft((prev: any) => {
+      if (prev?.date) return prev
+      return { ...prev, date: new Date().toISOString().slice(0, 10) }
+    })
+  }, [])
 
   const handleCreate = () => {
     if (!draft.name || !draft.email) {
-      toast({ title: 'Name and email are required', status: 'error', duration: 2000 });
-      return;
+      toast({
+        title: 'Name and email are required',
+        variant: 'error',
+        duration: 2000,
+      })
+      return
     }
-    const next = { ...draft, id: Date.now().toString() };
-    setInquiries([next, ...inquiries]);
-    toast({ title: 'Inquiry created', status: 'success', duration: 2000 });
-    router.push('/inquiries');
-  };
+    const next = { ...draft, id: Date.now().toString() }
+    setInquiries([next, ...inquiries])
+    toast({ title: 'Inquiry created', variant: 'success', duration: 2000 })
+    router.push('/admin/inquiries')
+  }
 
   return (
-    <Box maxW="800px">
-      <Flex justify="space-between" align="center" mb={6}>
-        <Flex align="center" gap={3}>
-          <Button leftIcon={<ArrowLeft size={16} />} variant="ghost" onClick={() => router.push('/inquiries')}>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={() => router.push('/admin/inquiries')}>
+            <ArrowLeft size={16} />
             Back
           </Button>
-          <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="brand.dark">
+          <div className="font-serif text-2xl font-semibold text-foreground">
             New Inquiry
-          </Text>
-        </Flex>
-        <Button leftIcon={<Save size={16} />} colorScheme="brand" onClick={handleCreate}>
+          </div>
+        </div>
+        <Button onClick={handleCreate}>
+          <Save size={16} />
           Create
         </Button>
-      </Flex>
+      </div>
 
-      <VStack spacing={5} align="stretch">
-        <FormControl isRequired>
-          <FormLabel>Client Name</FormLabel>
-          <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-        </FormControl>
-        <FormControl isRequired>
-          <FormLabel>Email</FormLabel>
-          <Input type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} />
-        </FormControl>
-        <Flex gap={4} flexDir={{ base: 'column', md: 'row' }}>
-          <FormControl>
-            <FormLabel>Event Type</FormLabel>
-            <Input value={draft.eventType} onChange={(e) => setDraft({ ...draft, eventType: e.target.value })} />
-          </FormControl>
-          <FormControl>
-            <FormLabel>Date Submitted</FormLabel>
-            <Input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} />
-          </FormControl>
-        </Flex>
-        <FormControl>
-          <FormLabel>Status</FormLabel>
-          <Select value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value })}>
-            <option value="New">New</option>
-            <option value="Contacted">Contacted</option>
-            <option value="Booked">Booked</option>
-            <option value="Closed">Closed</option>
-          </Select>
-        </FormControl>
-      </VStack>
-    </Box>
-  );
+      <Card className="border-border/70">
+        <CardHeader>
+          <CardTitle className="font-serif text-lg">Details</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-5">
+          <div className="space-y-2">
+            <Label>Client Name</Label>
+            <Input
+              value={draft.name}
+              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+              className="h-10"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input
+              type="email"
+              value={draft.email}
+              onChange={(e) => setDraft({ ...draft, email: e.target.value })}
+              className="h-10"
+            />
+          </div>
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Event Type</Label>
+              <Input
+                value={draft.eventType}
+                onChange={(e) =>
+                  setDraft({ ...draft, eventType: e.target.value })
+                }
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Date Submitted</Label>
+              <Input
+                type="date"
+                value={draft.date}
+                onChange={(e) => setDraft({ ...draft, date: e.target.value })}
+                className="h-10"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <select
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              value={draft.status}
+              onChange={(e) => setDraft({ ...draft, status: e.target.value })}
+            >
+              <option value="New">New</option>
+              <option value="Contacted">Contacted</option>
+              <option value="Booked">Booked</option>
+              <option value="Closed">Closed</option>
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }
-

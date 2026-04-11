@@ -1,38 +1,15 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import {
-  Box,
-  Button,
-  Flex,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Text,
-  useToast,
-  VStack,
-  HStack,
-  Badge,
-  IconButton,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  useDisclosure,
-  Alert,
-  AlertIcon,
-} from '@chakra-ui/react'
-import { Plus, Lock, Unlock, Trash2, Key } from 'lucide-react'
+import * as React from 'react'
+import { Plus, Lock, Unlock, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useToast } from '@/src/admin/toast/ToastProvider'
+import { useDisclosure } from '@/src/admin/hooks/useDisclosure'
+import { Modal } from '@/src/admin/components/Modal'
+import { formatAdminDate } from '@/src/admin/utils/formatDate'
+import { DataTable, PageHeader } from '@/src/admin/components/shared'
 
 interface User {
   id: string
@@ -48,27 +25,30 @@ interface User {
   lockedUntil: string | null
 }
 
+function isLocked(user: User) {
+  return user.lockedUntil && new Date(user.lockedUntil) > new Date()
+}
+
 export function UsersManagementPage() {
-  const [users, setUsers] = useState<User[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const toast = useToast()
+  const [users, setUsers] = React.useState<User[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [selectedUser, setSelectedUser] = React.useState<User | null>(null)
+  const { toast } = useToast()
 
-  const createModal = useDisclosure()
-  const lockModal = useDisclosure()
-  const resetModal = useDisclosure()
+  const createModal = useDisclosure(false)
+  const lockModal = useDisclosure(false)
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = React.useState({
     email: '',
     password: '',
     name: '',
     role: 'admin',
   })
 
-  const [lockDuration, setLockDuration] = useState(15)
+  const [lockDuration, setLockDuration] = React.useState(15)
 
-  useEffect(() => {
-    fetchUsers()
+  React.useEffect(() => {
+    void fetchUsers()
   }, [])
 
   const fetchUsers = async () => {
@@ -76,18 +56,14 @@ export function UsersManagementPage() {
       const response = await fetch('/api/admin/users')
       const data = await response.json()
 
-      if (data.success) {
-        setUsers(data.users)
-      } else {
-        throw new Error(data.error || 'Failed to fetch users')
-      }
+      if (data.success) setUsers(data.users)
+      else throw new Error(data.error || 'Failed to fetch users')
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to fetch users',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        title: 'Failed to fetch users',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'error',
+        duration: 4500,
       })
     } finally {
       setIsLoading(false)
@@ -96,7 +72,6 @@ export function UsersManagementPage() {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault()
-
     try {
       const response = await fetch('/api/admin/users', {
         method: 'POST',
@@ -105,34 +80,26 @@ export function UsersManagementPage() {
       })
 
       const data = await response.json()
-
       if (data.success) {
-        toast({
-          title: 'User created successfully',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        })
+        toast({ title: 'User created', variant: 'success', duration: 2500 })
         createModal.onClose()
         setFormData({ email: '', password: '', name: '', role: 'admin' })
-        fetchUsers()
+        void fetchUsers()
       } else {
         throw new Error(data.error || 'Failed to create user')
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create user',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        title: 'Failed to create user',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'error',
+        duration: 4500,
       })
     }
   }
 
   const handleLockUser = async () => {
     if (!selectedUser) return
-
     try {
       const response = await fetch(`/api/admin/users/${selectedUser.id}/lock`, {
         method: 'POST',
@@ -141,26 +108,19 @@ export function UsersManagementPage() {
       })
 
       const data = await response.json()
-
       if (data.success) {
-        toast({
-          title: 'User locked successfully',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        })
+        toast({ title: 'User locked', variant: 'success', duration: 2500 })
         lockModal.onClose()
-        fetchUsers()
+        void fetchUsers()
       } else {
         throw new Error(data.error || 'Failed to lock user')
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to lock user',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        title: 'Failed to lock user',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'error',
+        duration: 4500,
       })
     }
   }
@@ -170,332 +130,266 @@ export function UsersManagementPage() {
       const response = await fetch(`/api/admin/users/${user.id}/lock`, {
         method: 'DELETE',
       })
-
       const data = await response.json()
-
       if (data.success) {
-        toast({
-          title: 'User unlocked successfully',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        })
-        fetchUsers()
+        toast({ title: 'User unlocked', variant: 'success', duration: 2500 })
+        void fetchUsers()
       } else {
         throw new Error(data.error || 'Failed to unlock user')
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to unlock user',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        title: 'Failed to unlock user',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'error',
+        duration: 4500,
       })
     }
   }
 
   const handleDeleteUser = async (user: User) => {
     if (!confirm(`Are you sure you want to delete ${user.name}?`)) return
-
     try {
       const response = await fetch(`/api/admin/users/${user.id}`, {
         method: 'DELETE',
       })
-
       const data = await response.json()
-
       if (data.success) {
-        toast({
-          title: 'User deleted successfully',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        })
-        fetchUsers()
+        toast({ title: 'User deleted', variant: 'success', duration: 2500 })
+        void fetchUsers()
       } else {
         throw new Error(data.error || 'Failed to delete user')
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to delete user',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        title: 'Failed to delete user',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'error',
+        duration: 4500,
       })
     }
   }
 
-  const isLocked = (user: User) => {
-    return user.lockedUntil && new Date(user.lockedUntil) > new Date()
-  }
+  const anyLocked = users.some((u) => isLocked(u))
+
+  const columns = [
+    {
+      key: 'user',
+      header: 'User',
+      cell: (user: User) => (
+        <div>
+          <div className="font-medium text-foreground">{user.name}</div>
+          <div className="mt-1 text-sm text-muted-foreground">{user.email}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'role',
+      header: 'Role',
+      cell: (user: User) => (
+        <span
+          className={
+            user.role === 'super_admin'
+              ? 'inline-flex rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-800 ring-1 ring-inset ring-violet-200'
+              : 'inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 ring-1 ring-inset ring-sky-200'
+          }
+        >
+          {user.role}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (user: User) => (
+        <div className="flex flex-wrap items-center gap-2">
+          {user.isActive ? (
+            <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-inset ring-emerald-200">
+              Active
+            </span>
+          ) : (
+            <span className="inline-flex rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-800 ring-1 ring-inset ring-rose-200">
+              Inactive
+            </span>
+          )}
+          {isLocked(user) ? (
+            <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900 ring-1 ring-inset ring-amber-200">
+              Locked
+            </span>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      key: 'lastLoginAt',
+      header: 'Last Login',
+      cell: (user: User) => (user.lastLoginAt ? formatAdminDate(user.lastLoginAt) : 'Never'),
+    },
+    {
+      key: 'failed',
+      header: 'Failed',
+      cell: (user: User) =>
+        user.failedLoginAttempts > 0 ? (
+          <span className="inline-flex rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-800 ring-1 ring-inset ring-rose-200">
+            {user.failedLoginAttempts}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      className: 'text-right',
+      cell: (user: User) => (
+        <div className="flex items-center justify-end gap-2">
+          {isLocked(user) ? (
+            <Button variant="outline" size="sm" onClick={() => handleUnlockUser(user)}>
+              <Unlock size={16} />
+              Unlock
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSelectedUser(user)
+                lockModal.onOpen()
+              }}
+            >
+              <Lock size={16} />
+              Lock
+            </Button>
+          )}
+          <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user)}>
+            <Trash2 size={16} />
+            Delete
+          </Button>
+        </div>
+      ),
+    },
+  ]
 
   return (
-    <Box p={8}>
-      <Flex justify="space-between" align="center" mb={6}>
-        <Box>
-          <Text fontSize="2xl" fontWeight="bold" color="brand.dark">
-            User Management
-          </Text>
-          <Text color="gray.500" mt={1}>
-            Manage admin user accounts
-          </Text>
-        </Box>
+    <div className="space-y-6">
+      <PageHeader
+        title="User Management"
+        description="Manage admin user accounts"
+        action={{ label: 'Add User', onClick: createModal.onOpen, icon: Plus }}
+      />
 
-        <Button
-          leftIcon={<Plus size={18} />}
-          colorScheme="brand"
-          onClick={createModal.onOpen}
-        >
-          Add User
-        </Button>
-      </Flex>
+      {anyLocked ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+          Some user accounts are currently locked.
+        </div>
+      ) : null}
 
-      {users.some((u) => isLocked(u)) && (
-        <Alert status="warning" mb={4}>
-          <AlertIcon />
-          Some user accounts are currently locked
-        </Alert>
-      )}
+      <DataTable
+        data={users}
+        columns={columns}
+        keyExtractor={(user) => user.id}
+        isLoading={isLoading}
+        emptyMessage="No users found."
+      />
 
-      <Box bg="white" borderRadius="xl" shadow="sm" overflow="hidden">
-        <Table variant="simple">
-          <Thead bg="gray.50">
-            <Tr>
-              <Th>User</Th>
-              <Th>Role</Th>
-              <Th>Status</Th>
-              <Th>Last Login</Th>
-              <Th>Failed Attempts</Th>
-              <Th>Actions</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {isLoading ? (
-              <Tr>
-                <Td colSpan={6} textAlign="center" py={8}>
-                  Loading...
-                </Td>
-              </Tr>
-            ) : users.length === 0 ? (
-              <Tr>
-                <Td colSpan={6} textAlign="center" py={8}>
-                  No users found
-                </Td>
-              </Tr>
-            ) : (
-              users.map((user) => (
-                <Tr key={user.id}>
-                  <Td>
-                    <VStack align="start" spacing={0}>
-                      <Text fontWeight="medium">{user.name}</Text>
-                      <Text fontSize="sm" color="gray.500">
-                        {user.email}
-                      </Text>
-                    </VStack>
-                  </Td>
-                  <Td>
-                    <Badge
-                      colorScheme={user.role === 'super_admin' ? 'purple' : 'blue'}
-                    >
-                      {user.role}
-                    </Badge>
-                  </Td>
-                  <Td>
-                    <HStack spacing={2}>
-                      {user.isActive ? (
-                        <Badge colorScheme="green">Active</Badge>
-                      ) : (
-                        <Badge colorScheme="red">Inactive</Badge>
-                      )}
-                      {isLocked(user) && (
-                        <Badge colorScheme="orange">Locked</Badge>
-                      )}
-                    </HStack>
-                  </Td>
-                  <Td>
-                    <Text fontSize="sm">
-                      {user.lastLoginAt
-                        ? new Date(user.lastLoginAt).toLocaleDateString()
-                        : 'Never'}
-                    </Text>
-                  </Td>
-                  <Td>
-                    {user.failedLoginAttempts > 0 && (
-                      <Badge colorScheme="red">
-                        {user.failedLoginAttempts}
-                      </Badge>
-                    )}
-                  </Td>
-                  <Td>
-                    <HStack spacing={2}>
-                      {isLocked(user) ? (
-                        <IconButton
-                          aria-label="Unlock user"
-                          icon={<Unlock size={16} />}
-                          size="sm"
-                          variant="ghost"
-                          colorScheme="green"
-                          onClick={() => handleUnlockUser(user)}
-                        />
-                      ) : (
-                        <IconButton
-                          aria-label="Lock user"
-                          icon={<Lock size={16} />}
-                          size="sm"
-                          variant="ghost"
-                          colorScheme="orange"
-                          onClick={() => {
-                            setSelectedUser(user)
-                            lockModal.onOpen()
-                          }}
-                        />
-                      )}
-                      <IconButton
-                        aria-label="Delete user"
-                        icon={<Trash2 size={16} />}
-                        size="sm"
-                        variant="ghost"
-                        colorScheme="red"
-                        onClick={() => handleDeleteUser(user)}
-                      />
-                    </HStack>
-                  </Td>
-                </Tr>
-              ))
-            )}
-          </Tbody>
-        </Table>
-      </Box>
-
-      {/* Create User Modal */}
       <Modal
         isOpen={createModal.isOpen}
         onClose={createModal.onClose}
-        size="md"
+        title="Create New User"
+        footer={
+          <>
+            <Button variant="ghost" onClick={createModal.onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" form="createUserForm">
+              Create User
+            </Button>
+          </>
+        }
       >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Create New User</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <form id="createUserForm" onSubmit={handleCreateUser}>
-              <VStack spacing={4}>
-                <FormControl isRequired>
-                  <FormLabel>Name</FormLabel>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="John Doe"
-                  />
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel>Email</FormLabel>
-                  <Input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    placeholder="john@example.com"
-                  />
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel>Password</FormLabel>
-                  <Input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    placeholder="••••••••"
-                  />
-                  <Text fontSize="xs" color="gray.500" mt={1}>
-                    Min 8 chars, uppercase, lowercase, number, special char
-                  </Text>
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel>Role</FormLabel>
-                  <Select
-                    value={formData.role}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        role: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="admin">Admin</option>
-                    <option value="super_admin">Super Admin</option>
-                  </Select>
-                </FormControl>
-              </VStack>
-            </form>
-          </ModalBody>
-          <ModalFooter>
-            <HStack spacing={3}>
-              <Button variant="ghost" onClick={createModal.onClose}>
-                Cancel
-              </Button>
-              <Button
-                colorScheme="brand"
-                type="submit"
-                form="createUserForm"
-              >
-                Create User
-              </Button>
-            </HStack>
-          </ModalFooter>
-        </ModalContent>
+        <form id="createUserForm" onSubmit={handleCreateUser} className="grid gap-4">
+          <div className="space-y-2">
+            <Label>Name</Label>
+            <Input
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="John Doe"
+              className="h-10"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="john@example.com"
+              className="h-10"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Password</Label>
+            <Input
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              placeholder="••••••••"
+              className="h-10"
+            />
+            <div className="text-xs text-muted-foreground">
+              Min 8 chars; include letters + numbers.
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Role</Label>
+            <select
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+            >
+              <option value="admin">Admin</option>
+              <option value="super_admin">Super Admin</option>
+            </select>
+          </div>
+        </form>
       </Modal>
 
-      {/* Lock User Modal */}
-      <Modal isOpen={lockModal.isOpen} onClose={lockModal.onClose} size="sm">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Lock User Account</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <VStack spacing={4} align="stretch">
-              <Text>
-                Lock {selectedUser?.name}'s account for how many minutes?
-              </Text>
-
-              <FormControl>
-                <FormLabel>Duration (minutes)</FormLabel>
-                <Input
-                  type="number"
-                  value={lockDuration}
-                  onChange={(e) =>
-                    setLockDuration(parseInt(e.target.value) || 15)
-                  }
-                  min={1}
-                  max={43200}
-                />
-                <Text fontSize="xs" color="gray.500" mt={1}>
-                  Max: 43200 minutes (30 days)
-                </Text>
-              </FormControl>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <HStack spacing={3}>
-              <Button variant="ghost" onClick={lockModal.onClose}>
-                Cancel
-              </Button>
-              <Button colorScheme="orange" onClick={handleLockUser}>
-                Lock Account
-              </Button>
-            </HStack>
-          </ModalFooter>
-        </ModalContent>
+      <Modal
+        isOpen={lockModal.isOpen}
+        onClose={lockModal.onClose}
+        title="Lock User Account"
+        maxWidthClassName="max-w-md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={lockModal.onClose}>
+              Cancel
+            </Button>
+            <Button variant="outline" onClick={handleLockUser}>
+              Lock Account
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="text-sm text-muted-foreground">
+            Lock <span className="font-semibold text-foreground">{selectedUser?.name}</span> for how many minutes?
+          </div>
+          <div className="space-y-2">
+            <Label>Duration (minutes)</Label>
+            <Input
+              type="number"
+              value={lockDuration}
+              onChange={(e) => setLockDuration(parseInt(e.target.value, 10) || 15)}
+              min={1}
+              max={43200}
+              className="h-10"
+            />
+            <div className="text-xs text-muted-foreground">
+              Max: 43200 minutes (30 days)
+            </div>
+          </div>
+        </div>
       </Modal>
-    </Box>
+    </div>
   )
 }

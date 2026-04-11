@@ -765,3 +765,5 @@ export function ConsultationPage({
     </div>);
 
 }
+
+export default ConsultationPage;

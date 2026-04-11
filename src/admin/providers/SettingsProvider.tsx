@@ -14,6 +14,7 @@ const SettingsContext = createContext<SettingsContextValue | null>(null);
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const mapFromDb = (row: any) => {
     const social = row?.social_links || {};
@@ -36,9 +37,22 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const res = await fetch('/api/admin/site-settings', { cache: 'no-store' });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error || 'Failed to load settings');
+      const json = await res.json().catch(() => ({} as any));
+      if (!res.ok) {
+        const message = json?.error || res.statusText || 'Failed to load settings';
+        console.error('Failed to load settings:', message);
+        setError(message);
+        // Keep UI usable with defaults when DB is unavailable.
+        setSettings(mapFromDb({}));
+        return;
+      }
+      setError(null);
       setSettings(mapFromDb(json.settings));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load settings';
+      console.error('Failed to load settings:', message);
+      setError(message);
+      setSettings(mapFromDb({}));
     } finally {
       setIsLoading(false);
     }

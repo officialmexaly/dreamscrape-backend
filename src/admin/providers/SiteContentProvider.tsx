@@ -46,10 +46,10 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
     setIsLoading(true);
     try {
       const res = await fetch('/api/site-content', { cache: 'no-store' });
-      const json = await res.json();
-
+      const json = await res.json().catch(() => ({} as any));
       if (!res.ok) {
-        throw new Error(json?.error || 'Failed to load site content');
+        console.error('❌ Error loading site content:', json?.error || res.statusText);
+        return;
       }
 
       // Transform the grouped data into our content structure

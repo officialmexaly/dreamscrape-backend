@@ -240,3 +240,5 @@ export function ContactPage({ initialCards }: { initialCards?: ContactCard[] }) 
     </div>
   );
 }
+
+export default ContactPage;

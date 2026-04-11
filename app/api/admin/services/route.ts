@@ -3,6 +3,18 @@ import { supabaseAdmin } from '@/src/lib/supabase-admin';
 import { revalidateTag } from 'next/cache';
 import { SERVICES_CACHE_TAGS } from '@/src/lib/cached-services';
 
+function isDatabaseUnavailableError(error: any) {
+  const message = String(error?.message || '');
+  const details = String(error?.details || '');
+  return (
+    message.includes('fetch failed') ||
+    message.includes('ETIMEDOUT') ||
+    details.includes('ETIMEDOUT') ||
+    message.includes('ECONNREFUSED') ||
+    message.includes('ENOTFOUND')
+  );
+}
+
 function safeRevalidate(tag: string) {
   try {
     revalidateTag(tag);
@@ -12,17 +24,36 @@ function safeRevalidate(tag: string) {
 }
 
 export async function GET() {
-  const { data, error } = await supabaseAdmin()
-    .from('services')
-    .select('*')
-    .order('display_order', { ascending: true })
-    .order('created_at', { ascending: false });
+  try {
+    const { data, error } = await supabaseAdmin()
+      .from('services')
+      .select('*')
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: false });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      if (isDatabaseUnavailableError(error)) {
+        return NextResponse.json(
+          { items: [], error: 'Database temporarily unavailable' },
+          { status: 503 }
+        );
+      }
+      return NextResponse.json({ items: [], error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ items: data ?? [] });
+  } catch (error) {
+    if (isDatabaseUnavailableError(error)) {
+      return NextResponse.json(
+        { items: [], error: 'Database temporarily unavailable' },
+        { status: 503 }
+      );
+    }
+    return NextResponse.json(
+      { items: [], error: error instanceof Error ? error.message : 'Failed to fetch services' },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ items: data ?? [] });
 }
 
 export async function POST(request: NextRequest) {

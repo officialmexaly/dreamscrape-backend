@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/src/lib/supabase-admin';
+import { protectAdminRoute } from '@/src/lib/server-auth';
 
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -8,6 +9,9 @@ function isUuid(value: string) {
 }
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
+
   const { id } = await params;
   const key = (id || '').trim().replace(/\s+/g, '');
 
@@ -28,6 +32,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
+
   const { id } = await params;
   const key = (id || '').trim().replace(/\s+/g, '');
   const body = await request.json();
@@ -80,17 +87,21 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   return NextResponse.json({ item: data });
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
+
   const { id } = await params;
   const key = (id || '').trim().replace(/\s+/g, '');
-  const deleteQuery = supabaseAdmin().from('portfolio_items').delete();
-  const { error } = isUuid(key)
-    ? await deleteQuery.eq('id', key)
-    : await deleteQuery.eq('slug', key);
+
+  const query = supabaseAdmin().from('portfolio_items').delete().select('*');
+  const { data, error } = isUuid(key)
+    ? await query.eq('id', key).maybeSingle<any>()
+    : await query.eq('slug', key).maybeSingle<any>();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ item: data });
 }

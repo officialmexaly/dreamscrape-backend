@@ -1,9 +1,8 @@
-'use client'
+import { redirect } from 'next/navigation';
 
-import { BlogPreviewPage } from '@/src/admin/pages/BlogPreviewPage'
-import { useParams } from 'next/navigation'
+type PageProps = { params: Promise<{ id: string }> };
 
-export default function PreviewBlogPostRoute() {
-  const params = useParams()
-  return <BlogPreviewPage postId={params.id as string} />
+export default async function LegacyPreviewBlogPostRoute({ params }: PageProps) {
+  const { id } = await params;
+  redirect(`/admin/blog/${id}/preview`);
 }

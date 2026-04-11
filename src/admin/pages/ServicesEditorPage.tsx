@@ -1,33 +1,17 @@
-'use client';
+'use client'
 
-import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Box,
-  Button,
-  Flex,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  Text,
-  Textarea,
-  useToast,
-  VStack,
-  HStack,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
-  Badge,
-  IconButton,
-  Image,
-  useDisclosure,
-} from '@chakra-ui/react';
-import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Eye, ImagePlus } from 'lucide-react';
-import { useServices } from '../providers/ServicesProvider';
-import { MediaPickerModal } from '../components/MediaPickerModal';
+import * as React from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { ArrowLeft, Eye, Save, ImagePlus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/src/admin/toast/ToastProvider'
+import { useDisclosure } from '@/src/admin/hooks/useDisclosure'
+import { MediaPickerModal } from '../components/MediaPickerModal'
+import { useServices } from '../providers/ServicesProvider'
 
 const slugify = (value: string) =>
   value
@@ -35,30 +19,33 @@ const slugify = (value: string) =>
     .trim()
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
+    .replace(/-+/g, '-')
 
-type EditorProps = {
-  id?: string;
-};
+type EditorProps = { id?: string }
 
 export function ServicesEditorPage({ id }: EditorProps) {
-  const router = useRouter();
-  const params = useParams();
-  const routeId = (id || (params?.id as string) || '').toString();
-  const normalizedRouteId = routeId.trim().replace(/\s+/g, '');
-  const toast = useToast();
-  const { services, createService, updateService, isLoading } = useServices();
-  const [isFetching, setIsFetching] = useState(false);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const isNew = !normalizedRouteId || normalizedRouteId === 'new';
-  const [serviceId, setServiceId] = useState<string | null>(null);
+  const router = useRouter()
+  const params = useParams()
+  const routeId = (id || (params?.id as string) || '').toString().trim()
+  const normalizedRouteId = routeId.replace(/\s+/g, '')
+  const isNew = !normalizedRouteId || normalizedRouteId === 'new'
 
-  const existing = useMemo(() => {
-    if (isNew) return null;
-    return services.find((s) => s.id === normalizedRouteId || s.slug === normalizedRouteId) || null;
-  }, [normalizedRouteId, services, isNew]);
+  const { toast } = useToast()
+  const mediaModal = useDisclosure(false)
 
-  const [draft, setDraft] = useState<any>(() => ({
+  const { services, createService, updateService, isLoading } = useServices()
+  const [isFetching, setIsFetching] = React.useState(false)
+  const [serviceId, setServiceId] = React.useState<string | null>(null)
+
+  const existing = React.useMemo(() => {
+    if (isNew) return null
+    return (
+      services.find((s: any) => s.id === normalizedRouteId || s.slug === normalizedRouteId) ||
+      null
+    )
+  }, [normalizedRouteId, services, isNew])
+
+  const [draft, setDraft] = React.useState<any>({
     slug: '',
     category: '',
     title: '',
@@ -70,37 +57,36 @@ export function ServicesEditorPage({ id }: EditorProps) {
     cta_link: '',
     status: 'draft',
     display_order: 0,
-  }));
+  })
 
-  useEffect(() => {
-    if (existing) {
-      setServiceId(existing.id);
-      setDraft({
-        slug: existing.slug || '',
-        category: existing.category || '',
-        title: existing.title || '',
-        subtitle: existing.subtitle || '',
-        description: existing.description || '',
-        image: existing.image || '',
-        listItemsText: (existing.list_items || []).join('\n'),
-        cta_text: existing.cta_text || '',
-        cta_link: existing.cta_link || '',
-        status: existing.status || 'draft',
-        display_order: existing.display_order ?? 0,
-      });
-    }
-  }, [existing]);
+  React.useEffect(() => {
+    if (!existing) return
+    setServiceId(existing.id)
+    setDraft({
+      slug: existing.slug || '',
+      category: existing.category || '',
+      title: existing.title || '',
+      subtitle: existing.subtitle || '',
+      description: existing.description || '',
+      image: existing.image || '',
+      listItemsText: (existing.list_items || []).join('\n'),
+      cta_text: existing.cta_text || '',
+      cta_link: existing.cta_link || '',
+      status: existing.status || 'draft',
+      display_order: existing.display_order ?? 0,
+    })
+  }, [existing])
 
-  useEffect(() => {
-    if (isNew || existing || !normalizedRouteId) return;
+  React.useEffect(() => {
+    if (isNew || existing || !normalizedRouteId) return
     const load = async () => {
-      setIsFetching(true);
+      setIsFetching(true)
       try {
-        const res = await fetch(`/api/admin/services/${normalizedRouteId}`);
-        const json = await res.json();
+        const res = await fetch(`/api/admin/services/${normalizedRouteId}`, { cache: 'no-store' })
+        const json = await res.json()
         if (res.ok && json?.item) {
-          const item = json.item;
-          setServiceId(item.id);
+          const item = json.item
+          setServiceId(item.id)
           setDraft({
             slug: item.slug || '',
             category: item.category || '',
@@ -113,19 +99,23 @@ export function ServicesEditorPage({ id }: EditorProps) {
             cta_link: item.cta_link || '',
             status: item.status || 'draft',
             display_order: item.display_order ?? 0,
-          });
+          })
         }
       } finally {
-        setIsFetching(false);
+        setIsFetching(false)
       }
-    };
-    load();
-  }, [normalizedRouteId, existing, isNew]);
+    }
+    void load()
+  }, [normalizedRouteId, existing, isNew])
 
   const handleSave = async () => {
     if (!draft.title || !draft.description) {
-      toast({ title: 'Title and description are required', status: 'error', duration: 2000 });
-      return;
+      toast({
+        title: 'Title and description are required',
+        variant: 'error',
+        duration: 2000,
+      })
+      return
     }
 
     const payload = {
@@ -143,203 +133,220 @@ export function ServicesEditorPage({ id }: EditorProps) {
       cta_link: draft.cta_link || null,
       status: draft.status || 'draft',
       display_order: Number(draft.display_order) || 0,
-    };
+    }
 
     try {
       if (isNew) {
-        const created = await createService(payload);
-        toast({ title: 'Service created', status: 'success', duration: 2000 });
-        router.replace(`/admin/services/${created.id}/edit`);
-        return;
+        const created = await createService(payload)
+        toast({ title: 'Service created', variant: 'success', duration: 2000 })
+        router.replace(`/admin/services/${created.id}/edit`)
+        return
       }
-      const targetId = serviceId || normalizedRouteId;
-      if (!targetId) return;
-      await updateService(targetId, payload);
-      toast({ title: 'Service updated', status: 'success', duration: 2000 });
+      const targetId = serviceId || normalizedRouteId
+      if (!targetId) return
+      await updateService(targetId, payload)
+      toast({ title: 'Service updated', variant: 'success', duration: 2000 })
     } catch (error: any) {
-      toast({ title: error?.message || 'Failed to save', status: 'error', duration: 3000 });
+      toast({
+        title: error?.message || 'Failed to save',
+        variant: 'error',
+        duration: 3000,
+      })
     }
-  };
+  }
 
-  const handleMediaSelect = (url: string) => {
-    setDraft({ ...draft, image: url });
-  };
+  const previewId = draft.slug?.trim() ? draft.slug : normalizedRouteId
 
   return (
-    <Box minH="calc(100vh - 72px)" display="flex" flexDirection="column" m={-8}>
-      <Flex
-        bg="white"
-        p={4}
-        borderBottom="1px solid"
-        borderColor="gray.200"
-        justify="space-between"
-        align="center"
-        zIndex={2}>
-        <HStack spacing={4}>
-          <IconButton
-            aria-label="Back"
-            icon={<ArrowLeft size={18} />}
-            variant="ghost"
-            onClick={() => router.push('/admin/services')}
-          />
-          <Text fontWeight="bold" color="brand.dark">
-            {isNew ? 'New Service' : draft.title || 'Untitled Service'}
-          </Text>
-          {!isNew && (
-            <Badge colorScheme={draft.status === 'published' ? 'green' : 'gray'}>
-              {draft.status || 'draft'}
-            </Badge>
-          )}
-        </HStack>
-        <HStack spacing={3}>
-          {!isNew && (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={() => router.push('/admin/services')}>
+            <ArrowLeft size={16} />
+            Back
+          </Button>
+          <div className="font-serif text-2xl font-semibold text-foreground">
+            {isNew ? 'New Service' : 'Edit Service'}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {!isNew ? (
             <Button
-              leftIcon={<Eye size={16} />}
               variant="outline"
-              onClick={() => router.push(`/admin/services/preview/${draft.slug || normalizedRouteId}`)}
+              onClick={() => router.push(`/admin/services/preview/${previewId}`)}
             >
+              <Eye size={16} />
               Preview
             </Button>
-          )}
-          <Button leftIcon={<Save size={16} />} colorScheme="brand" onClick={handleSave} isLoading={isLoading || isFetching}>
+          ) : null}
+          <Button onClick={handleSave} disabled={isLoading || isFetching}>
+            <Save size={16} />
             Save
           </Button>
-        </HStack>
-      </Flex>
+        </div>
+      </div>
 
-      <Box bg="gray.50" p={8} flex="1" overflow="hidden">
-        <Box bg="white" borderRadius="2xl" border="1px solid" borderColor="gray.200" shadow="sm" p={6} h="full">
-          <Tabs colorScheme="brand" variant="soft-rounded" size="md" h="full" display="flex" flexDirection="column">
-            <TabList gap={2} borderBottom="1px solid" borderColor="gray.200" pb={2}>
-              <Tab px={5} py={2} fontSize="sm" fontWeight="semibold" borderRadius="full" _selected={{ bg: 'brand.primary', color: 'white' }}>
-                Content
-              </Tab>
-              <Tab px={5} py={2} fontSize="sm" fontWeight="semibold" borderRadius="full" _selected={{ bg: 'brand.primary', color: 'white' }}>
-                Details
-              </Tab>
-            </TabList>
-            <TabPanels flex="1" pt={6} overflow="auto">
-              <TabPanel p={0} pr={2}>
-                <Flex gap={8} wrap="wrap" maxW="1100px">
-                <Box flex="1 1 420px" minW="320px">
-                  <VStack spacing={6} align="stretch">
-                    <Text fontFamily="heading" fontSize="lg" fontWeight="bold" color="brand.dark">
-                      Essentials
-                    </Text>
-                    <FormControl isRequired>
-                      <FormLabel>Title</FormLabel>
-                      <Input size="md" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
-                    </FormControl>
-                    <FormControl>
-                      <FormLabel>Subtitle</FormLabel>
-                      <Input size="md" value={draft.subtitle} onChange={(e) => setDraft({ ...draft, subtitle: e.target.value })} />
-                    </FormControl>
-                    <FormControl>
-                      <FormLabel>Description</FormLabel>
-                      <Textarea size="md" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} rows={6} />
-                    </FormControl>
-                    <FormControl>
-                      <FormLabel>List Items (one per line)</FormLabel>
-                      <Textarea
-                        size="md"
-                        value={draft.listItemsText}
-                        onChange={(e) => setDraft({ ...draft, listItemsText: e.target.value })}
-                        rows={8}
-                      />
-                    </FormControl>
-                  </VStack>
-                </Box>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="border-border/70">
+          <CardHeader>
+            <CardTitle className="font-serif text-lg">Content</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <Input
+                value={draft.title}
+                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Subtitle</Label>
+              <Input
+                value={draft.subtitle}
+                onChange={(e) =>
+                  setDraft({ ...draft, subtitle: e.target.value })
+                }
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea
+                value={draft.description}
+                onChange={(e) =>
+                  setDraft({ ...draft, description: e.target.value })
+                }
+                rows={8}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>List Items (one per line)</Label>
+              <Textarea
+                value={draft.listItemsText}
+                onChange={(e) =>
+                  setDraft({ ...draft, listItemsText: e.target.value })
+                }
+                rows={7}
+                className="font-mono text-xs"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-                <Box flex="1 1 420px" minW="320px">
-                  <VStack spacing={6} align="stretch">
-                    <Text fontFamily="heading" fontSize="lg" fontWeight="bold" color="brand.dark">
-                      Media & CTA
-                    </Text>
-                    <FormControl>
-                      <FormLabel>Image URL</FormLabel>
-                      <HStack>
-                        <Input size="md" value={draft.image} onChange={(e) => setDraft({ ...draft, image: e.target.value })} />
-                        <IconButton
-                          aria-label="Browse"
-                          icon={<ImagePlus size={16} />}
-                          onClick={onOpen}
-                        />
-                      </HStack>
-                      {draft.image && (
-                        <Image
-                          src={draft.image}
-                          borderRadius="md"
-                          h="160px"
-                          w="full"
-                          objectFit="cover"
-                          mt={3}
-                        />
-                      )}
-                    </FormControl>
-                    <FormControl>
-                      <FormLabel>CTA Text</FormLabel>
-                      <Input size="md" value={draft.cta_text} onChange={(e) => setDraft({ ...draft, cta_text: e.target.value })} />
-                    </FormControl>
-                    <FormControl>
-                      <FormLabel>CTA Link</FormLabel>
-                      <Input size="md" value={draft.cta_link} onChange={(e) => setDraft({ ...draft, cta_link: e.target.value })} />
-                    </FormControl>
-                  </VStack>
-                </Box>
-              </Flex>
-            </TabPanel>
-            <TabPanel p={0} pr={2}>
-              <Flex gap={8} wrap="wrap" maxW="1100px">
-                <Box flex="1 1 420px" minW="320px">
-                        <VStack spacing={6} align="stretch">
-                          <Text fontFamily="heading" fontSize="lg" fontWeight="bold" color="brand.dark">
-                            Identity
-                          </Text>
-                          <FormControl>
-                            <FormLabel>Slug</FormLabel>
-                            <Input size="md" value={draft.slug} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} />
-                          </FormControl>
-                          <FormControl>
-                            <FormLabel>Category</FormLabel>
-                            <Input size="md" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })} />
-                          </FormControl>
-                        </VStack>
-                      </Box>
-                      <Box flex="1 1 420px" minW="320px">
-                        <VStack spacing={6} align="stretch">
-                          <Text fontFamily="heading" fontSize="lg" fontWeight="bold" color="brand.dark">
-                            Publishing
-                          </Text>
-                          <FormControl>
-                            <FormLabel>Status</FormLabel>
-                            <Select size="md" value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value })}>
-                              <option value="draft">Draft</option>
-                              <option value="published">Published</option>
-                            </Select>
-                          </FormControl>
-                          <FormControl>
-                            <FormLabel>Display Order</FormLabel>
-                            <Input
-                              type="number"
-                              size="md"
-                              value={draft.display_order}
-                              onChange={(e) => setDraft({ ...draft, display_order: e.target.value })}
-                            />
-                          </FormControl>
-                        </VStack>
-                      </Box>
-                    </Flex>
-                  </TabPanel>
-            </TabPanels>
-          </Tabs>
-        </Box>
-      </Box>
+        <Card className="border-border/70">
+          <CardHeader>
+            <CardTitle className="font-serif text-lg">Details</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Input
+                  value={draft.category}
+                  onChange={(e) =>
+                    setDraft({ ...draft, category: e.target.value })
+                  }
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Display Order</Label>
+                <Input
+                  type="number"
+                  value={draft.display_order}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      display_order: parseInt(e.target.value, 10) || 0,
+                    })
+                  }
+                  className="h-10"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Slug</Label>
+              <Input
+                value={draft.slug}
+                onChange={(e) => setDraft({ ...draft, slug: e.target.value })}
+                placeholder="auto-generated if blank"
+                className="h-10 font-mono"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <select
+                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                value={draft.status}
+                onChange={(e) => setDraft({ ...draft, status: e.target.value })}
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Image</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={draft.image}
+                  onChange={(e) => setDraft({ ...draft, image: e.target.value })}
+                  placeholder="Image URL"
+                  className="h-10"
+                />
+                <Button variant="outline" onClick={mediaModal.onOpen}>
+                  <ImagePlus size={16} />
+                  Browse
+                </Button>
+              </div>
+              {draft.image ? (
+                <div className="mt-3 overflow-hidden rounded-xl border border-border/70 bg-muted">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={draft.image}
+                    alt="Service"
+                    className="h-[160px] w-full object-cover"
+                  />
+                </div>
+              ) : null}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>CTA Text</Label>
+                <Input
+                  value={draft.cta_text}
+                  onChange={(e) =>
+                    setDraft({ ...draft, cta_text: e.target.value })
+                  }
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>CTA Link</Label>
+                <Input
+                  value={draft.cta_link}
+                  onChange={(e) =>
+                    setDraft({ ...draft, cta_link: e.target.value })
+                  }
+                  className="h-10"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <MediaPickerModal
-        isOpen={isOpen}
-        onClose={onClose}
-        onSelect={handleMediaSelect}
+        isOpen={mediaModal.isOpen}
+        onClose={mediaModal.onClose}
+        onSelect={(url) => setDraft({ ...draft, image: url })}
       />
-    </Box>
-  );
+    </div>
+  )
 }
+

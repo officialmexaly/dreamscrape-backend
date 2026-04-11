@@ -82,6 +82,7 @@ export function Navigation() {
               src="/logo.png"
               alt="Dreamscape Curated Events"
               fill
+              sizes="(min-width: 768px) 208px, 160px"
               priority
               className="object-contain object-left relative z-10"
             />

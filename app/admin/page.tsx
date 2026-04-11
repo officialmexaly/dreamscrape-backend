@@ -18,10 +18,10 @@ export default function HomePage() {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-brand-light flex items-center justify-center">
+      <div className="grid min-h-screen place-items-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-purple border-t-transparent"></div>
-          <p className="mt-4 text-brand-gray">Loading...</p>
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-primary/25 border-t-primary" />
+          <div className="mt-4 text-sm text-muted-foreground">Loading…</div>
         </div>
       </div>
     );
@@ -29,4 +29,3 @@ export default function HomePage() {
 
   return null;
 }
-

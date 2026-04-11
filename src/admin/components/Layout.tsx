@@ -1,81 +1,74 @@
-'use client';
+'use client'
 
-import React, { useEffect, useState } from 'react';
-import { Box, Flex } from '@chakra-ui/react';
-import { Sidebar } from './Sidebar';
-import { TopBar } from './TopBar';
-import { motion } from 'framer-motion';
+import * as React from 'react'
+import { motion } from 'framer-motion'
+import { Sidebar } from './Sidebar'
+import { TopBar } from './TopBar'
+import { cn } from '@/src/lib/utils'
+
 interface LayoutProps {
-  children: React.ReactNode;
-  onLogout: () => void;
+  children: React.ReactNode
+  onLogout: () => void
 }
 
-const SIDEBAR_STORAGE_KEY = 'dreamscape_admin_sidebarCollapsed';
+const SIDEBAR_STORAGE_KEY = 'dreamscape_admin_sidebarCollapsed'
+const SIDEBAR_WIDTH = 260
+const SIDEBAR_COLLAPSED_WIDTH = 80
 
 export function Layout({ children, onLogout }: LayoutProps) {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false)
 
-  useEffect(() => {
+  React.useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
-      setIsSidebarCollapsed(raw === 'true');
+      const raw = window.localStorage.getItem(SIDEBAR_STORAGE_KEY)
+      setIsSidebarCollapsed(raw === 'true')
     } catch {
       // ignore
     }
-  }, []);
+  }, [])
 
-  const toggleSidebar = () => {
+  const toggleSidebar = React.useCallback(() => {
     setIsSidebarCollapsed((prev) => {
-      const next = !prev;
+      const next = !prev
       try {
-        window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
+        window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next))
       } catch {
         // ignore
       }
-      return next;
-    });
-  };
+      return next
+    })
+  }, [])
 
   return (
-    <Flex minH="100vh" bg="gray.50">
+    <div className="min-h-screen" suppressHydrationWarning>
       <Sidebar
         onLogout={onLogout}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapsed={toggleSidebar}
       />
-      <Box
-        flex={1}
-        ml={isSidebarCollapsed ? '80px' : '260px'}
-        transition="margin-left 200ms ease"
-        minW={0}>
-        
-        <TopBar />
-        <Box as="main" p={{ base: 5, md: 8 }}>
-          <motion.div
-            initial={{
-              opacity: 0,
-              y: 10
-            }}
-            animate={{
-              opacity: 1,
-              y: 0
-            }}
-            transition={{
-              duration: 0.3
-            }}>
-            
-            <Box
-              bg="surface.bg"
-              border="1px solid"
-              borderColor="surface.border"
-              borderRadius="2xl"
-              boxShadow="soft"
-              p={{ base: 5, md: 8 }}>
-              {children}
-            </Box>
-          </motion.div>
-        </Box>
-      </Box>
-    </Flex>);
 
+      <div
+        className={cn(
+          "min-h-screen transition-all duration-300",
+          isSidebarCollapsed ? "ml-20" : "ml-[260px]"
+        )}
+        suppressHydrationWarning
+      >
+        <TopBar />
+        <main className="px-5 py-6 md:px-8 md:py-8" suppressHydrationWarning>
+          <div className="mx-auto max-w-7xl" suppressHydrationWarning>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-2xl border border-border/70 bg-background/80 p-5 shadow-[0_1px_2px_rgba(16,24,40,0.06),0_20px_70px_rgba(16,24,40,0.08)] backdrop-blur md:p-8"
+              suppressHydrationWarning
+            >
+              {children}
+            </motion.div>
+          </div>
+        </main>
+      </div>
+    </div>
+  )
 }

@@ -20,10 +20,10 @@ export const CACHE_TAGS = {
 export const getPublishedBlogPostsCached = unstable_cache(
   async () => {
     const { data, error } = await supabaseAdmin()
-      .from('blog_posts')
+      .from('portfolio_items')
       .select('*')
       .eq('status', 'published')
-      .order('published_at', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     return data ?? [];
@@ -37,7 +37,7 @@ export async function getPublishedBlogPostCached(key: string) {
 
   const cached = unstable_cache(
     async (lookup: string) => {
-      const query = supabaseAdmin().from('blog_posts').select('*').eq('status', 'published');
+      const query = supabaseAdmin().from('portfolio_items').select('*').eq('status', 'published');
       const { data, error } = isUuid(lookup)
         ? await query.eq('id', lookup).maybeSingle()
         : await query.eq('slug', lookup).maybeSingle();
@@ -86,3 +86,16 @@ export async function getPublishedPortfolioItemCached(key: string) {
   return cached(normalized);
 }
 
+export const getAllPortfolioItemsCached = unstable_cache(
+  async () => {
+    const { data, error } = await supabaseAdmin()
+      .from('portfolio_items')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data ?? [];
+  },
+  ['all-portfolio-items'],
+  { tags: [CACHE_TAGS.PORTFOLIO_LIST], revalidate: 60 * 60 }
+);

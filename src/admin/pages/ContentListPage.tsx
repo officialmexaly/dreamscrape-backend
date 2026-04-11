@@ -1,326 +1,337 @@
-'use client';
+'use client'
 
-import React, { useEffect, useState, useMemo } from 'react';
-import {
-  Box,
-  Button,
-  Flex,
-  Text,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  IconButton,
-  useToast,
-  Input,
-  VStack,
-  HStack,
-  Tabs,
-  TabList,
-  Tab,
-  TabPanel,
-  TabPanels,
-} from '@chakra-ui/react';
-import { Plus, Edit, Eye, RefreshCw } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import * as React from 'react'
+import { Plus, RefreshCw } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useToast } from '@/src/admin/toast/ToastProvider'
+import { ActionButtons, DataTable, StatusBadge } from '@/src/admin/components/shared'
+import { cn } from '@/src/lib/utils'
 
 type ContentItem = {
-  id: string;
-  page: string;
-  section: string;
-  content_key: string;
-  content_type: string;
-  content: string | null;
-  content_json: any;
-  display_order: number;
-  is_active: boolean;
-  updated_at: string;
-};
+  id: string
+  page: string
+  section: string
+  content_key: string
+  content_type: string
+  content: string | null
+  content_json: any
+  display_order: number
+  is_active: boolean
+  updated_at: string
+}
+
+function pagePill(page: string) {
+  switch (page) {
+    case 'home':
+      return 'bg-violet-50 text-violet-800 ring-violet-200'
+    case 'about':
+      return 'bg-sky-50 text-sky-800 ring-sky-200'
+    case 'services':
+      return 'bg-emerald-50 text-emerald-800 ring-emerald-200'
+    case 'contact':
+      return 'bg-amber-50 text-amber-900 ring-amber-200'
+    default:
+      return 'bg-slate-50 text-slate-700 ring-slate-200'
+  }
+}
+
+function typePill(type: string) {
+  switch (type) {
+    case 'image':
+      return 'bg-emerald-50 text-emerald-800 ring-emerald-200'
+    case 'richtext':
+      return 'bg-sky-50 text-sky-800 ring-sky-200'
+    case 'json':
+      return 'bg-violet-50 text-violet-800 ring-violet-200'
+    case 'number':
+      return 'bg-amber-50 text-amber-900 ring-amber-200'
+    case 'text':
+    default:
+      return 'bg-slate-50 text-slate-700 ring-slate-200'
+  }
+}
+
+function formatContentValue(item: ContentItem) {
+  if (item.content_type === 'json') {
+    const json = item.content_json
+    if (Array.isArray(json)) return `Array (${json.length} items)`
+    if (json && typeof json === 'object') {
+      const keys = Object.keys(json)
+      if (keys.length <= 3) {
+        return keys
+          .map((k) => `${k}: ${JSON.stringify(json[k]).slice(0, 30)}…`)
+          .join(', ')
+      }
+      return `Object (${keys.length} keys)`
+    }
+    return `${JSON.stringify(json).slice(0, 50)}…`
+  }
+
+  const value = item.content || ''
+  return value.slice(0, 60) + (value.length > 60 ? '…' : '')
+}
 
 export function ContentListPage({ page }: { page: string }) {
-  const router = useRouter();
-  const toast = useToast();
-  const [items, setItems] = useState<ContentItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState(0);
+  const router = useRouter()
+  const { toast } = useToast()
+  const [items, setItems] = React.useState<ContentItem[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [searchQuery, setSearchQuery] = React.useState('')
+  const [activeSection, setActiveSection] = React.useState<string>('')
 
-  const fetchContent = async () => {
-    setIsLoading(true);
+  const fetchContent = React.useCallback(async () => {
+    setIsLoading(true)
     try {
-      // If page is empty (advanced view), fetch all content
-      const url = page ? `/api/admin/content?page=${page}` : '/api/admin/content';
-      const res = await fetch(url, { cache: 'no-store' });
-      const json = await res.json();
+      const url = page ? `/api/admin/content?page=${page}` : '/api/admin/content'
+      const res = await fetch(url, { cache: 'no-store' })
+      const json = await res.json()
 
-      if (!res.ok) {
-        throw new Error(json.error || 'Failed to load content');
-      }
-
-      setItems(json.items || []);
+      if (!res.ok) throw new Error(json.error || 'Failed to load content')
+      setItems(json.items || [])
     } catch (error: any) {
-      toast({ title: 'Failed to load content', description: error.message, status: 'error', duration: 3000 });
+      toast({
+        title: 'Failed to load content',
+        description: error?.message,
+        variant: 'error',
+        duration: 3000,
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }, [page, toast])
 
-  useEffect(() => {
-    fetchContent();
-  }, [page]);
+  React.useEffect(() => {
+    void fetchContent()
+  }, [fetchContent])
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this content item?')) return;
-
-    try {
-      const res = await fetch(`/api/admin/content/${id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to delete content');
-      }
-
-      await fetchContent();
-      toast({ title: 'Content deleted', status: 'success', duration: 2000 });
-    } catch (error: any) {
-      toast({ title: 'Failed to delete content', description: error.message, status: 'error', duration: 3000 });
+  const sections = React.useMemo(() => {
+    const grouped: Record<string, ContentItem[]> = {}
+    for (const item of items) {
+      const key = page ? item.section : `${item.page}_${item.section}`
+      grouped[key] ||= []
+      grouped[key].push(item)
     }
-  };
+    Object.keys(grouped).forEach((k) =>
+      grouped[k].sort((a, b) => a.display_order - b.display_order)
+    )
+    return grouped
+  }, [items, page])
 
-  // Group items by section (or by page if advanced view)
-  const sections = useMemo(() => {
-    const grouped: Record<string, ContentItem[]> = {};
-    items.forEach((item) => {
-      // For advanced view (no page), group by "page_section"
-      const key = page ? item.section : `${item.page}_${item.section}`;
-      if (!grouped[key]) {
-        grouped[key] = [];
-      }
-      grouped[key].push(item);
-    });
+  const sectionKeys = React.useMemo(() => Object.keys(sections).sort(), [sections])
 
-    // Sort items within each section by display_order
-    Object.keys(grouped).forEach((section) => {
-      grouped[section].sort((a, b) => a.display_order - b.display_order);
-    });
-
-    return grouped;
-  }, [items, page]);
-
-  const sectionList = Object.keys(sections).sort();
+  React.useEffect(() => {
+    if (!sectionKeys.length) return
+    setActiveSection((prev) => (prev && sectionKeys.includes(prev) ? prev : sectionKeys[0]))
+  }, [sectionKeys])
 
   const getSectionLabel = (key: string) => {
     if (!page) {
-      // Advanced view: "Home - Hero" format
-      const [pageName, sectionName] = key.split('_');
-      return `${pageName.charAt(0).toUpperCase() + pageName.slice(1)} - ${sectionName.charAt(0).toUpperCase() + sectionName.slice(1)}`;
+      const [pageName, sectionName] = key.split('_')
+      return `${pageName.charAt(0).toUpperCase() + pageName.slice(1)} - ${sectionName.charAt(0).toUpperCase() + sectionName.slice(1)}`
     }
-    return key;
-  };
+    return key
+  }
 
-  const getContentTypeBadge = (type: string) => {
-    const colors: Record<string, string> = {
-      text: 'gray',
-      richtext: 'blue',
-      image: 'green',
-      json: 'purple',
-      number: 'orange',
-    };
-    return colors[type] || 'gray';
-  };
-
-  const formatContentValue = (item: ContentItem) => {
-    if (item.content_type === 'json') {
-      const json = item.content_json;
-      if (Array.isArray(json)) {
-        return `Array (${json.length} items)`;
-      }
-      if (typeof json === 'object') {
-        const keys = Object.keys(json);
-        if (keys.length <= 3) {
-          return keys.map(k => `${k}: ${JSON.stringify(json[k]).slice(0, 30)}...`).join(', ');
-        }
-        return `Object (${keys.length} keys)`;
-      }
-      return JSON.stringify(json).slice(0, 50) + '...';
-    }
-    return item.content?.slice(0, 60) + (item.content && item.content.length > 60 ? '...' : '');
-  };
-
-  const pageTitle = page ? page.charAt(0).toUpperCase() + page.slice(1) : 'All Content';
+  const pageTitle = page
+    ? page.charAt(0).toUpperCase() + page.slice(1)
+    : 'Advanced Content View'
 
   const renderTable = (sectionKey: string, sectionItems: ContentItem[]) => {
     const filteredItems = sectionItems.filter((item) =>
       item.content_key.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    )
 
-    if (filteredItems.length === 0) {
-      return (
-        <Box p={8} textAlign="center">
-          <Text color="gray.500">
-            {searchQuery ? 'No matching content found' : 'No content items in this section'}
-          </Text>
-        </Box>
-      );
+    const columns: any[] = []
+
+    if (!page) {
+      columns.push({
+        key: 'page',
+        header: 'Page',
+        cell: (item: ContentItem) => (
+          <span
+            className={cn(
+              'inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset',
+              pagePill(item.page)
+            )}
+          >
+            {item.page}
+          </span>
+        ),
+      })
     }
 
+    columns.push(
+      {
+        key: 'section',
+        header: 'Section',
+        cell: (item: ContentItem) => (
+          <span className="text-sm capitalize text-muted-foreground">
+            {item.section}
+          </span>
+        ),
+      },
+      {
+        key: 'content_key',
+        header: 'Content Key',
+        cell: (item: ContentItem) => (
+          <span className="font-mono text-sm font-semibold">
+            {item.content_key}
+          </span>
+        ),
+      },
+      {
+        key: 'content_type',
+        header: 'Type',
+        cell: (item: ContentItem) => (
+          <span
+            className={cn(
+              'inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset',
+              typePill(item.content_type)
+            )}
+          >
+            {item.content_type}
+          </span>
+        ),
+      },
+      {
+        key: 'value',
+        header: 'Value',
+        cell: (item: ContentItem) => (
+          <span className="block max-w-[360px] truncate text-sm text-muted-foreground">
+            {formatContentValue(item)}
+          </span>
+        ),
+      },
+      {
+        key: 'order',
+        header: 'Order',
+        cell: (item: ContentItem) => item.display_order,
+      },
+      {
+        key: 'status',
+        header: 'Status',
+        cell: (item: ContentItem) => (
+          <StatusBadge status={item.is_active ? 'active' : 'inactive'} />
+        ),
+      },
+      {
+        key: 'actions',
+        header: '',
+        className: 'text-right',
+        cell: (item: ContentItem) => (
+          <div className="flex justify-end">
+            <ActionButtons
+              onEdit={() =>
+                router.push(`/admin/content/${page || item.page}/${item.id}/edit`)
+              }
+              onView={() => router.push(`/admin/content/${page || item.page}/${item.id}`)}
+              editLabel="Edit"
+              viewLabel="View"
+            />
+          </div>
+        ),
+      }
+    )
+
     return (
-      <Table variant="simple" size="sm">
-        <Thead bg="gray.50">
-          <Tr>
-            {!page && <Th>Page</Th>}
-            <Th>Section</Th>
-            <Th>Content Key</Th>
-            <Th>Type</Th>
-            <Th>Value</Th>
-            <Th>Order</Th>
-            <Th>Status</Th>
-            <Th textAlign="right">Actions</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {filteredItems.map((item) => (
-            <Tr key={item.id}>
-              {!page && (
-                <Td>
-                  <Badge colorScheme={
-                    item.page === 'home' ? 'purple' :
-                    item.page === 'about' ? 'blue' :
-                    item.page === 'services' ? 'green' :
-                    item.page === 'contact' ? 'orange' :
-                    'gray'
-                  } fontSize="xs">
-                    {item.page}
-                  </Badge>
-                </Td>
-              )}
-              <Td>
-                <Text fontSize="sm" textTransform="capitalize">{page ? item.section : ''}</Text>
-              </Td>
-              <Td>
-                <Text fontSize="sm" fontFamily="mono" fontWeight="medium">
-                  {item.content_key}
-                </Text>
-              </Td>
-              <Td>
-                <Badge colorScheme={getContentTypeBadge(item.content_type)} fontSize="xs">
-                  {item.content_type}
-                </Badge>
-              </Td>
-              <Td>
-                <Text fontSize="sm" color="gray.600" noOfLines={1} maxW="250px">
-                  {formatContentValue(item)}
-                </Text>
-              </Td>
-              <Td>
-                <Text fontSize="sm">{item.display_order}</Text>
-              </Td>
-              <Td>
-                <Badge colorScheme={item.is_active ? 'green' : 'red'} fontSize="xs">
-                  {item.is_active ? 'Active' : 'Inactive'}
-                </Badge>
-              </Td>
-              <Td textAlign="right">
-                <HStack spacing={2} justify="flex-end">
-                  <IconButton
-                    aria-label="Edit"
-                    icon={<Edit size={14} />}
-                    size="xs"
-                    variant="ghost"
-                    colorScheme="brand"
-                    onClick={() => router.push(`/admin/content/${page || item.page}/${item.id}/edit`)}
-                  />
-                  <IconButton
-                    aria-label="View"
-                    icon={<Eye size={14} />}
-                    size="xs"
-                    variant="ghost"
-                    onClick={() => router.push(`/admin/content/${page || item.page}/${item.id}`)}
-                  />
-                </HStack>
-              </Td>
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
-    );
-  };
+      <DataTable
+        className="rounded-none border-0 shadow-none"
+        data={filteredItems}
+        columns={columns}
+        keyExtractor={(item: ContentItem) => item.id}
+        emptyMessage={searchQuery ? 'No matching content found.' : 'No items in this section.'}
+      />
+    )
+  }
 
   return (
-    <Box>
-      <Flex justify="space-between" align="center" mb={6}>
-        <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="brand.dark">
-          {page ? `${pageTitle} Content` : 'Advanced Content View'}
-        </Text>
-        <HStack spacing={3}>
-          <Button
-            leftIcon={<RefreshCw size={16} />}
-            variant="outline"
-            onClick={fetchContent}
-            isLoading={isLoading}
-          >
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="font-serif text-2xl font-semibold text-foreground">
+            {page ? `${pageTitle} Content` : pageTitle}
+          </div>
+          <div className="mt-1 text-sm text-muted-foreground">
+            Manage structured site content items.
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={fetchContent} disabled={isLoading}>
+            <RefreshCw size={16} />
             Refresh
           </Button>
-          <Button
-            leftIcon={<Plus size={18} />}
-            colorScheme="brand"
-            onClick={() => router.push(`/admin/content/${page || 'home'}/new`)}
-          >
+          <Button onClick={() => router.push(`/admin/content/${page || 'home'}/new`)}>
+            <Plus size={16} />
             Add Content
           </Button>
-        </HStack>
-      </Flex>
+        </div>
+      </div>
 
-      <Box bg="white" borderRadius="xl" shadow="sm" border="1px solid" borderColor="gray.100" overflow="hidden">
-        {sectionList.length > 0 ? (
-          <Tabs colorScheme="brand" size="md" index={activeTab} onChange={setActiveTab}>
-            <TabList px={4} pt={3} borderBottom="1px solid" borderColor="gray.200">
-              {sectionList.map((sectionKey) => (
-                <Tab key={sectionKey} fontSize="sm" fontWeight="500">
-                  {getSectionLabel(sectionKey)}
-                </Tab>
-              ))}
-            </TabList>
+      <Card className="border-border/70 p-0">
+        {sectionKeys.length > 0 ? (
+          <Tabs value={activeSection} onValueChange={setActiveSection} className="gap-0">
+            <div className="border-b border-border/70 px-4 pt-3">
+              <TabsList variant="line" className="h-auto w-full flex-wrap justify-start gap-1 bg-transparent p-0">
+                {sectionKeys.map((key) => (
+                  <TabsTrigger
+                    key={key}
+                    value={key}
+                    className="h-9 rounded-lg px-3 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground data-[state=active]:text-foreground"
+                  >
+                    {getSectionLabel(key)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
-            <TabPanels>
-              {sectionList.map((sectionKey) => (
-                <TabPanel key={sectionKey} p={0}>
-                  <VStack align="stretch" spacing={0}>
-                    <Box p={4} bg="gray.50" borderBottom="1px solid" borderColor="gray.200">
-                      <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600">
-                          Section: <Text as="span" fontWeight="semibold" color="brand.dark">{getSectionLabel(sectionKey)}</Text>
-                        </Text>
-                        <Input
-                          placeholder="Search keys..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          maxW="250px"
-                          size="sm"
-                        />
-                      </HStack>
-                    </Box>
-                    {renderTable(sectionKey, sections[sectionKey])}
-                  </VStack>
-                </TabPanel>
-              ))}
-            </TabPanels>
+            {sectionKeys.map((key) => (
+              <TabsContent key={key} value={key} className="p-0">
+                <div className="flex items-center justify-between gap-4 border-b border-border/70 bg-muted/20 p-4">
+                  <div className="text-sm text-muted-foreground">
+                    Section:{' '}
+                    <span className="font-semibold text-foreground">
+                      {getSectionLabel(key)}
+                    </span>
+                  </div>
+                  <div className="w-[260px]">
+                    <Input
+                      placeholder="Search keys…"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+                {isLoading ? (
+                  <div className="p-8 text-center text-sm text-muted-foreground">
+                    Loading…
+                  </div>
+                ) : (
+                  renderTable(key, sections[key])
+                )}
+              </TabsContent>
+            ))}
           </Tabs>
         ) : (
-          <VStack p={12} spacing={4}>
-            <Text color="gray.500">No content sections found for this page.</Text>
-            <Button
-              leftIcon={<Plus size={16} />}
-              colorScheme="brand"
-              onClick={() => router.push(`/admin/content/${page}/new`)}
-            >
-              Add First Content Item
-            </Button>
-          </VStack>
+          <div className="p-12 text-center">
+            <div className="text-sm text-muted-foreground">
+              No content sections found for this page.
+            </div>
+            {page ? (
+              <div className="mt-4">
+                <Button onClick={() => router.push(`/admin/content/${page}/new`)}>
+                  <Plus size={16} />
+                  Add First Content Item
+                </Button>
+              </div>
+            ) : null}
+          </div>
         )}
-      </Box>
-    </Box>
-  );
+      </Card>
+    </div>
+  )
 }

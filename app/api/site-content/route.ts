@@ -4,6 +4,18 @@ import { CACHE_DURATION } from '@/src/lib/cache';
 import { revalidateTag } from 'next/cache';
 import { SITE_CONTENT_CACHE_TAGS } from '@/src/lib/cached-site-content';
 
+function isDatabaseUnavailableError(error: any) {
+  const message = String(error?.message || '');
+  const details = String(error?.details || '');
+  return (
+    message.includes('fetch failed') ||
+    message.includes('ETIMEDOUT') ||
+    details.includes('ETIMEDOUT') ||
+    message.includes('ECONNREFUSED') ||
+    message.includes('ENOTFOUND')
+  );
+}
+
 function revalidateSiteContent(page?: string | null, section?: string | null) {
   revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL);
   if (page) {
@@ -37,7 +49,16 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('❌ Error fetching site content:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      if (isDatabaseUnavailableError(error)) {
+        return NextResponse.json(
+          { items: [], grouped: {}, error: 'Database temporarily unavailable' },
+          { status: 503 }
+        );
+      }
+      return NextResponse.json(
+        { items: [], grouped: {}, error: error.message || 'Failed to fetch site content' },
+        { status: 500 }
+      );
     }
 
     // Group content by section for easier consumption
@@ -85,7 +106,16 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error: any) {
     console.error('❌ Unexpected error:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    if (isDatabaseUnavailableError(error)) {
+      return NextResponse.json(
+        { items: [], grouped: {}, error: 'Database temporarily unavailable' },
+        { status: 503 }
+      );
+    }
+    return NextResponse.json(
+      { items: [], grouped: {}, error: error.message || 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 

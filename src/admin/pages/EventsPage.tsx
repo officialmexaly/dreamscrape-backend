@@ -1,132 +1,99 @@
-'use client';
+'use client'
 
-import React from 'react';
-import {
-  Box,
-  Button,
-  Flex,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  IconButton,
-  useToast,
-  Image,
-  Text } from
-'@chakra-ui/react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useEvents } from '../providers/EventsProvider';
+import * as React from 'react'
+import { Plus } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEvents } from '../providers/EventsProvider'
+import { formatAdminDate } from '@/src/admin/utils/formatDate'
+import { PageHeader } from '../components/shared'
+import { DataTable } from '../components/shared/DataTable'
+import { StatusBadge } from '../components/shared'
+import { ActionButtons } from '../components/shared'
+import { useToast } from '@/src/admin/toast/ToastProvider'
+
 export function EventsPage() {
-  const router = useRouter();
-  const { events, deleteEvent, isLoading } = useEvents();
-  const toast = useToast();
+  const router = useRouter()
+  const { events, deleteEvent, isLoading } = useEvents()
+  const { toast } = useToast()
+
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this event?')) return;
-    await deleteEvent(id);
-    toast({
-      title: 'Event deleted',
-      status: 'info',
-      duration: 2000
-    });
-  };
+    await deleteEvent(id)
+    toast({ title: 'Event deleted', variant: 'info', duration: 2000 })
+  }
+
+  const columns = [
+    {
+      key: 'event',
+      header: 'Event',
+      cell: (event: any) => {
+        const imageUrl = event.featured_image || event.featuredImage || ''
+        return (
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 overflow-hidden rounded-lg bg-muted">
+              {imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imageUrl}
+                  alt={event.title}
+                  className="h-full w-full object-cover"
+                />
+              ) : null}
+            </div>
+            <div className="font-medium text-foreground">
+              {event.title}
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      key: 'category',
+      header: 'Category',
+      cell: (event: any) => event.event_type,
+    },
+    {
+      key: 'date',
+      header: 'Date',
+      cell: (event: any) => formatAdminDate(event.event_date),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (event: any) => <StatusBadge status={event.status} />,
+    },
+    {
+      key: 'actions',
+      header: '',
+      className: 'text-right',
+      cell: (event: any) => (
+        <ActionButtons
+          onEdit={() => router.push(`/admin/events/${event.id}/edit`)}
+          onDelete={() => handleDelete(event.id)}
+          deleteConfirmMessage="Delete this event?"
+        />
+      ),
+    },
+  ]
+
   return (
-    <Box>
-      <Flex justify="space-between" align="center" mb={6}>
-        <Text
-          fontSize="2xl"
-          fontFamily="heading"
-          fontWeight="bold"
-          color="brand.dark">
+    <div className="space-y-6">
+      <PageHeader
+        title="Events"
+        action={{
+          label: 'Add Event',
+          onClick: () => router.push('/admin/events/new'),
+          icon: Plus,
+        }}
+      />
 
-          Blog Posts
-        </Text>
-        <Button
-          leftIcon={<Plus size={18} />}
-          colorScheme="brand"
-          onClick={() => router.push('/admin/events/new')}>
-          
-          Add Event
-        </Button>
-      </Flex>
-
-      <Box
-        bg="white"
-        borderRadius="xl"
-        shadow="sm"
-        border="1px solid"
-        borderColor="gray.100"
-        overflow="hidden">
-        
-        <Table variant="simple">
-          <Thead bg="gray.50">
-            <Tr>
-              <Th>Event</Th>
-              <Th>Category</Th>
-              <Th>Date</Th>
-              <Th>Status</Th>
-              <Th textAlign="right">Actions</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {isLoading && (
-              <Tr>
-                <Td colSpan={5}>
-                  <Text color="gray.500">Loading...</Text>
-                </Td>
-              </Tr>
-            )}
-            {events.map((event) =>
-            <Tr key={event.id}>
-                <Td>
-                  <Flex align="center" gap={3}>
-                    <Image
-                    src={event.featured_image || event.featuredImage || ''}
-                    alt={event.title}
-                    boxSize="40px"
-                    borderRadius="md"
-                    objectFit="cover" />
-                  
-                    <Text fontWeight="500">{event.title}</Text>
-                  </Flex>
-                </Td>
-                <Td>{event.event_type}</Td>
-                <Td>{event.event_date ? new Date(event.event_date).toLocaleDateString() : '—'}</Td>
-                <Td>
-                  <Badge
-                  colorScheme={
-                  event.status === 'published' ? 'green' : 'yellow'
-                  }>
-                  
-                    {event.status === 'published' ? 'Published' : 'Draft'}
-                  </Badge>
-                </Td>
-                <Td textAlign="right">
-                  <IconButton
-                  aria-label="Edit"
-                  icon={<Edit size={16} />}
-                  size="sm"
-                  variant="ghost"
-                  mr={2}
-                  onClick={() => router.push(`/admin/events/${event.id}/edit`)} />
-                
-                  <IconButton
-                  aria-label="Delete"
-                  icon={<Trash2 size={16} />}
-                  size="sm"
-                  variant="ghost"
-                  colorScheme="red"
-                  onClick={() => handleDelete(event.id)} />
-                
-                </Td>
-              </Tr>
-            )}
-          </Tbody>
-        </Table>
-      </Box>
-    </Box>);
-
+      <DataTable
+        data={events}
+        columns={columns}
+        keyExtractor={(event) => event.id}
+        isLoading={isLoading}
+        emptyMessage="No events found"
+        loadingMessage="Loading events…"
+      />
+    </div>
+  )
 }

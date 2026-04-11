@@ -242,11 +242,20 @@ function deriveHomeState(grouped?: Record<string, any>) {
       rawSlides = [];
     }
   }
+  if (rawSlides && typeof rawSlides === 'object' && !Array.isArray(rawSlides)) {
+    const maybeSlides = (rawSlides as any).slides;
+    if (Array.isArray(maybeSlides)) rawSlides = maybeSlides;
+  }
   const slideArray = Array.isArray(rawSlides) ? rawSlides : [];
   const slides: Slide[] = slideArray
     .map((slide: any, index: number) => ({
       id: slide?.id || `slide_${index + 1}`,
-      image: typeof slide?.image === 'string' ? slide.image : '',
+      image:
+        typeof slide === 'string'
+          ? slide
+          : typeof slide?.image === 'string'
+            ? slide.image
+            : '',
     }))
     .filter((slide: Slide) => slide.image.trim().length > 0);
 
@@ -382,7 +391,7 @@ function deriveHomeState(grouped?: Record<string, any>) {
   };
 }
 
-export function HomePage({ initialGrouped }: { initialGrouped?: Record<string, any> }) {
+export default function HomePage({ initialGrouped }: { initialGrouped?: Record<string, any> }) {
   // Custom simple crossfade hero carousel
   const derived = useMemo(() => deriveHomeState(initialGrouped), [initialGrouped]);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -423,12 +432,21 @@ export function HomePage({ initialGrouped }: { initialGrouped?: Record<string, a
               rawSlides = [];
             }
           }
+          if (rawSlides && typeof rawSlides === 'object' && !Array.isArray(rawSlides)) {
+            const maybeSlides = (rawSlides as any).slides;
+            if (Array.isArray(maybeSlides)) rawSlides = maybeSlides;
+          }
 
           const slideArray = Array.isArray(rawSlides) ? rawSlides : [];
           const nextSlides: Slide[] = slideArray
             .map((slide: any, index: number) => ({
               id: slide?.id || `slide_${index + 1}`,
-              image: typeof slide?.image === 'string' ? slide.image : ''
+              image:
+                typeof slide === 'string'
+                  ? slide
+                  : typeof slide?.image === 'string'
+                    ? slide.image
+                    : ''
             }))
             .filter((slide: Slide) => slide.image.trim().length > 0);
 

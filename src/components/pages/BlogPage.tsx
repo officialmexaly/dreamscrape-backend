@@ -3,9 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ScrollReveal } from '../ScrollReveal';
-import { BLOG_POSTS } from '@/src/lib/blog-posts';
 import type { BlogPost } from '@/src/lib/blog-posts';
-import { mapBlogRowToPublicPost } from '@/src/lib/public-posts';
+import { mapPortfolioItemToPublicPost } from '@/src/lib/public-posts';
 
 export function BlogPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -25,10 +24,10 @@ export function BlogPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
         const json = await res.json();
         if (!res.ok) return;
         const rows = Array.isArray(json?.posts) ? json.posts : [];
-        const mapped = rows.map(mapBlogRowToPublicPost).filter((p: BlogPost) => p.id && p.title);
-        setPosts(mapped.length ? mapped : BLOG_POSTS);
+        const mapped = rows.map(mapPortfolioItemToPublicPost).filter((p: BlogPost) => p.id && p.title);
+        setPosts(mapped);
       } catch {
-        setPosts(BLOG_POSTS);
+        setPosts([]);
       }
     };
     load();
@@ -44,8 +43,8 @@ export function BlogPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
 
   const isPostsLoading = posts === null;
   const resolvedPosts = posts ?? [];
-  const featuredPost = isPostsLoading ? null : (resolvedPosts[0] || BLOG_POSTS[0]);
-  const remainingPosts = isPostsLoading ? [] : (resolvedPosts.length ? resolvedPosts.slice(1) : BLOG_POSTS.slice(1));
+  const featuredPost = isPostsLoading ? null : (resolvedPosts[0] || null);
+  const remainingPosts = isPostsLoading ? [] : resolvedPosts.slice(1);
 
   return (
     <div className="min-h-screen w-full bg-[#fcf8f7] pb-24">
@@ -165,7 +164,11 @@ export function BlogPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
                   </div>
                 </ScrollReveal>
               </>
-            ) : null}
+            ) : (
+              <div className="rounded-3xl border border-brand-purple/10 bg-white px-8 py-10 text-center text-brand-gray xl:col-span-2">
+                No blog posts yet.
+              </div>
+            )}
           </div>
 
           <div className="pt-24">
@@ -194,7 +197,7 @@ export function BlogPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
                       <div className="h-px w-full bg-brand-purple/10" />
                     </div>
                   ))
-                : remainingPosts.map((post, index) => (
+                : remainingPosts.length ? remainingPosts.map((post, index) => (
                     <ScrollReveal key={post.id} direction="up" delay={index * 100}>
                       <Link href={`/blog/${post.id}`} className="group block text-left">
                         <div className="mb-6 aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-[#f5f1f2]">
@@ -223,7 +226,11 @@ export function BlogPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
                         </div>
                       </Link>
                     </ScrollReveal>
-                  ))}
+                  )) : (
+                    <div className="rounded-3xl border border-brand-purple/10 bg-white px-8 py-10 text-center text-brand-gray md:col-span-2 xl:col-span-3">
+                      No published stories to show yet.
+                    </div>
+                  )}
             </div>
           </div>
         </div>
@@ -231,3 +238,5 @@ export function BlogPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
     </div>
   );
 }
+
+export default BlogPage;

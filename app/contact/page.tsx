@@ -1,4 +1,4 @@
-import { ContactPage } from '@/src/components/pages/ContactPage';
+import ContactPage from '@/app/_client/ContactPageClient';
 import { getSiteContentSectionCached } from '@/src/lib/cached-site-content';
 
 export default async function Page() {

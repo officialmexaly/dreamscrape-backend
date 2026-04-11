@@ -95,3 +95,5 @@ export function ConsultationEditorialPage() {
     </div>
   );
 }
+
+export default ConsultationEditorialPage;

@@ -132,11 +132,13 @@ export async function checkRateLimit(
       // PGRST116 is "not found" which is ok
       console.error('Error fetching rate limit:', fetchError)
       return {
-        allowed: false,
-        remainingAttempts: 0,
-        resetAt: null,
+        // Fail open: do not block legitimate logins if the rate limit backend
+        // (Supabase/PostgREST/fetch) is temporarily unavailable.
+        allowed: true,
+        remainingAttempts: config.maxAttempts,
+        resetAt: new Date(now.getTime() + config.windowSeconds * 1000),
         lockedUntil: null,
-        error: 'Rate limit check failed',
+        error: 'Rate limit unavailable',
       }
     }
 
@@ -284,7 +286,7 @@ export async function resetRateLimit(
 export async function checkRateLimitByIp(
   requestType: keyof typeof RATE_LIMIT_CONFIGS
 ): Promise<RateLimitResult> {
-  const ip = getClientIp()
+  const ip = await getClientIp()
   return checkRateLimit({ type: 'ip', value: ip }, requestType)
 }
 

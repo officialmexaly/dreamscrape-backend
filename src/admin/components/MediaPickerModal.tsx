@@ -1,80 +1,254 @@
-'use client';
+'use client'
 
-import React from 'react';
-import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-  SimpleGrid,
-  Image,
-  Box,
-  Text } from
-'@chakra-ui/react';
-import { useMedia } from '../providers/MediaProvider';
+import * as React from 'react'
+import { createPortal } from 'react-dom'
+import { Check, Maximize2, Search } from 'lucide-react'
+import { useMedia } from '../providers/MediaProvider'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Separator } from '@/components/ui/separator'
+import { cn } from '@/src/lib/utils'
+
 interface MediaPickerModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSelect: (url: string) => void;
+  isOpen: boolean
+  onClose: () => void
+  onSelect: (url: string) => void
+  selectedUrl?: string
+  title?: string
+  description?: string
+  confirmLabel?: string
+  applyOnPick?: boolean
 }
+
 export function MediaPickerModal({
   isOpen,
   onClose,
-  onSelect
+  onSelect,
+  selectedUrl,
+  title = 'Select Media',
+  description = 'Browse and pick from your media library.',
+  confirmLabel = 'Use image',
+  applyOnPick = true,
 }: MediaPickerModalProps) {
-  const { media, isLoading } = useMedia();
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} size="4xl">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Select Media</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody pb={6}>
-          {isLoading && <Text color="gray.500">Loading...</Text>}
-          <SimpleGrid
-            columns={{
-              base: 2,
-              md: 3,
-              lg: 4
-            }}
-            spacing={4}>
-            
-            {media.map((item) =>
-            <Box
-              key={item.id}
-              cursor="pointer"
-              borderRadius="md"
-              overflow="hidden"
-              border="2px solid transparent"
-              _hover={{
-                borderColor: 'brand.primary',
-                transform: 'scale(1.02)'
-              }}
-              transition="all 0.2s"
-              onClick={() => {
-                onSelect(item.url);
-                onClose();
-              }}>
-              
-                <Image
-                src={item.url}
-                alt={item.name}
-                h="150px"
-                w="full"
-                objectFit="cover" />
-              
-                <Box p={2} bg="gray.50">
-                  <Text fontSize="xs" noOfLines={1} fontWeight="medium">
-                    {item.name}
-                  </Text>
-                </Box>
-              </Box>
-            )}
-          </SimpleGrid>
-        </ModalBody>
-      </ModalContent>
-    </Modal>);
+  const { media, isLoading } = useMedia()
 
+  const [query, setQuery] = React.useState('')
+  const [selected, setSelected] = React.useState<string>(selectedUrl || '')
+  const itemsRef = React.useRef<
+    Array<{ src: string; msrc?: string; width: number; height: number; alt?: string }>
+  >([])
+
+  React.useEffect(() => {
+    if (!isOpen) return
+    setQuery('')
+    setSelected(selectedUrl || '')
+  }, [isOpen, selectedUrl])
+
+  const filtered = React.useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return media
+    return media.filter((item) =>
+      String(item?.name || '').toLowerCase().includes(q)
+    )
+  }, [media, query])
+
+  React.useEffect(() => {
+    itemsRef.current = filtered.map((item) => ({
+      src: item.url,
+      msrc: item.url,
+      width: 1600,
+      height: 1067,
+      alt: item.name,
+    }))
+  }, [filtered])
+
+  React.useEffect(() => {
+    if (!isOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isOpen, onClose])
+
+  const openPreview = async (index: number) => {
+    const items = itemsRef.current
+    if (!items.length) return
+    const safeIndex = Math.max(0, Math.min(index, items.length - 1))
+    const { default: PhotoSwipeLightbox } = await import('photoswipe/lightbox')
+    const lightbox = new PhotoSwipeLightbox({
+      dataSource: items,
+      pswpModule: () => import('photoswipe'),
+    })
+    lightbox.init()
+    lightbox.loadAndOpen(safeIndex)
+    lightbox.on('close', () => lightbox.destroy())
+  }
+
+  const apply = () => {
+    if (!selected) return
+    onSelect(selected)
+    onClose()
+  }
+
+  if (!isOpen) return null
+
+  return createPortal(
+    <div className="fixed inset-0 z-[60]">
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+        onClick={onClose}
+      />
+
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div className="w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-background shadow-[0_30px_120px_rgba(2,6,23,0.35)]">
+          <div className="p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-foreground">
+                  {title}
+                </div>
+                <div className="mt-1 text-sm text-muted-foreground">
+                  {description}
+                </div>
+
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <div className="relative w-full max-w-[420px]">
+                    <Search
+                      size={16}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    />
+                    <Input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Search files…"
+                      className="h-9 pl-9"
+                    />
+                  </div>
+                  <div className="text-xs font-semibold text-muted-foreground">
+                    {isLoading
+                      ? 'Loading…'
+                      : `${filtered.length} item${filtered.length === 1 ? '' : 's'}`}
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                onClick={onClose}
+                aria-label="Close"
+              >
+                ×
+              </Button>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="max-h-[70vh] overflow-auto p-5">
+            {isLoading ? (
+              <div className="text-sm text-muted-foreground">Loading…</div>
+            ) : null}
+
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {filtered.map((item, index) => {
+                const isSelected = selected === item.url
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={cn(
+                      'group overflow-hidden rounded-xl border bg-background text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(64,21,63,0.10)]',
+                      isSelected
+                        ? 'border-primary'
+                        : 'border-border/70 hover:border-primary/50'
+                    )}
+                    onClick={() => {
+                      setSelected(item.url)
+                      if (applyOnPick) {
+                        onSelect(item.url)
+                        onClose()
+                      }
+                    }}
+                  >
+                    <div className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.url}
+                        alt={item.name}
+                        className="h-40 w-full object-cover"
+                      />
+                      <div className="pointer-events-none absolute inset-0 bg-black/0 transition group-hover:bg-black/25" />
+
+                      <div className="absolute right-2 top-2 flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="h-7 gap-1 rounded-full bg-black/55 px-2 text-white hover:bg-black/70"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            void openPreview(index)
+                          }}
+                        >
+                          <Maximize2 size={12} />
+                          Preview
+                        </Button>
+                        {isSelected ? (
+                          <div className="grid h-7 w-7 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_10px_24px_rgba(64,21,63,0.32)]">
+                            <Check size={14} />
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <div className="truncate text-xs font-semibold text-foreground/90">
+                        {item.name}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            {!isLoading && filtered.length === 0 ? (
+              <div className="py-10 text-center">
+                <div className="text-sm font-semibold text-foreground">
+                  No results
+                </div>
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Try a different search.
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {!applyOnPick ? (
+            <>
+              <Separator />
+              <div className="flex items-center justify-between gap-4 px-5 py-4">
+                <div className="text-sm text-muted-foreground">
+                  {selected ? '1 selected' : 'No selection'}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="ghost" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  <Button type="button" onClick={apply} disabled={!selected}>
+                    {confirmLabel}
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : null}
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
 }
+

@@ -19,93 +19,8 @@ type ServiceItem = {
   display_order?: number;
 };
 
-const fallbackServices: ServiceItem[] = [
-  {
-    id: 'weddings',
-    slug: 'luxury-wedding-planning',
-    category: 'Weddings',
-    title: 'Luxury Wedding Planning & Production',
-    subtitle: 'Luxury Wedding Planning',
-    description:
-      'From intimate ceremonies to full wedding weekends, every detail is thoughtfully curated to reflect your vision with elegance and intention.',
-    image: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?q=80&w=2069&auto=format&fit=crop',
-    list_items: [
-      'Month-of Coordination',
-      'Partial Planning',
-      'Full Planning & Design',
-      'Dreamscape Exclusive',
-      'Destination Weddings (including international experiences such as Dallas, USA)',
-    ],
-    cta_text: 'Start Planning',
-    cta_link: '/consultation-editorial',
-    display_order: 1,
-  },
-  {
-    id: 'private',
-    slug: 'private-social-events',
-    category: 'Private & Social Events',
-    title: 'Elevated Personal Celebrations',
-    subtitle: 'Private and Social Events',
-    description:
-      'From milestone birthdays to bridal showers and intimate dinners, we curate experiences that feel refined, seamless, and unforgettable.',
-    image: 'https://images.unsplash.com/photo-1530103862676-de8892b07439?q=80&w=2070&auto=format&fit=crop',
-    list_items: [
-      'Concept & mood board',
-      'Vendor sourcing & coordination',
-      'Styling guidance',
-      'Timeline & logistics',
-      'Full day-of execution',
-    ],
-    cta_text: 'Start Planning',
-    cta_link: '/consultation-editorial',
-    display_order: 2,
-  },
-  {
-    id: 'corporate',
-    slug: 'corporate-brand-events',
-    category: 'Corporate, Brand & Industry Events',
-    title: 'Strategy Meets Sophistication',
-    subtitle: 'Corporate and Brand Events',
-    description:
-      'We partner with brands, entrepreneurs, and organizations to create experiences that communicate vision, elevate presence, and engage audiences.',
-    image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=2069&auto=format&fit=crop',
-    list_items: ['Brand activations & launches', 'Corporate events & retreats', 'Expos, showcases & industry events'],
-    cta_text: 'Start Planning',
-    cta_link: '/consultation-editorial',
-    display_order: 3,
-  },
-  {
-    id: 'special',
-    slug: 'special-public-events',
-    category: 'Special & Public Events',
-    title: 'Large-Scale, Seamlessly Executed',
-    subtitle: 'Special and Public Events',
-    description:
-      'From cultural celebrations to charity galas and public showcases, Dreamscape delivers structured planning and smooth execution at scale.',
-    image: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=2069&auto=format&fit=crop',
-    list_items: [],
-    cta_text: 'Start Planning',
-    cta_link: '/consultation-editorial',
-    display_order: 4,
-  },
-  {
-    id: 'destination',
-    slug: 'destination-experiences',
-    category: 'Destination & Luxury Experiences',
-    title: 'Luxury Without Borders',
-    subtitle: 'Destination Experiences',
-    description:
-      'From yachts to villas to international celebrations, we curate destination experiences that are immersive, seamless, and unforgettable.',
-    image: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=2070&auto=format&fit=crop',
-    list_items: [],
-    cta_text: 'Start Planning',
-    cta_link: '/consultation-editorial',
-    display_order: 5,
-  },
-];
-
-export function ServicesPage({ initialServices }: { initialServices?: ServiceItem[] }) {
-  const [services, setServices] = useState<ServiceItem[]>(initialServices?.length ? initialServices : fallbackServices);
+export default function ServicesPage({ initialServices }: { initialServices?: ServiceItem[] }) {
+  const [services, setServices] = useState<ServiceItem[]>(initialServices?.length ? initialServices : []);
 
   useEffect(() => {
     const load = async () => {
@@ -116,7 +31,7 @@ export function ServicesPage({ initialServices }: { initialServices?: ServiceIte
           setServices(json.items);
         }
       } catch {
-        // keep fallback if fetch fails
+        // keep current state if fetch fails
       }
     };
     if (!initialServices?.length) load();
@@ -137,7 +52,7 @@ export function ServicesPage({ initialServices }: { initialServices?: ServiceIte
         </ScrollReveal>
       </section>
 
-      {services.map((service, index) => {
+      {services.length ? services.map((service, index) => {
         const isReverse = index % 2 === 1;
         const isDark = index === 2;
         const sectionBg = isDark ? 'bg-brand-purple text-white' : index % 2 === 0 ? 'bg-brand-light' : 'bg-white';
@@ -154,11 +69,15 @@ export function ServicesPage({ initialServices }: { initialServices?: ServiceIte
               <div className={`flex flex-col lg:flex-row ${isReverse ? 'lg:flex-row-reverse' : ''} gap-16 items-center`}>
                 <ScrollReveal direction={isReverse ? 'left' : 'right'} className="w-full lg:w-1/2">
                   <div className="relative aspect-[4/5] w-full">
-                    <img
-                      src={service.image || 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc'}
-                      alt={service.title}
-                      className="w-full h-full object-cover rounded-sm shadow-xl"
-                    />
+                    {service.image ? (
+                      <img
+                        src={service.image}
+                        alt={service.title}
+                        className="w-full h-full object-cover rounded-sm shadow-xl"
+                      />
+                    ) : (
+                      <div className="h-full w-full rounded-sm bg-black/10" />
+                    )}
                   </div>
                 </ScrollReveal>
 
@@ -175,9 +94,7 @@ export function ServicesPage({ initialServices }: { initialServices?: ServiceIte
 
                   {service.list_items && service.list_items.length > 0 && (
                     <div className={`space-y-4 mb-10 ${isDark ? '' : ''}`}>
-                      <p className={`text-sm uppercase tracking-[0.16em] ${isDark ? 'text-white/60' : 'text-brand-pink'}`}>
-                        Planning Options (Preview Only)
-                      </p>
+                      <p className={`text-sm uppercase tracking-[0.16em] ${isDark ? 'text-white/60' : 'text-brand-pink'}`}>Planning Options</p>
                       <ul className={`space-y-3 ${textColor} font-light`}>
                         {service.list_items.map((item: string, itemIndex: number) => (
                           <li key={`${service.id}-${itemIndex}`}>{item}</li>
@@ -196,7 +113,15 @@ export function ServicesPage({ initialServices }: { initialServices?: ServiceIte
             </div>
           </section>
         );
-      })}
+      }) : (
+        <section className="py-24 bg-brand-light">
+          <div className="container mx-auto px-6">
+            <div className="rounded-3xl border border-brand-purple/10 bg-white px-8 py-10 text-center text-brand-gray">
+              No services published yet.
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* FINAL CTA */}
       <section className="py-32 bg-white text-center">
