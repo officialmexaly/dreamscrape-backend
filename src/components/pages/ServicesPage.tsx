@@ -20,10 +20,12 @@ type ServiceItem = {
 };
 
 export default function ServicesPage({ initialServices }: { initialServices?: ServiceItem[] }) {
-  const [services, setServices] = useState<ServiceItem[]>(initialServices?.length ? initialServices : []);
+  const [services, setServices] = useState<ServiceItem[]>(initialServices ?? []);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
+      setIsLoading(true);
       try {
         const res = await fetch('/api/services', { cache: 'no-store' });
         const json = await res.json();
@@ -32,6 +34,8 @@ export default function ServicesPage({ initialServices }: { initialServices?: Se
         }
       } catch {
         // keep current state if fetch fails
+      } finally {
+        setIsLoading(false);
       }
     };
     if (!initialServices?.length) load();
@@ -52,7 +56,31 @@ export default function ServicesPage({ initialServices }: { initialServices?: Se
         </ScrollReveal>
       </section>
 
-      {services.length ? services.map((service, index) => {
+      {isLoading ? (
+        <section className="py-16 md:py-24 bg-brand-light">
+          <div className="container mx-auto px-4 sm:px-6">
+            <div className="space-y-8">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="flex flex-col lg:flex-row gap-8 md:gap-12 lg:gap-16 items-center">
+                    <div className="w-full lg:w-1/2">
+                      <div className="aspect-[4/5] w-full max-w-md mx-auto lg:max-w-none bg-gray-200 rounded-sm" />
+                    </div>
+                    <div className="w-full lg:w-1/2 space-y-4">
+                      <div className="h-4 bg-gray-200 rounded w-24" />
+                      <div className="h-8 bg-gray-200 rounded w-3/4" />
+                      <div className="h-4 bg-gray-200 rounded w-full" />
+                      <div className="h-4 bg-gray-200 rounded w-full" />
+                      <div className="h-4 bg-gray-200 rounded w-2/3" />
+                      <div className="h-10 bg-gray-200 rounded-full w-40 mt-6" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : services.length ? services.map((service, index) => {
         const isReverse = index % 2 === 1;
         const isDark = index === 2;
         const sectionBg = isDark ? 'bg-brand-purple text-white' : index % 2 === 0 ? 'bg-brand-light' : 'bg-white';
@@ -113,7 +141,7 @@ export default function ServicesPage({ initialServices }: { initialServices?: Se
             </div>
           </section>
         );
-      }) : (
+      }) : !isLoading && (
         <section className="py-16 md:py-24 bg-brand-light">
           <div className="container mx-auto px-4 sm:px-6">
             <div className="rounded-2xl md:rounded-3xl border border-brand-purple/10 bg-white px-6 md:px-8 py-8 md:py-10 text-center text-brand-gray">
