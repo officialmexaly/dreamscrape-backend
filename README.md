@@ -104,6 +104,7 @@ dreamscrap/
 - Optimized for all screen sizes
 - Smooth animations and transitions
 
+
 ## Deployment
 
 This project is deployed on Vercel and automatically builds from the `main` branch.
