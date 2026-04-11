@@ -68,7 +68,7 @@ export async function PUT(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  revalidateTag(CACHE_TAGS.blogPosts)
+  revalidateTag(CACHE_TAGS.blogPosts, "max")
   return NextResponse.json({ item: data })
 }
 
@@ -89,6 +89,6 @@ export async function DELETE(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  revalidateTag(CACHE_TAGS.blogPosts)
+  revalidateTag(CACHE_TAGS.blogPosts, "max")
   return NextResponse.json({ item: data })
 }

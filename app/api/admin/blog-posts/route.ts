@@ -49,6 +49,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  revalidateTag(CACHE_TAGS.blogPosts);
+  revalidateTag(CACHE_TAGS.blogPosts, "max");
   return NextResponse.json({ item: data });
 }

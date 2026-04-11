@@ -181,7 +181,7 @@ export async function POST() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    revalidateTag(CACHE_TAGS.BLOG_LIST);
+    revalidateTag(CACHE_TAGS.BLOG_LIST, "max");
     return NextResponse.json({
       success: true,
       message: 'Blog posts seeded successfully',

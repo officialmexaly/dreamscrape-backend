@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import PortfolioStoryPage from '@/app/_client/PortfolioStoryPageClient';
+import PortfolioStoryPage from '@/src/components/pages/PortfolioStoryPage';
 import { mapPortfolioItemToPublicPost } from '@/src/lib/public-posts';
 import { getPublishedPortfolioItemCached } from '@/src/lib/cached-posts';
 

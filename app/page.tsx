@@ -1,4 +1,4 @@
-import HomePage from '@/app/_client/HomePageClient';
+import HomePage from '@/src/components/pages/HomePage';
 import { getSiteContentPageCached } from '@/src/lib/cached-site-content';
 
 export default async function Page() {

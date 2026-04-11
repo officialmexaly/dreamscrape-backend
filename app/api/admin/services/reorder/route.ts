@@ -5,7 +5,7 @@ import { SERVICES_CACHE_TAGS } from '@/src/lib/cached-services';
 
 function safeRevalidate(tag: string) {
   try {
-    revalidateTag(tag);
+    revalidateTag(tag, "max");
   } catch (error) {
     console.warn(`Failed to revalidate tag "${tag}":`, error);
   }

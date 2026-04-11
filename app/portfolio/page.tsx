@@ -1,4 +1,4 @@
-import PortfolioPage from '@/app/_client/PortfolioPageClient';
+import PortfolioPage from '@/src/components/pages/PortfolioPage';
 import { getPublishedPortfolioItemsCached } from '@/src/lib/cached-posts';
 import { mapPortfolioItemToPublicPost } from '@/src/lib/public-posts';
 import type { BlogPost } from '@/src/lib/blog-posts';

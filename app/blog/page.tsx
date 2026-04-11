@@ -1,4 +1,4 @@
-import BlogPage from '@/app/_client/BlogPageClient';
+import BlogPage from '@/src/components/pages/BlogPage';
 import { getPublishedBlogPostsCached } from '@/src/lib/cached-posts';
 import { mapBlogRowToPublicPost } from '@/src/lib/public-posts';
 import type { BlogPost } from '@/src/lib/blog-posts';

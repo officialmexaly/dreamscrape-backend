@@ -86,10 +86,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Revalidate site content cache
-    revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL);
+    revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL, "max");
     if (data?.page) {
-      revalidateTag(SITE_CONTENT_CACHE_TAGS.PAGE(String(data.page)));
-      if (data?.section) revalidateTag(SITE_CONTENT_CACHE_TAGS.SECTION(String(data.page), String(data.section)));
+      revalidateTag(SITE_CONTENT_CACHE_TAGS.PAGE(String(data.page, "max")));
+      if (data?.section) revalidateTag(SITE_CONTENT_CACHE_TAGS.SECTION(String(data.page, "max"), String(data.section)));
     }
 
     return NextResponse.json({ item: data });
@@ -115,7 +115,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     }
 
     // Revalidate site content cache
-    revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL);
+    revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL, "max");
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

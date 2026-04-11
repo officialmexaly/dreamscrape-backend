@@ -1,4 +1,4 @@
-import AboutPage from '@/app/_client/AboutPageClient';
+import AboutPage from '@/src/components/pages/AboutPage';
 import { getSiteContentPageCached } from '@/src/lib/cached-site-content';
 
 export default async function Page() {

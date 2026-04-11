@@ -1,79 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { writeFile } from 'fs/promises';
-
-const MEDIA_DIR = path.join(process.cwd(), 'public', 'media');
-
-// Helper function to get file stats safely
-async function getFileStats(filePath: string) {
-  try {
-    return await fs.stat(filePath);
-  } catch {
-    return null;
-  }
-}
-
-// Helper function to format file size
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-}
+import {
+  listMedia,
+  uploadFile,
+  MediaItem,
+} from '@/src/lib/supabase-storage-admin';
 
 export async function GET() {
   try {
-    // Ensure media directory exists
-    await fs.mkdir(MEDIA_DIR, { recursive: true });
+    const { data: items, error } = await listMedia();
 
-    // Read all files in the media directory
-    const files = await fs.readdir(MEDIA_DIR);
-
-    // Get file information for each file
-    const mediaItems = await Promise.all(
-      files.map(async (filename) => {
-        const filePath = path.join(MEDIA_DIR, filename);
-        const stats = await getFileStats(filePath);
-
-        if (!stats || !stats.isFile()) return null;
-
-        // Get file extension to determine type
-        const ext = path.extname(filename).toLowerCase();
-        const mimeTypes: Record<string, string> = {
-          '.jpg': 'image/jpeg',
-          '.jpeg': 'image/jpeg',
-          '.png': 'image/png',
-          '.gif': 'image/gif',
-          '.webp': 'image/webp',
-          '.svg': 'image/svg+xml',
-          '.pdf': 'application/pdf',
-          '.mp4': 'video/mp4',
-          '.webm': 'video/webm',
-        };
-
-        return {
-          id: filename, // Use filename as ID
-          name: filename,
-          url: `/media/${filename}`,
-          type: ext.startsWith('.jpg') || ext.startsWith('.png') || ext.startsWith('.gif') || ext.startsWith('.webp') || ext.startsWith('.svg') ? 'image' : 'file',
-          mime_type: mimeTypes[ext] || 'application/octet-stream',
-          size: formatFileSize(stats.size),
-          size_bytes: stats.size,
-          created_at: stats.mtime.toISOString(),
-          folder: 'media',
-        };
-      })
-    );
-
-    // Filter out null values and sort by creation date (newest first)
-    const items = mediaItems
-      .filter((item): item is NonNullable<typeof item> => item !== null)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    if (error) {
+      console.error('❌ Error listing media:', error);
+      return NextResponse.json({ error }, { status: 500 });
+    }
 
     return NextResponse.json({ items });
   } catch (error: any) {
-    console.error('❌ Error reading media directory:', error);
-    return NextResponse.json({ error: error.message || 'Failed to read media directory' }, { status: 500 });
+    console.error('❌ Error listing media:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to list media' },
+      { status: 500 }
+    );
   }
 }
 
@@ -86,40 +33,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Ensure media directory exists
-    await fs.mkdir(MEDIA_DIR, { recursive: true });
+    // Upload file to Supabase Storage
+    const { data: uploadData, error: uploadError } = await uploadFile(file);
 
-    // Generate unique filename if needed
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Use original filename
-    const filename = file.name;
-    const filepath = path.join(MEDIA_DIR, filename);
-
-    // Write file to disk
-    await writeFile(filepath, buffer);
-
-    // Get file stats
-    const stats = await fs.stat(filepath);
+    if (uploadError || !uploadData) {
+      console.error('❌ Error uploading file:', uploadError);
+      return NextResponse.json(
+        { error: uploadError?.message || 'Failed to upload file' },
+        { status: 500 }
+      );
+    }
 
     // Return the media item
-    const item = {
-      id: filename,
-      name: filename,
-      url: `/media/${filename}`,
-      type: file.type.startsWith('image/') ? 'image' : 'file',
-      mime_type: file.type,
-      size: formatFileSize(stats.size),
-      size_bytes: stats.size,
-      created_at: stats.mtime.toISOString(),
+    const item: MediaItem = {
+      id: uploadData.path,
+      name: uploadData.fileName,
+      url: uploadData.url,
+      path: uploadData.path,
+      type: uploadData.contentType.startsWith('image/') ? 'image' : 'file',
+      mime_type: uploadData.contentType,
+      size: uploadData.size < 1024
+        ? `${uploadData.size} B`
+        : uploadData.size < 1024 * 1024
+        ? `${(uploadData.size / 1024).toFixed(1)} KB`
+        : `${(uploadData.size / (1024 * 1024)).toFixed(1)} MB`,
+      size_bytes: uploadData.size,
+      created_at: new Date().toISOString(),
       folder: 'media',
     };
 
     return NextResponse.json({ item }, { status: 201 });
   } catch (error: any) {
     console.error('❌ Error uploading file:', error);
-    return NextResponse.json({ error: error.message || 'Failed to upload file' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Failed to upload file' },
+      { status: 500 }
+    );
   }
 }
 

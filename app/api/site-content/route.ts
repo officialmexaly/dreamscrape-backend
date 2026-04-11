@@ -17,11 +17,11 @@ function isDatabaseUnavailableError(error: any) {
 }
 
 function revalidateSiteContent(page?: string | null, section?: string | null) {
-  revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL);
+  revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL, "max");
   if (page) {
-    revalidateTag(SITE_CONTENT_CACHE_TAGS.PAGE(page));
+    revalidateTag(SITE_CONTENT_CACHE_TAGS.PAGE(page, "max"));
     if (section) {
-      revalidateTag(SITE_CONTENT_CACHE_TAGS.SECTION(page, section));
+      revalidateTag(SITE_CONTENT_CACHE_TAGS.SECTION(page, section, "max"));
     }
   }
 }
@@ -216,11 +216,11 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL);
-      for (const p of pages) revalidateTag(SITE_CONTENT_CACHE_TAGS.PAGE(p));
+      revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL, "max");
+      for (const p of pages) revalidateTag(SITE_CONTENT_CACHE_TAGS.PAGE(p, "max"));
       for (const ps of pageSections) {
         const [p, s] = ps.split(':');
-        if (p && s) revalidateTag(SITE_CONTENT_CACHE_TAGS.SECTION(p, s));
+        if (p && s) revalidateTag(SITE_CONTENT_CACHE_TAGS.SECTION(p, s, "max"));
       }
       return NextResponse.json({ results }, { status: 200 });
     }
@@ -366,11 +366,11 @@ export async function PUT(request: NextRequest) {
       }
 	    }
 
-	    revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL);
-	    for (const p of pages) revalidateTag(SITE_CONTENT_CACHE_TAGS.PAGE(p));
+	    revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL, "max");
+	    for (const p of pages) revalidateTag(SITE_CONTENT_CACHE_TAGS.PAGE(p, "max"));
 	    for (const ps of pageSections) {
 	      const [p, s] = ps.split(':');
-	      if (p && s) revalidateTag(SITE_CONTENT_CACHE_TAGS.SECTION(p, s));
+	      if (p && s) revalidateTag(SITE_CONTENT_CACHE_TAGS.SECTION(p, s, "max"));
 	    }
 	    return NextResponse.json({ results });
 	  } catch (error: any) {
@@ -395,7 +395,7 @@ export async function DELETE(request: NextRequest) {
 
 	      if (error) throw error;
 
-	      revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL);
+	      revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL, "max");
 	      return NextResponse.json({ success: true, id });
 	    }
 
@@ -417,7 +417,7 @@ export async function DELETE(request: NextRequest) {
 
 	    if (error) throw error;
 
-	    revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL);
+	    revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL, "max");
 	    return NextResponse.json({ success: true, deleted: data });
 	  } catch (error: any) {
 	    console.error('❌ Error deleting site content:', error);

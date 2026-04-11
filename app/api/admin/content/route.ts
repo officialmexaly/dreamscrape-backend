@@ -86,9 +86,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL);
-    if (data?.page) revalidateTag(SITE_CONTENT_CACHE_TAGS.PAGE(String(data.page)));
-    if (data?.page && data?.section) revalidateTag(SITE_CONTENT_CACHE_TAGS.SECTION(String(data.page), String(data.section)));
+    revalidateTag(SITE_CONTENT_CACHE_TAGS.ALL, "max");
+    if (data?.page) revalidateTag(SITE_CONTENT_CACHE_TAGS.PAGE(String(data.page, "max")));
+    if (data?.page && data?.section) revalidateTag(SITE_CONTENT_CACHE_TAGS.SECTION(String(data.page, "max"), String(data.section)));
     return NextResponse.json({ item: data }, { status: 201 });
   } catch (error: any) {
     console.error('❌ Unexpected error:', error);

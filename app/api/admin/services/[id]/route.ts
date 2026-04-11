@@ -8,7 +8,7 @@ const isUuid = (value: string) =>
 
 function safeRevalidate(tag: string) {
   try {
-    revalidateTag(tag);
+    revalidateTag(tag, "max");
   } catch (error) {
     console.warn(`Failed to revalidate tag "${tag}":`, error);
   }

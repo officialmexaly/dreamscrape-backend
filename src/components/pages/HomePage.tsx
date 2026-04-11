@@ -640,9 +640,9 @@ export default function HomePage({ initialGrouped }: { initialGrouped?: Record<s
           </div>
         ))}
 
-        <div className="relative z-20 text-center px-4 sm:px-6 max-w-4xl mx-auto mt-24 md:mt-20">
+        <div className="relative z-20 text-center px-4 sm:px-6 max-w-4xl mx-auto mt-20 md:mt-24">
           <ScrollReveal direction="up" delay={200}>
-            <h1 className="text-[2.5rem] sm:text-5xl md:text-6xl lg:text-7xl font-serif text-white mb-6 leading-[0.95]">
+            <h1 className="text-[2rem] xs:text-[2.5rem] sm:text-5xl md:text-6xl lg:text-7xl font-serif text-white mb-6 leading-[0.95]">
               {heroText.headline}
               <br />
               {heroText.subheadline}
@@ -650,7 +650,7 @@ export default function HomePage({ initialGrouped }: { initialGrouped?: Record<s
           </ScrollReveal>
 
           <ScrollReveal direction="up" delay={400}>
-            <p className="text-white/90 text-base md:text-base lg:text-lg font-light mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-white/90 text-sm xs:text-base md:text-base lg:text-lg font-light mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed px-2">
               {heroText.description}
             </p>
           </ScrollReveal>
@@ -658,19 +658,19 @@ export default function HomePage({ initialGrouped }: { initialGrouped?: Record<s
           <ScrollReveal
             direction="up"
             delay={600}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-2">
 
-            <Link href="/consultation-editorial" className="w-full sm:w-auto">
+            <Link href="/consultation-editorial" className="w-full sm:w-auto max-w-xs">
               <Button
-                className="min-h-12 rounded-full px-6 sm:px-8 text-sm tracking-[0.14em] uppercase bg-brand-purple hover:bg-brand-pink text-white w-full sm:w-auto transition-colors">
+                className="min-h-12 rounded-full px-6 sm:px-8 text-sm tracking-[0.14em] uppercase bg-brand-purple hover:bg-brand-pink text-white w-full transition-colors">
 
                 Book a Consultation
               </Button>
             </Link>
-            <Link href="/portfolio" className="w-full sm:w-auto">
+            <Link href="/portfolio" className="w-full sm:w-auto max-w-xs">
               <Button
                 variant="outline"
-                className="min-h-12 rounded-full px-6 sm:px-8 text-sm tracking-[0.14em] uppercase border-white text-white hover:bg-white hover:text-brand-dark w-full sm:w-auto transition-colors bg-transparent">
+                className="min-h-12 rounded-full px-6 sm:px-8 text-sm tracking-[0.14em] uppercase border-white text-white hover:bg-white hover:text-brand-dark w-full transition-colors bg-transparent">
 
                 View Blog
               </Button>
@@ -678,19 +678,19 @@ export default function HomePage({ initialGrouped }: { initialGrouped?: Record<s
           </ScrollReveal>
 
           <ScrollReveal direction="up" delay={800}>
-            <p className="text-white/70 text-xs tracking-[0.16em] uppercase mt-10 md:mt-12">
+            <p className="text-white/70 text-[0.65rem] xs:text-xs tracking-[0.16em] uppercase mt-8 md:mt-12 px-4">
               {heroText.bookingNote}
             </p>
           </ScrollReveal>
         </div>
 
         {/* Dot Navigation */}
-        <div className="absolute bottom-10 left-0 right-0 z-20 flex justify-center gap-3">
+        <div className="absolute bottom-8 xs:bottom-10 left-0 right-0 z-20 flex justify-center gap-2 xs:gap-3 px-4">
           {slides.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${currentSlide === index ? 'bg-white w-6' : 'bg-white/50'}`}
+              className={`h-3 xs:h-2 rounded-full transition-all duration-300 ${currentSlide === index ? 'bg-white w-8 xs:w-6' : 'bg-white/50 w-3 xs:w-2'}`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
@@ -698,35 +698,35 @@ export default function HomePage({ initialGrouped }: { initialGrouped?: Record<s
       </section>
 
       {/* BRAND INTRO */}
-      <section className="py-20 lg:py-32 bg-white">
+      <section className="py-16 sm:py-20 lg:py-32 bg-white">
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="flex flex-col lg:flex-row items-center gap-16">
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
             <ScrollReveal direction="right" className="w-full lg:w-1/2">
               <div className="relative aspect-[4/5] w-full max-w-md mx-auto lg:mx-0">
                 <img
                   src={brandIntro.image}
                   alt="Elegant table setting"
                   className="w-full h-full object-cover rounded-sm" />
-                
-                <div className="absolute -bottom-6 -right-6 w-2/3 aspect-square bg-brand-light -z-10" />
+
+                <div className="absolute -bottom-4 xs:-bottom-6 -right-4 xs:-right-6 w-2/3 aspect-square bg-brand-light -z-10" />
               </div>
             </ScrollReveal>
 
             <ScrollReveal direction="left" className="w-full lg:w-1/2">
-              <h2 className="text-sm tracking-[0.16em] uppercase text-brand-gray mb-4">
+              <h2 className="text-xs sm:text-sm tracking-[0.16em] uppercase text-brand-gray mb-3 sm:mb-4">
                 {brandIntro.label}
               </h2>
-              <h3 className="text-3xl md:text-4xl font-serif text-brand-dark mb-8 leading-tight">
+              <h3 className="text-2xl xs:text-3xl md:text-4xl font-serif text-brand-dark mb-6 sm:mb-8 leading-tight">
                 {brandIntro.headline}
               </h3>
-              <p className="text-brand-gray font-light leading-relaxed mb-6">
+              <p className="text-brand-gray font-light leading-relaxed mb-4 sm:mb-6 text-sm xs:text-base">
                 {brandIntro.paragraph1}
               </p>
-              <p className="text-brand-gray font-light leading-relaxed mb-8">
+              <p className="text-brand-gray font-light leading-relaxed mb-6 sm:mb-8 text-sm xs:text-base">
                 {brandIntro.paragraph2}
               </p>
-              <div className="pt-6 border-t border-brand-gray/20">
-                <p className="text-sm tracking-widest uppercase text-brand-purple font-medium">
+              <div className="pt-4 sm:pt-6 border-t border-brand-gray/20">
+                <p className="text-xs sm:text-sm tracking-widest uppercase text-brand-purple font-medium">
                   {brandIntro.locationNote}
                 </p>
               </div>
@@ -736,13 +736,13 @@ export default function HomePage({ initialGrouped }: { initialGrouped?: Record<s
       </section>
 
       {/* STATISTICS BANNER */}
-      <section className="py-14 md:py-16 bg-brand-purple text-white">
+      <section className="py-12 sm:py-14 md:py-16 bg-brand-purple text-white">
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 text-center">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 text-center">
             {statistics.map((stat, index) => (
               <ScrollReveal key={stat.id || index} delay={(index + 1) * 100}>
-                <p className="text-4xl font-serif mb-2">{stat.value}</p>
-                <p className="text-xs tracking-widest uppercase text-white/70">
+                <p className="text-3xl xs:text-4xl font-serif mb-2">{stat.value}</p>
+                <p className="text-[0.65rem] xs:text-xs tracking-widest uppercase text-white/70">
                   {stat.label}
                 </p>
               </ScrollReveal>
@@ -797,17 +797,17 @@ export default function HomePage({ initialGrouped }: { initialGrouped?: Record<s
       </section>
 
       {/* FEATURED EVENTS */}
-      <section className="py-24 lg:py-32 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+      <section className="py-16 sm:py-20 lg:py-32 bg-white">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-12 sm:mb-16 gap-4 sm:gap-6">
             <ScrollReveal direction="right" className="max-w-xl">
-              <h2 className="text-sm tracking-[0.2em] uppercase text-brand-gray mb-4">
+              <h2 className="text-xs sm:text-sm tracking-[0.2em] uppercase text-brand-gray mb-3 sm:mb-4">
                 {featuredEvents.label}
               </h2>
-              <h3 className="text-3xl md:text-4xl font-serif text-brand-dark mb-6">
+              <h3 className="text-2xl xs:text-3xl md:text-4xl font-serif text-brand-dark mb-4 sm:mb-6">
                 {featuredEvents.headline}
               </h3>
-              <p className="text-brand-gray font-light leading-relaxed">
+              <p className="text-brand-gray font-light leading-relaxed text-sm xs:text-base">
                 {featuredEvents.description}
               </p>
             </ScrollReveal>
@@ -822,12 +822,12 @@ export default function HomePage({ initialGrouped }: { initialGrouped?: Record<s
             </ScrollReveal>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {events.map((event, index) => (
               <ScrollReveal key={event.id || index} delay={index * 100} direction="up">
                 <Link href={featuredCtaHref}>
                   <div
-                  className="group relative aspect-[4/3] overflow-hidden cursor-pointer">
+                  className="group relative aspect-[3/4] sm:aspect-[4/3] overflow-hidden cursor-pointer">
 
                     <img
                     src={event.image}
@@ -835,11 +835,11 @@ export default function HomePage({ initialGrouped }: { initialGrouped?: Record<s
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
 
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
-                    <div className="absolute bottom-0 left-0 p-8">
-                      <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md text-white text-[0.65rem] tracking-widest uppercase mb-3">
+                    <div className="absolute bottom-0 left-0 p-4 sm:p-6 md:p-8">
+                      <span className="inline-block px-2 sm:px-3 py-1 bg-white/20 backdrop-blur-md text-white text-[0.6rem] sm:text-[0.65rem] tracking-widest uppercase mb-2 sm:mb-3">
                         {event.location}
                       </span>
-                      <h4 className="text-2xl font-serif text-white">
+                      <h4 className="text-xl xs:text-2xl font-serif text-white leading-tight">
                         {event.title}
                       </h4>
                     </div>
@@ -852,28 +852,28 @@ export default function HomePage({ initialGrouped }: { initialGrouped?: Record<s
       </section>
 
       {/* WHY DREAMSCAPE */}
-      <section className="py-24 bg-brand-light">
-        <div className="container mx-auto px-6">
+      <section className="py-16 sm:py-20 md:py-24 bg-brand-light">
+        <div className="container mx-auto px-4 sm:px-6">
           <ScrollReveal
             direction="up"
-            className="text-center max-w-2xl mx-auto mb-16">
-            
+            className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+
             {whyDreamscape.label ? (
-              <h2 className="text-sm tracking-[0.2em] uppercase text-brand-gray mb-4">
+              <h2 className="text-xs sm:text-sm tracking-[0.2em] uppercase text-brand-gray mb-3 sm:mb-4">
                 {whyDreamscape.label}
               </h2>
             ) : null}
-            <h2 className="text-3xl md:text-4xl font-serif text-brand-dark mb-6">
+            <h2 className="text-2xl xs:text-3xl md:text-4xl font-serif text-brand-dark mb-4 sm:mb-6">
               {whyDreamscape.headline}
             </h2>
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 max-w-5xl mx-auto">
             {whyDreamscape.features.map((point, index) => (
               <ScrollReveal key={index} delay={index * 100} direction="up">
-                <div className="text-center px-4">
-                  <div className="w-12 h-[1px] bg-brand-pink mx-auto mb-6" />
-                  <p className="text-brand-dark font-serif text-lg leading-relaxed">
+                <div className="text-center px-2 sm:px-4">
+                  <div className="w-10 sm:w-12 h-[1px] bg-brand-pink mx-auto mb-4 sm:mb-6" />
+                  <p className="text-brand-dark font-serif text-base xs:text-lg leading-relaxed">
                     {point}
                   </p>
                 </div>
@@ -884,38 +884,38 @@ export default function HomePage({ initialGrouped }: { initialGrouped?: Record<s
       </section>
 
       {/* LOVE NOTES SNIPPET */}
-      <section className="py-24 lg:py-32 bg-brand-dark text-white text-center">
-        <div className="container mx-auto px-6 max-w-4xl">
+      <section className="py-16 sm:py-20 lg:py-32 bg-brand-dark text-white text-center">
+        <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
           <ScrollReveal direction="up">
-            <h2 className="text-sm tracking-[0.2em] uppercase text-white/50 mb-16">
+            <h2 className="text-xs sm:text-sm tracking-[0.2em] uppercase text-white/50 mb-12 sm:mb-16">
               Love Notes
             </h2>
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 mb-12 sm:mb-16">
             <ScrollReveal direction="right" delay={100}>
-              <p className="font-serif text-xl md:text-2xl italic leading-relaxed mb-6 text-white/90">
+              <p className="font-serif text-lg xs:text-xl md:text-2xl italic leading-relaxed mb-4 sm:mb-6 text-white/90 px-2">
                 "Dreamscape truly made my dream birthday come true..."
               </p>
-              <div className="flex items-center justify-center gap-4">
-                <div className="w-8 h-[1px] bg-brand-pink" />
-                <p className="text-sm tracking-widest uppercase text-white/70">
+              <div className="flex items-center justify-center gap-2 sm:gap-4">
+                <div className="w-6 sm:w-8 h-[1px] bg-brand-pink" />
+                <p className="text-[0.7rem] sm:text-sm tracking-widest uppercase text-white/70">
                   Nneoma Achioso
                 </p>
-                <div className="w-8 h-[1px] bg-brand-pink" />
+                <div className="w-6 sm:w-8 h-[1px] bg-brand-pink" />
               </div>
             </ScrollReveal>
 
             <ScrollReveal direction="left" delay={200}>
-              <p className="font-serif text-xl md:text-2xl italic leading-relaxed mb-6 text-white/90">
+              <p className="font-serif text-lg xs:text-xl md:text-2xl italic leading-relaxed mb-4 sm:mb-6 text-white/90 px-2">
                 "My grad party turned out amazing..."
               </p>
-              <div className="flex items-center justify-center gap-4">
-                <div className="w-8 h-[1px] bg-brand-pink" />
-                <p className="text-sm tracking-widest uppercase text-white/70">
+              <div className="flex items-center justify-center gap-2 sm:gap-4">
+                <div className="w-6 sm:w-8 h-[1px] bg-brand-pink" />
+                <p className="text-[0.7rem] sm:text-sm tracking-widest uppercase text-white/70">
                   Dr. Chika Obetta
                 </p>
-                <div className="w-8 h-[1px] bg-brand-pink" />
+                <div className="w-6 sm:w-8 h-[1px] bg-brand-pink" />
               </div>
             </ScrollReveal>
           </div>
@@ -923,7 +923,7 @@ export default function HomePage({ initialGrouped }: { initialGrouped?: Record<s
           <ScrollReveal direction="up" delay={300}>
             <Link
               href="/love-notes"
-              className="inline-flex min-h-12 items-center justify-center rounded-full border border-brand-pink px-6 text-sm tracking-[0.14em] uppercase text-brand-pink hover:bg-brand-pink hover:text-white transition-colors">
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-brand-pink px-4 sm:px-6 text-sm tracking-[0.14em] uppercase text-brand-pink hover:bg-brand-pink hover:text-white transition-colors">
               Read More
             </Link>
           </ScrollReveal>
@@ -931,31 +931,31 @@ export default function HomePage({ initialGrouped }: { initialGrouped?: Record<s
       </section>
 
       {/* FINAL CTA */}
-      <section className="py-32 bg-white text-center">
-        <div className="container mx-auto px-6">
+      <section className="py-20 sm:py-24 lg:py-32 bg-white text-center">
+        <div className="container mx-auto px-4 sm:px-6">
           <ScrollReveal direction="up">
-            <h2 className="text-4xl md:text-5xl font-serif text-brand-dark mb-10">
+            <h2 className="text-3xl xs:text-4xl md:text-5xl font-serif text-brand-dark mb-8 sm:mb-10 px-2">
               {ctaSection.headline || DEFAULT_CTA.headline}
             </h2>
             {ctaSection.subheadline ? (
-              <p className="text-sm tracking-[0.2em] uppercase text-brand-gray mb-4">
+              <p className="text-xs sm:text-sm tracking-[0.2em] uppercase text-brand-gray mb-3 sm:mb-4">
                 {ctaSection.subheadline}
               </p>
             ) : null}
             {ctaSection.description ? (
-              <p className="mx-auto mb-10 max-w-2xl text-brand-gray font-light leading-relaxed">
+              <p className="mx-auto mb-8 sm:mb-10 max-w-2xl text-brand-gray font-light leading-relaxed px-4 text-sm xs:text-base">
                 {ctaSection.description}
               </p>
             ) : null}
             <Link href="/consultation-editorial">
               <Button
-                className="min-h-12 rounded-full px-8 sm:px-10 text-sm tracking-[0.14em] uppercase bg-brand-purple hover:bg-brand-pink text-white transition-colors">
+                className="min-h-12 rounded-full px-6 sm:px-8 xs:px-10 text-sm tracking-[0.14em] uppercase bg-brand-purple hover:bg-brand-pink text-white transition-colors">
 
                 Book Your Consultation
               </Button>
             </Link>
             {ctaSection.details ? (
-              <p className="mx-auto mt-6 max-w-2xl text-xs tracking-[0.08em] uppercase text-brand-gray/80">
+              <p className="mx-auto mt-4 sm:mt-6 max-w-2xl text-[0.65rem] xs:text-xs tracking-[0.08em] uppercase text-brand-gray/80 px-4">
                 {ctaSection.details}
               </p>
             ) : null}

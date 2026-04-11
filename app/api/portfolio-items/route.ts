@@ -64,8 +64,8 @@ export async function POST(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   // Immediately invalidate cached public reads
-  revalidateTag(POSTS_CACHE_TAGS.PORTFOLIO_LIST);
-  if (data?.id) revalidateTag(POSTS_CACHE_TAGS.PORTFOLIO_ITEM(String(data.id)));
-  if (data?.slug) revalidateTag(POSTS_CACHE_TAGS.PORTFOLIO_ITEM(String(data.slug)));
+  revalidateTag(POSTS_CACHE_TAGS.PORTFOLIO_LIST, "max");
+  if (data?.id) revalidateTag(POSTS_CACHE_TAGS.PORTFOLIO_ITEM(String(data.id, "max")));
+  if (data?.slug) revalidateTag(POSTS_CACHE_TAGS.PORTFOLIO_ITEM(String(data.slug, "max")));
   return NextResponse.json({ item: data }, { status: 201 });
 }

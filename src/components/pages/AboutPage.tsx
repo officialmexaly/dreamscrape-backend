@@ -29,7 +29,7 @@ type TeamContent = {
   description: string;
 };
 
-export function AboutPage({
+export default function AboutPage({
   initialFounder,
   initialStory,
   initialPhilosophy,
@@ -218,7 +218,4 @@ export function AboutPage({
         </div>
       )}
     </div>);
-
 }
-
-export default AboutPage;

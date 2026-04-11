@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import BlogStoryPage from '@/app/_client/BlogStoryPageClient';
+import BlogStoryPage from '@/src/components/pages/BlogStoryPage';
 import { mapBlogRowToPublicPost } from '@/src/lib/public-posts';
 import { getPublishedBlogPostCached } from '@/src/lib/cached-posts';
 
