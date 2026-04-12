@@ -42,10 +42,25 @@ export function LoginPage({ callbackUrl = '/admin/dashboard' }: LoginPageProps) 
         email,
         password,
         callbackUrl,
-        redirect: true,
+        redirect: false, // We'll handle redirect manually
       })
 
-      if (result?.error) throw new Error(result.error)
+      if (result?.error) {
+        throw new Error(result.error)
+      }
+
+      // Successful login - redirect immediately
+      toast({
+        title: 'Login successful',
+        description: 'Redirecting to dashboard...',
+        variant: 'success',
+        duration: 2000,
+      })
+
+      // Small delay to show the success message
+      setTimeout(() => {
+        router.push(callbackUrl)
+      }, 500)
     } catch (err: any) {
       setIsLoading(false)
       toast({
