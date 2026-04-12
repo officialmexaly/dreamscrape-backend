@@ -50,17 +50,7 @@ export function LoginPage({ callbackUrl = '/admin/dashboard' }: LoginPageProps) 
       }
 
       // Successful login - redirect immediately
-      toast({
-        title: 'Login successful',
-        description: 'Redirecting to dashboard...',
-        variant: 'success',
-        duration: 2000,
-      })
-
-      // Small delay to show the success message
-      setTimeout(() => {
-        router.push(callbackUrl)
-      }, 500)
+      router.push(callbackUrl)
     } catch (err: any) {
       setIsLoading(false)
       toast({
