@@ -64,7 +64,7 @@ export default function ServicesPage({ initialServices }: { initialServices?: Se
                 <div key={i} className="animate-pulse">
                   <div className="flex flex-col lg:flex-row gap-8 md:gap-12 lg:gap-16 items-center">
                     <div className="w-full lg:w-1/2">
-                      <div className="aspect-[4/5] w-full max-w-md mx-auto lg:max-w-none bg-gray-200 rounded-sm" />
+                      <div className="aspect-[4/5] w-full max-w-[26rem] mx-auto lg:max-w-none bg-gray-200 rounded-sm" />
                     </div>
                     <div className="w-full lg:w-1/2 space-y-4">
                       <div className="h-4 bg-gray-200 rounded w-24" />
@@ -94,38 +94,50 @@ export default function ServicesPage({ initialServices }: { initialServices?: Se
         return (
           <section key={service.id} className={`py-16 md:py-24 ${sectionBg}`}>
             <div className="container mx-auto px-4 sm:px-6">
-              <div className={`flex flex-col lg:flex-row ${isReverse ? 'lg:flex-row-reverse' : ''} gap-8 md:gap-12 lg:gap-16 items-center`}>
-                <ScrollReveal direction={isReverse ? 'left' : 'right'} className="w-full lg:w-1/2">
-                  <div className="relative aspect-[4/5] w-full max-w-md mx-auto lg:max-w-none">
+              <div
+                className={`flex flex-col lg:flex-row ${isReverse ? 'lg:flex-row-reverse' : ''} gap-10 md:gap-12 lg:gap-16 items-start lg:items-center`}
+              >
+                <ScrollReveal
+                  direction={isReverse ? 'left' : 'right'}
+                  className="w-full lg:w-1/2"
+                >
+                  <div className="relative aspect-[4/5] w-full max-w-[28rem] mx-auto overflow-hidden rounded-[1.25rem] sm:rounded-[1.5rem] lg:max-w-none lg:rounded-sm">
                     {service.image ? (
                       <img
                         src={service.image}
                         alt={service.title}
-                        className="w-full h-full object-cover rounded-sm shadow-xl"
+                        className="w-full h-full object-cover shadow-xl"
                       />
                     ) : (
-                      <div className="h-full w-full rounded-sm bg-black/10" />
+                      <div className="h-full w-full bg-black/10" />
                     )}
                   </div>
                 </ScrollReveal>
 
-                <ScrollReveal direction={isReverse ? 'right' : 'left'} className="w-full lg:w-1/2">
-                  <h2 className={`text-xs tracking-[0.2em] uppercase mb-3 md:mb-4 ${labelColor}`}>
+                <ScrollReveal
+                  direction={isReverse ? 'right' : 'left'}
+                  className="w-full lg:w-1/2"
+                >
+                  <div className="mx-auto max-w-[36rem] lg:max-w-none">
+                  <h2 className={`text-[0.68rem] sm:text-xs tracking-[0.2em] uppercase mb-3 md:mb-4 ${labelColor}`}>
                     {service.category || 'Services'}
                   </h2>
-                  <h3 className={`text-2xl sm:text-3xl md:text-4xl font-serif mb-4 md:mb-6 ${titleColor} leading-tight`}>
+                  <h3 className={`max-w-[14ch] text-2xl sm:text-3xl md:text-4xl font-serif mb-4 md:mb-6 ${titleColor} leading-tight`}>
                     {service.title}
                   </h3>
-                  <p className={`${textColor} font-light leading-relaxed mb-6 md:mb-10 text-sm md:text-base`}>
+                  <p className={`${textColor} font-light leading-7 md:leading-relaxed mb-6 md:mb-10 text-[0.95rem] md:text-base`}>
                     {service.description}
                   </p>
 
                   {service.list_items && service.list_items.length > 0 && (
                     <div className={`space-y-3 md:space-y-4 mb-6 md:mb-10`}>
                       <p className={`text-xs sm:text-sm uppercase tracking-[0.16em] ${isDark ? 'text-white/60' : 'text-brand-pink'}`}>Planning Options</p>
-                      <ul className={`space-y-2 md:space-y-3 ${textColor} font-light text-sm md:text-base`}>
+                      <ul className={`space-y-2.5 md:space-y-3 ${textColor} font-light text-sm md:text-base`}>
                         {service.list_items.map((item: string, itemIndex: number) => (
-                          <li key={`${service.id}-${itemIndex}`}>{item}</li>
+                          <li key={`${service.id}-${itemIndex}`} className="flex items-start gap-3">
+                            <span className={`mt-[0.45rem] h-1.5 w-1.5 flex-none rounded-full ${isDark ? 'bg-white/60' : 'bg-brand-pink'}`} />
+                            <span>{item}</span>
+                          </li>
                         ))}
                       </ul>
                     </div>
@@ -133,9 +145,10 @@ export default function ServicesPage({ initialServices }: { initialServices?: Se
 
                   <a
                     href={service.cta_link || '/consultation-editorial'}
-                    className={`inline-block rounded-full border px-5 md:px-6 py-2.5 md:py-3 text-xs sm:text-sm uppercase tracking-[0.12em] md:tracking-[0.14em] transition-colors ${buttonClass}`}>
+                    className={`inline-flex min-h-12 w-full items-center justify-center rounded-full border px-5 md:px-6 py-3 text-xs sm:text-sm uppercase tracking-[0.12em] md:tracking-[0.14em] transition-colors sm:w-auto ${buttonClass}`}>
                     {service.cta_text || 'Start Planning'}
                   </a>
+                  </div>
                 </ScrollReveal>
               </div>
             </div>
