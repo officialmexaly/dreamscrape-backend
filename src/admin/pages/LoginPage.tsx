@@ -4,7 +4,7 @@ import * as React from 'react'
 import Image from 'next/image'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, Lock } from 'lucide-react'
+import { Eye, EyeOff, Lock, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -49,7 +49,13 @@ export function LoginPage({ callbackUrl = '/admin/dashboard' }: LoginPageProps) 
         throw new Error(result.error)
       }
 
-      // Successful login - redirect immediately
+      // Successful login - show toast and redirect immediately
+      toast({
+        title: 'Login successful',
+        description: 'Welcome back!',
+        variant: 'success',
+        duration: 3000,
+      })
       router.push(callbackUrl)
     } catch (err: any) {
       setIsLoading(false)
@@ -130,7 +136,14 @@ export function LoginPage({ callbackUrl = '/admin/dashboard' }: LoginPageProps) 
             </div>
 
             <Button type="submit" className="h-10 w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in…' : 'Sign In'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in…
+                </>
+              ) : (
+                'Sign In'
+              )}
             </Button>
 
             <div className="text-center text-xs text-muted-foreground">
