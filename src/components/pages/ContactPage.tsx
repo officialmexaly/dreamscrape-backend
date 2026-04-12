@@ -1,32 +1,31 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger
-} from '../ui/accordion';
+import InquiryForm from '../InquiryForm';
 import { ScrollReveal } from '../ScrollReveal';
 
 const DEFAULT_CONTACT_CARDS = [
   {
-    label: 'Email Address',
+    label: 'Email',
     value: 'dreamscapeventts@gmail.com',
     href: 'mailto:dreamscapeventts@gmail.com'
   },
   {
-    label: 'Phone Number',
+    label: 'Phone',
     value: '+1 (365) 987-9393',
     href: 'tel:+13659879393'
   },
   {
-    label: 'Our Location',
-    value: 'Serving the Greater Toronto Area (GTA), Canada & Worldwide.',
-    href: '/consultation-editorial'
+    label: 'WhatsApp',
+    value: '+1 (365) 987-9393',
+    href: 'https://wa.me/13659879393'
+  },
+  {
+    label: 'Instagram',
+    value: '@dreamscapeventts',
+    href: 'https://instagram.com/dreamscapeventts'
   }
 ] as const;
 
@@ -66,7 +65,7 @@ export function ContactPage({ initialCards }: { initialCards?: ContactCard[] }) 
             Contact
           </p>
           <h1 className="mx-auto mb-5 max-w-3xl text-4xl font-serif leading-tight text-brand-dark sm:text-5xl md:text-6xl">
-            Get in touch, let us know how we can help
+            Let's Plan Your Experience
           </h1>
           <p className="mx-auto max-w-2xl text-base leading-relaxed text-brand-gray sm:text-lg">
             Dreamscape Curated Events plans weddings, private celebrations, and
@@ -84,12 +83,11 @@ export function ContactPage({ initialCards }: { initialCards?: ContactCard[] }) 
                 Reach Dreamscape directly
               </h2>
               <p className="text-base leading-relaxed text-brand-gray">
-                Choose the contact method that fits you best, whether you prefer a
-                detailed email, a direct call, or a quick WhatsApp message.
+                Serving the Greater Toronto Area (GTA), Canada & Worldwide.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {contactCards.map((card) => (
                 <a
                   key={card.label}
@@ -114,53 +112,82 @@ export function ContactPage({ initialCards }: { initialCards?: ContactCard[] }) 
                 Inquiry Form
               </p>
               <h2 className="mb-4 text-4xl font-serif leading-tight text-brand-dark sm:text-5xl">
-                Share your event details
+                Let's Begin Your Dreamscape Experience
               </h2>
               <p className="text-base leading-relaxed text-brand-gray">
-                Tell us what you are planning and Dreamscape will guide you toward
-                the right next step for your celebration or brand experience.
+                Please share a few details so we can thoughtfully design and curate your event.
               </p>
             </div>
 
-            <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm text-brand-gray">Your Name</label>
-                  <Input
-                    placeholder="Your name"
-                    className="h-12 rounded-full border-brand-purple/12 bg-white px-5"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm text-brand-gray">Email address</label>
-                  <Input
-                    type="email"
-                    placeholder="Your email address"
-                    className="h-12 rounded-full border-brand-purple/12 bg-white px-5"
-                  />
-                </div>
-              </div>
+            <div className="bg-white rounded-2xl p-6 md:p-8 lg:p-12">
+              <InquiryForm />
+            </div>
+          </section>
+        </ScrollReveal>
 
-              <div className="space-y-2">
-                <label className="text-sm text-brand-gray">Message</label>
-                <Textarea
-                  placeholder="Write something..."
-                  className="min-h-[220px] rounded-[1.5rem] border-brand-purple/12 bg-white px-5 py-4"
+        {/* CALENDLY BOOKING SECTION */}
+        <ScrollReveal direction="up" className="mb-24">
+          <section className="bg-brand-purple text-white rounded-2xl p-8 md:p-12 lg:p-16 text-center">
+            <p className="mb-3 text-base uppercase tracking-[0.24em] text-brand-pink md:text-lg">
+              Quick Booking
+            </p>
+            <h2 className="mb-4 text-3xl md:text-4xl font-serif leading-tight sm:text-5xl">
+              Prefer to Book a Call Directly?
+            </h2>
+            <p className="text-base md:text-lg leading-relaxed text-white/80 mb-8 max-w-2xl mx-auto">
+              Schedule a consultation at your convenience using our Calendly booking system.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                asChild
+                className="rounded-full px-8 py-4 bg-white text-brand-purple hover:bg-brand-light">
+                <a
+                  href="https://calendly.com"
+                  target="_blank"
+                  rel="noopener noreferrer">
+                  Book via Calendly
+                </a>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="rounded-full px-8 py-4 border-white text-white hover:bg-white/10">
+                <Link href="/consultation-editorial">
+                  Consultation Form
+                </Link>
+              </Button>
+            </div>
+          </section>
+        </ScrollReveal>
+
+        {/* NEWSLETTER SECTION */}
+        <ScrollReveal direction="up" className="mb-24">
+          <section className="border-t border-b border-brand-purple/10 py-12 md:py-16">
+            <div className="max-w-2xl mx-auto text-center">
+              <p className="mb-3 text-base uppercase tracking-[0.24em] text-brand-pink md:text-lg">
+                Stay Connected
+              </p>
+              <h2 className="mb-4 text-3xl md:text-4xl font-serif leading-tight text-brand-dark">
+                Join Our Newsletter
+              </h2>
+              <p className="text-base leading-relaxed text-brand-gray mb-8">
+                Be the first to know about new services, planning tips, and exclusive offers.
+              </p>
+              <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto" onSubmit={(e) => e.preventDefault()}>
+                <Input
+                  type="email"
+                  placeholder="your@email.com"
+                  className="flex-1 h-12 rounded-full border-brand-purple/12 bg-white px-5"
                 />
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm leading-relaxed text-brand-gray">
-                  Prefer to book directly? Use the consultation page or reach us
-                  via WhatsApp and email.
-                </p>
                 <Button
                   type="submit"
-                  className="h-12 rounded-full bg-brand-purple px-8 text-sm uppercase tracking-[0.14em] text-white hover:bg-brand-pink">
-                  Send Message
+                  className="h-12 rounded-full bg-brand-purple px-8 text-sm uppercase tracking-[0.14em] text-white hover:bg-brand-pink whitespace-nowrap">
+                  Subscribe
                 </Button>
-              </div>
-            </form>
+              </form>
+            </div>
+          </section>
+        </ScrollReveal>
 
             <div className="mt-20 mb-8 max-w-2xl">
               <p className="mb-3 text-base uppercase tracking-[0.24em] text-brand-pink md:text-lg">

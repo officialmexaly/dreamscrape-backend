@@ -23,7 +23,8 @@ const defaultFooterGroups = [
     links: [
       { label: 'Home', href: '/' },
       { label: 'Services', href: '/services' },
-      { label: 'Blog', href: '/portfolio' }
+      { label: 'Blog', href: '/portfolio' },
+      { label: 'FAQ', href: '/faq' }
     ]
   },
   {
@@ -39,6 +40,7 @@ const defaultFooterGroups = [
     links: [
       { label: 'Instagram', href: 'https://instagram.com/dreamscapeventts', external: true },
       { label: 'Email', href: 'mailto:dreamscapeventts@gmail.com', external: true },
+      { label: 'WhatsApp', href: 'https://wa.me/13659879393', external: true },
       { label: 'Consultation', href: '/consultation-editorial' }
     ]
   }
@@ -102,6 +104,9 @@ export function Footer({ config }: { config?: FooterConfig }) {
             </p>
             <p className="mt-2 text-sm text-white/68 leading-relaxed">
               Luxury weddings, private celebrations, and elevated brand experiences.
+            </p>
+            <p className="mt-3 text-xs font-semibold tracking-wider uppercase text-brand-pink">
+              Now booking 2026 & 2027 events
             </p>
 
             <form
