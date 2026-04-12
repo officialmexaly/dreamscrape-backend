@@ -93,17 +93,17 @@ export default function ContentRoute() {
   const router = useRouter()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <div className="font-serif text-2xl font-semibold text-foreground">
+        <div className="font-serif text-xl sm:text-2xl font-semibold text-foreground">
           Site Content
         </div>
-        <div className="mt-1 text-sm text-muted-foreground">
+        <div className="mt-1 text-xs sm:text-sm text-muted-foreground">
           Edit website content in structured sections.
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {pages.map((page) => {
           const Icon = page.icon
           return (
@@ -112,30 +112,30 @@ export default function ContentRoute() {
               className="cursor-pointer border-border/70 transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_18px_50px_rgba(64,21,63,0.08)]"
               onClick={() => router.push(`/admin/content/${page.id}`)}
             >
-              <CardContent className="p-5">
-                <div className="flex items-start gap-4">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <div
                     className={cn(
-                      'grid h-11 w-11 place-items-center rounded-xl ring-1 ring-inset',
+                      'grid h-10 w-10 sm:h-11 sm:w-11 place-items-center flex-shrink-0 rounded-xl ring-1 ring-inset',
                       toneClasses(page.tone)
                     )}
                   >
-                    <Icon size={18} />
+                    <Icon size={16} className="sm:size-[18px]" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="truncate text-base font-semibold text-foreground">
+                    <div className="flex items-center justify-between gap-2 sm:gap-3">
+                      <div className="truncate text-sm sm:text-base font-semibold text-foreground">
                         {page.label} Page
                       </div>
-                      <ChevronRight size={18} className="text-muted-foreground" />
+                      <ChevronRight size={16} className="text-muted-foreground flex-shrink-0 sm:size-[18px]" />
                     </div>
-                    <div className="mt-1 text-sm text-muted-foreground">
+                    <div className="mt-1 text-xs sm:text-sm text-muted-foreground line-clamp-2">
                       {page.description}
                     </div>
-                    <div className="mt-3">
+                    <div className="mt-2 sm:mt-3">
                       <span
                         className={cn(
-                          'inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset',
+                          'inline-flex rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-semibold ring-1 ring-inset',
                           toneClasses(page.tone)
                         )}
                       >
@@ -153,23 +153,23 @@ export default function ContentRoute() {
           className="cursor-pointer border-dashed border-border/70 transition hover:-translate-y-0.5 hover:bg-muted/20"
           onClick={() => router.push('/admin/content/advanced')}
         >
-          <CardContent className="p-5">
-            <div className="flex items-start gap-4">
-              <div className="grid h-11 w-11 place-items-center rounded-xl bg-muted text-muted-foreground ring-1 ring-inset ring-border">
-                <Settings size={18} />
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center flex-shrink-0 rounded-xl bg-muted text-muted-foreground ring-1 ring-inset ring-border">
+                <Settings size={16} className="sm:size-[18px]" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="truncate text-base font-semibold text-foreground">
+                <div className="flex items-center justify-between gap-2 sm:gap-3">
+                  <div className="truncate text-sm sm:text-base font-semibold text-foreground">
                     Advanced View
                   </div>
-                  <ChevronRight size={18} className="text-muted-foreground" />
+                  <ChevronRight size={16} className="text-muted-foreground flex-shrink-0 sm:size-[18px]" />
                 </div>
-                <div className="mt-1 text-sm text-muted-foreground">
+                <div className="mt-1 text-xs sm:text-sm text-muted-foreground line-clamp-2">
                   Table-based editing for all content items.
                 </div>
-                <div className="mt-3">
-                  <span className="inline-flex rounded-full bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-inset ring-slate-200">
+                <div className="mt-2 sm:mt-3">
+                  <span className="inline-flex rounded-full bg-slate-50 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-slate-700 ring-1 ring-inset ring-slate-200">
                     For advanced users
                   </span>
                 </div>

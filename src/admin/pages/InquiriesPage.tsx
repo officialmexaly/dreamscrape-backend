@@ -91,18 +91,18 @@ export function InquiriesPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="font-serif text-2xl font-semibold text-foreground">
+          <div className="font-serif text-xl sm:text-2xl font-semibold text-foreground">
             Consultation Inquiries
           </div>
-          <div className="mt-1 text-sm text-muted-foreground">
+          <div className="mt-1 text-xs sm:text-sm text-muted-foreground">
             Manage client inquiries and bookings
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="icon"
@@ -112,9 +112,9 @@ export function InquiriesPage() {
           >
             <RefreshCw className={`h-4 w-4 ${isLoading || isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
-          <Button onClick={() => router.push('/admin/inquiries/new')}>
-            <Plus size={16} />
-            Add Inquiry
+          <Button size="sm" onClick={() => router.push('/admin/inquiries/new')}>
+            <Plus size={14} />
+            <span className="hidden sm:inline">Add Inquiry</span>
           </Button>
         </div>
       </div>

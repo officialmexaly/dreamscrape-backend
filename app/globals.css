@@ -80,3 +80,9 @@
     @apply bg-white/80 backdrop-blur-xl border-b border-brand-purple/10 shadow-[0_10px_40px_rgba(64,21,63,0.06)];
   }
 }
+
+body.not-found-route {
+  background-image:
+    radial-gradient(circle at top left, rgba(196, 100, 147, 0.05), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(252, 250, 247, 1));
+}

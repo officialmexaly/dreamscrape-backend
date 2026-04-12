@@ -21,9 +21,14 @@ export function MainLayoutWrapper({
 }) {
   const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(Boolean(isAdminRoute));
+  const [isNotFoundRoute, setIsNotFoundRoute] = useState(false);
 
   useEffect(() => {
     setIsAdmin(pathname.startsWith('/admin'));
+  }, [pathname]);
+
+  useEffect(() => {
+    setIsNotFoundRoute(document.body.classList.contains('not-found-route'));
   }, [pathname]);
 
   // Remove browser extension attributes that cause hydration mismatches
@@ -57,9 +62,9 @@ export function MainLayoutWrapper({
 
   return (
     <>
-      {!isAdmin && <Navigation />}
+      {!isAdmin && !isNotFoundRoute && <Navigation />}
       {children}
-      {!isAdmin && <Footer config={footerConfig} />}
+      {!isAdmin && !isNotFoundRoute && <Footer config={footerConfig} />}
     </>
   );
 }

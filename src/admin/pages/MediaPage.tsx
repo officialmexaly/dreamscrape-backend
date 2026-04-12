@@ -48,9 +48,9 @@ export function MediaPage() {
 
   if (error) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="font-serif text-2xl font-semibold text-foreground">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="font-serif text-xl sm:text-2xl font-semibold text-foreground">
             Media Library
           </div>
           <div className="flex items-center gap-2">
@@ -63,14 +63,14 @@ export function MediaPage() {
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
-            <Button onClick={() => router.push('/admin/media/new')}>
-              <Plus size={16} />
-              Add Media
+            <Button size="sm" onClick={() => router.push('/admin/media/new')}>
+              <Plus size={14} />
+              <span className="hidden sm:inline">Add Media</span>
             </Button>
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-4 rounded-xl border border-destructive/20 bg-destructive/5 p-8 text-center">
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-destructive/20 bg-destructive/5 p-6 sm:p-8 text-center">
           <AlertCircle className="h-10 w-10 text-destructive" />
           <div>
             <div className="font-semibold text-foreground">Failed to load media</div>
@@ -86,9 +86,9 @@ export function MediaPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="font-serif text-2xl font-semibold text-foreground">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="font-serif text-xl sm:text-2xl font-semibold text-foreground">
             Media Library
           </div>
           <div className="flex items-center gap-2">
@@ -101,9 +101,9 @@ export function MediaPage() {
             >
               <RefreshCw className="h-4 w-4 animate-spin" />
             </Button>
-            <Button onClick={() => router.push('/admin/media/new')}>
-              <Plus size={16} />
-              Add Media
+            <Button size="sm" onClick={() => router.push('/admin/media/new')}>
+              <Plus size={14} />
+              <span className="hidden sm:inline">Add Media</span>
             </Button>
           </div>
         </div>
@@ -114,13 +114,13 @@ export function MediaPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="font-serif text-2xl font-semibold text-foreground">
+          <div className="font-serif text-xl sm:text-2xl font-semibold text-foreground">
             Media Library
           </div>
-          <div className="mt-1 text-sm text-muted-foreground">
+          <div className="mt-1 text-xs sm:text-sm text-muted-foreground">
             {media.length} {media.length === 1 ? 'item' : 'items'}
           </div>
         </div>
@@ -134,29 +134,29 @@ export function MediaPage() {
           >
             <RefreshCw className={`h-4 w-4 ${isLoading || isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
-          <Button onClick={() => router.push('/admin/media/new')}>
-            <Plus size={16} />
-            Add Media
+          <Button size="sm" onClick={() => router.push('/admin/media/new')}>
+            <Plus size={14} />
+            <span className="hidden sm:inline">Add Media</span>
           </Button>
         </div>
       </div>
 
       {media.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border/50 p-12 text-center">
-          <div className="text-6xl">📷</div>
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border/50 p-8 sm:p-12 text-center">
+          <div className="text-5xl sm:text-6xl">📷</div>
           <div>
             <div className="font-semibold text-foreground">No media yet</div>
             <div className="text-sm text-muted-foreground">
               Add your first image to get started
             </div>
           </div>
-          <Button onClick={() => router.push('/admin/media/new')}>
-            <Plus size={16} />
+          <Button size="sm" onClick={() => router.push('/admin/media/new')}>
+            <Plus size={14} />
             Add Media
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {media.map((item) => (
             <div
               key={item.id}
@@ -166,13 +166,13 @@ export function MediaPage() {
               <img
                 src={item.url}
                 alt={item.name}
-                className="h-[200px] w-full object-cover"
+                className="h-[150px] sm:h-[200px] w-full object-cover"
               />
 
               <div className="pointer-events-none absolute inset-0 bg-black/0 transition group-hover:bg-black/45" />
 
-              <div className="absolute inset-0 flex flex-col justify-between p-3 opacity-0 transition group-hover:opacity-100">
-                <div className="flex justify-end gap-2">
+              <div className="absolute inset-0 flex flex-col justify-between p-2 sm:p-3 opacity-0 transition group-hover:opacity-100">
+                <div className="flex justify-end gap-1.5 sm:gap-2">
                   <Button
                     variant="secondary"
                     size="icon-sm"
@@ -180,7 +180,7 @@ export function MediaPage() {
                     onClick={() => router.push(`/admin/media/${item.id}/edit`)}
                     aria-label="Edit image"
                   >
-                    <Pencil size={14} />
+                    <Pencil size={12} className="sm:size-[14px]" />
                   </Button>
 
                   <Button
@@ -189,13 +189,13 @@ export function MediaPage() {
                     onClick={() => handleDelete(item.id)}
                     aria-label="Delete image"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={12} className="sm:size-[14px]" />
                   </Button>
                 </div>
 
                 <div className="text-white">
-                  <div className="truncate text-sm font-semibold">{item.name}</div>
-                  <div className="text-xs text-white/80">
+                  <div className="truncate text-xs sm:text-sm font-semibold">{item.name}</div>
+                  <div className="text-[10px] sm:text-xs text-white/80">
                     {item.size ? `${item.size}` : '—'} •{' '}
                     {formatAdminDate(item.created_at)}
                   </div>

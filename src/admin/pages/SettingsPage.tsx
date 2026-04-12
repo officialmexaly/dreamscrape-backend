@@ -47,33 +47,33 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex items-center justify-between gap-4">
+    <div className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="font-serif text-2xl font-semibold text-foreground">
+          <div className="font-serif text-xl sm:text-2xl font-semibold text-foreground">
             Global Settings
           </div>
-          <div className="mt-1 text-sm text-muted-foreground">
+          <div className="mt-1 text-xs sm:text-sm text-muted-foreground">
             Company details, social links, and defaults.
           </div>
         </div>
-        <Button onClick={handleSave} disabled={isLoading || !draft}>
-          <Save size={16} />
-          Save Settings
+        <Button size="sm" onClick={handleSave} disabled={isLoading || !draft}>
+          <Save size={14} />
+          <span className="hidden sm:inline">Save Settings</span>
         </Button>
       </div>
 
       {isLoading || !draft ? (
         <div className="text-sm text-muted-foreground">Loading…</div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <Card className="border-border/70">
             <CardHeader>
-              <CardTitle className="font-serif text-lg">
+              <CardTitle className="font-serif text-base sm:text-lg">
                 Business Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-5 md:grid-cols-2">
+            <CardContent className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
               <Field label="Company Name">
                 <Input
                   value={draft.companyName || ''}
@@ -112,9 +112,9 @@ export function SettingsPage() {
 
           <Card className="border-border/70">
             <CardHeader>
-              <CardTitle className="font-serif text-lg">Social Media</CardTitle>
+              <CardTitle className="font-serif text-base sm:text-lg">Social Media</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-5 md:grid-cols-2">
+            <CardContent className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
               <Field label="Instagram Handle">
                 <Input
                   value={draft.instagram || ''}
@@ -138,9 +138,9 @@ export function SettingsPage() {
 
           <Card className="border-border/70">
             <CardHeader>
-              <CardTitle className="font-serif text-lg">SEO Defaults</CardTitle>
+              <CardTitle className="font-serif text-base sm:text-lg">SEO Defaults</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-5">
+            <CardContent className="grid gap-4 sm:gap-5">
               <Field label="Default Meta Title">
                 <Input
                   value={draft.metaTitle || ''}

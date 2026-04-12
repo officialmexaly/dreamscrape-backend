@@ -122,23 +122,23 @@ export function DashboardPage() {
   ]
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="space-y-6 sm:space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-[linear-gradient(135deg,rgba(64,21,63,0.14)_0%,rgba(201,168,76,0.12)_100%)] text-primary">
-              <Sparkles size={18} />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="grid h-8 w-8 sm:h-9 sm:w-9 place-items-center rounded-xl bg-[linear-gradient(135deg,rgba(64,21,63,0.14)_0%,rgba(201,168,76,0.12)_100%)] text-primary">
+              <Sparkles size={16} className="sm:size-[18px]" />
             </div>
-            <div className="font-serif text-2xl font-semibold text-foreground">
+            <div className="font-serif text-xl sm:text-2xl font-semibold text-foreground">
               Dashboard
             </div>
           </div>
-          <div className="mt-1 text-sm text-muted-foreground">
+          <div className="mt-1 text-xs sm:text-sm text-muted-foreground">
             Quick overview and recent activity.
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="icon"
@@ -148,17 +148,18 @@ export function DashboardPage() {
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
-          <Button variant="outline" onClick={() => router.push('/admin/blog')}>
+          <Button variant="outline" size="sm" onClick={() => router.push('/admin/blog')}>
             Manage Blog
           </Button>
-          <Button onClick={() => router.push('/admin/events/new')}>
-            <Plus size={16} />
-            New Event
+          <Button size="sm" onClick={() => router.push('/admin/events/new')}>
+            <Plus size={14} />
+            <span className="hidden sm:inline">New Event</span>
+            <span className="sm:hidden">Event</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Events"
           value={Array.isArray(events) ? events.length : 0}
@@ -182,15 +183,15 @@ export function DashboardPage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         <Card className="border-border/70 lg:col-span-2">
-          <CardHeader className="flex-row items-center justify-between gap-4">
+          <CardHeader className="flex-row items-center justify-between gap-2 sm:gap-4">
             <div>
-              <CardTitle className="font-serif text-lg">Recent Inquiries</CardTitle>
+              <CardTitle className="font-serif text-base sm:text-lg">Recent Inquiries</CardTitle>
             </div>
             <Button
               variant="link"
-              className="h-auto p-0"
+              className="h-auto p-0 text-sm"
               onClick={() => router.push('/admin/inquiries')}
             >
               View all
@@ -207,24 +208,24 @@ export function DashboardPage() {
         </Card>
 
         <Card className="border-border/70">
-          <CardHeader className="flex-row items-center justify-between gap-4">
-            <CardTitle className="font-serif text-lg">Upcoming Events</CardTitle>
+          <CardHeader className="flex-row items-center justify-between gap-2 sm:gap-4">
+            <CardTitle className="font-serif text-base sm:text-lg">Upcoming Events</CardTitle>
             <Button
               variant="link"
-              className="h-auto p-0"
+              className="h-auto p-0 text-sm"
               onClick={() => router.push('/admin/events')}
             >
               View all
             </Button>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
+          <CardContent className="space-y-3 sm:space-y-4">
+            <div className="space-y-2 sm:space-y-3">
               {upcomingEvents.map((event) => (
                 <div
                   key={event.id}
-                  className="flex items-center gap-4 rounded-xl border border-border/60 bg-muted/20 p-3"
+                  className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/20 p-2.5 sm:p-3"
                 >
-                  <div className="h-12 w-12 overflow-hidden rounded-lg bg-muted">
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 overflow-hidden rounded-lg bg-muted flex-shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={event.image}
@@ -233,14 +234,14 @@ export function DashboardPage() {
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold">
+                    <div className="truncate text-xs sm:text-sm font-semibold">
                       {event.title}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-[10px] sm:text-xs text-muted-foreground">
                       {formatAdminDate(event.date)}
                     </div>
                   </div>
-                  <span className="rounded-full bg-primary/10 px-2 py-1 text-[0.7rem] font-semibold text-primary">
+                  <span className="hidden sm:inline-flex rounded-full bg-primary/10 px-2 py-1 text-[0.65rem] sm:text-[0.7rem] font-semibold text-primary flex-shrink-0">
                     {event.category}
                   </span>
                 </div>
@@ -248,7 +249,7 @@ export function DashboardPage() {
             </div>
 
             <Separator />
-            <Button variant="outline" onClick={() => router.push('/admin/events/new')}>
+            <Button variant="outline" size="sm" className="w-full" onClick={() => router.push('/admin/events/new')}>
               Add event
             </Button>
           </CardContent>

@@ -110,19 +110,19 @@ export function DataTable<T>({
         </div>
       )}
 
+      {/* Desktop Table View */}
       <Card
         className={cn(
-          'gap-0 overflow-hidden border-border/70 bg-card p-0 py-0 shadow-[0_12px_40px_rgba(15,23,42,0.06)]',
+          'gap-0 overflow-hidden border-border/70 bg-card p-0 py-0 shadow-[0_12px_40px_rgba(15,23,42,0.06)] hidden sm:block',
           className
         )}
       >
-        <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-          <div className="min-w-[600px] sm:min-w-0">
-            <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
             <thead className="bg-muted/40">
               <tr className="border-b border-border/60 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 {selectable && (
-                  <th className="w-12 px-3 sm:px-4 py-3 align-middle">
+                  <th className="w-12 px-4 py-3 align-middle">
                     <Checkbox
                       checked={allSelected}
                       onCheckedChange={handleSelectAll}
@@ -136,7 +136,7 @@ export function DataTable<T>({
                     key={column.key}
                     scope="col"
                     className={cn(
-                      'px-3 sm:px-4 py-3 align-middle',
+                      'px-4 py-3 align-middle',
                       column.className
                     )}
                   >
@@ -150,7 +150,7 @@ export function DataTable<T>({
                 <tr>
                   <td
                     colSpan={tableColumns.length}
-                    className="px-3 sm:px-4 py-8 sm:py-10 text-center text-sm text-muted-foreground"
+                    className="px-4 py-10 text-center text-sm text-muted-foreground"
                   >
                     {loadingMessage}
                   </td>
@@ -159,7 +159,7 @@ export function DataTable<T>({
                 <tr>
                   <td
                     colSpan={tableColumns.length}
-                    className="px-3 sm:px-4 py-8 sm:py-10 text-center text-sm text-muted-foreground"
+                    className="px-4 py-10 text-center text-sm text-muted-foreground"
                   >
                     {emptyMessage}
                   </td>
@@ -179,7 +179,7 @@ export function DataTable<T>({
                       )}
                     >
                       {selectable && (
-                        <td className="w-12 px-3 sm:px-4 py-3 sm:py-4 align-middle" onClick={(e) => e.stopPropagation()}>
+                        <td className="w-12 px-4 py-4 align-middle" onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={(checked) => handleSelectRow(id, checked === true)}
@@ -190,7 +190,7 @@ export function DataTable<T>({
                       {columns.map((column) => (
                         <td
                           key={column.key}
-                          className={cn('px-3 sm:px-4 py-3 sm:py-4 align-middle', column.className)}
+                          className={cn('px-4 py-4 align-middle', column.className)}
                         >
                           {column.cell(item)}
                         </td>
@@ -201,9 +201,57 @@ export function DataTable<T>({
               )}
             </tbody>
           </table>
-          </div>
         </div>
       </Card>
+
+      {/* Mobile Card View */}
+      <div className="sm:hidden space-y-3">
+        {isLoading ? (
+          <div className="text-center py-10 text-sm text-muted-foreground">
+            {loadingMessage}
+          </div>
+        ) : data.length === 0 ? (
+          <div className="text-center py-10 text-sm text-muted-foreground">
+            {emptyMessage}
+          </div>
+        ) : (
+          data.map((item) => {
+            const id = keyExtractor(item)
+            const isSelected = selectedIds.has(id)
+            return (
+              <Card
+                key={id}
+                onClick={(e) => handleRowClick(item, e)}
+                className={cn(
+                  'border-border/70 bg-card shadow-sm',
+                  onRowClick && 'cursor-pointer',
+                  isSelected && 'ring-2 ring-primary/20'
+                )}
+              >
+                <div className="p-4 space-y-3">
+                  {selectable && (
+                    <div className="flex items-start justify-between" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) => handleSelectRow(id, checked === true)}
+                        aria-label="Select row"
+                      />
+                    </div>
+                  )}
+                  {columns.map((column) => (
+                    <div key={column.key} className="flex flex-col gap-1">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        {column.header}
+                      </div>
+                      <div className="text-sm">{column.cell(item)}</div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )
+          })
+        )}
+      </div>
     </div>
   )
 }
