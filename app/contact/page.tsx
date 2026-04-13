@@ -1,4 +1,4 @@
-import ContactPage from '@/src/components/pages/ContactPage';
+import { ContactPage } from './_components';
 import { getSiteContentSectionCached } from '@/src/lib/cached-site-content';
 
 export default async function Page() {
@@ -14,7 +14,7 @@ export default async function Page() {
       initialCards = cards;
     }
   } catch {
-    // ContactPage will fall back client-side
+    // ContactPage will use default cards
   }
 
   return <ContactPage initialCards={initialCards} />;

@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
-import { ScrollReveal } from '../ScrollReveal';
+import { Button } from '@/src/components/ui/button';
+import { Input } from '@/src/components/ui/input';
+import { Textarea } from '@/src/components/ui/textarea';
+import { ScrollReveal } from '@/src/components/ScrollReveal';
 
 const DEFAULT_CONTACT_CARDS = [
   {
@@ -36,7 +36,7 @@ interface ContactPageProps {
   initialCards?: ContactCard[];
 }
 
-export default function ContactPage({ initialCards }: ContactPageProps) {
+export function ContactPage({ initialCards }: ContactPageProps) {
   const [contactCards] = useState<ContactCard[]>(
     initialCards?.length ? initialCards : [...DEFAULT_CONTACT_CARDS]
   );
