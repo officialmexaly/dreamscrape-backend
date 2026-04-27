@@ -1,0 +1,113 @@
+2026/04/27 01:31:07 ✅ Supabase REST API client initialized successfully
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /swagger/*any             --> github.com/swaggo/gin-swagger.CustomWrapHandler.func1 (5 handlers)
+[GIN-debug] GET    /api/test                 --> main.main.func1 (5 handlers)
+[GIN-debug] POST   /api/auth/register        --> dreamscape-backend/internal/handlers/auth.(*AuthHandler).Register-fm (5 handlers)
+[GIN-debug] POST   /api/auth/login           --> dreamscape-backend/internal/handlers/auth.(*AuthHandler).Login-fm (5 handlers)
+[GIN-debug] POST   /api/auth/refresh         --> dreamscape-backend/internal/handlers/auth.(*AuthHandler).RefreshToken-fm (5 handlers)
+[GIN-debug] POST   /api/auth/logout          --> dreamscape-backend/internal/handlers/auth.(*AuthHandler).Logout-fm (5 handlers)
+[GIN-debug] POST   /api/auth/forgot-password --> dreamscape-backend/internal/handlers/auth.(*AuthHandler).ForgotPassword-fm (5 handlers)
+[GIN-debug] POST   /api/auth/reset-password  --> dreamscape-backend/internal/handlers/auth.(*AuthHandler).ResetPassword-fm (5 handlers)
+[GIN-debug] GET    /api/auth/google/login    --> dreamscape-backend/internal/handlers/auth.(*OAuthHandler).GoogleLogin-fm (5 handlers)
+[GIN-debug] GET    /api/auth/google/callback --> dreamscape-backend/internal/handlers/auth.(*OAuthHandler).GoogleCallback-fm (5 handlers)
+[GIN-debug] GET    /api/auth/facebook/login  --> dreamscape-backend/internal/handlers/auth.(*OAuthHandler).FacebookLogin-fm (5 handlers)
+[GIN-debug] GET    /api/auth/facebook/callback --> dreamscape-backend/internal/handlers/auth.(*OAuthHandler).FacebookCallback-fm (5 handlers)
+[GIN-debug] GET    /api/auth/apple/login     --> dreamscape-backend/internal/handlers/auth.(*OAuthHandler).AppleLogin-fm (5 handlers)
+[GIN-debug] POST   /api/auth/apple/callback  --> dreamscape-backend/internal/handlers/auth.(*OAuthHandler).AppleCallback-fm (5 handlers)
+[GIN-debug] GET    /api/auth/me              --> dreamscape-backend/internal/handlers/auth.(*AuthHandler).GetMe-fm (6 handlers)
+[GIN-debug] POST   /api/auth/change-password --> dreamscape-backend/internal/handlers/auth.(*AuthHandler).ChangePassword-fm (6 handlers)
+[GIN-debug] GET    /api/portfolio-items      --> dreamscape-backend/internal/handlers/public.(*PortfolioHandler).GetPortfolioItems-fm (5 handlers)
+[GIN-debug] GET    /api/portfolio-items/:id  --> dreamscape-backend/internal/handlers/public.(*PortfolioHandler).GetPortfolioItem-fm (5 handlers)
+[GIN-debug] GET    /api/blog-posts           --> dreamscape-backend/internal/handlers/public.(*PortfolioHandler).GetPortfolioItems-fm (5 handlers)
+[GIN-debug] GET    /api/blog-posts/:slug     --> dreamscape-backend/internal/handlers/public.(*PortfolioHandler).GetPortfolioItem-fm (5 handlers)
+[GIN-debug] GET    /api/events               --> dreamscape-backend/internal/handlers/public.(*EventHandler).GetEvents-fm (5 handlers)
+[GIN-debug] GET    /api/events/:id           --> dreamscape-backend/internal/handlers/public.(*EventHandler).GetEventByID-fm (5 handlers)
+[GIN-debug] GET    /api/events/slug/:slug    --> dreamscape-backend/internal/handlers/public.(*EventHandler).GetEventBySlug-fm (5 handlers)
+[GIN-debug] GET    /api/services             --> dreamscape-backend/internal/handlers/public.(*ServiceHandler).GetServices-fm (5 handlers)
+[GIN-debug] GET    /api/services/:id         --> dreamscape-backend/internal/handlers/public.(*ServiceHandler).GetServiceByID-fm (5 handlers)
+[GIN-debug] GET    /api/services/slug/:slug  --> dreamscape-backend/internal/handlers/public.(*ServiceHandler).GetServiceBySlug-fm (5 handlers)
+[GIN-debug] GET    /api/health               --> dreamscape-backend/internal/handlers/public.(*UtilitiesHandler).HealthCheck-fm (5 handlers)
+[GIN-debug] GET    /api/db/tables            --> dreamscape-backend/internal/handlers/public.(*UtilitiesHandler).GetDatabaseTables-fm (5 handlers)
+[GIN-debug] GET    /api/db/stats             --> dreamscape-backend/internal/handlers/public.(*UtilitiesHandler).GetDatabaseStats-fm (5 handlers)
+[GIN-debug] GET    /api/content              --> dreamscape-backend/internal/handlers/public.(*ContentHandler).GetSiteContent-fm (5 handlers)
+[GIN-debug] GET    /api/content/key/:key     --> dreamscape-backend/internal/handlers/public.(*ContentHandler).GetContentByKey-fm (5 handlers)
+[GIN-debug] GET    /api/settings             --> dreamscape-backend/internal/handlers/public.(*SettingsHandler).GetSiteSettings-fm (5 handlers)
+[GIN-debug] GET    /api/admin/portfolio-items --> dreamscape-backend/internal/handlers/public.(*PortfolioHandler).GetPortfolioItems-fm (6 handlers)
+[GIN-debug] POST   /api/admin/portfolio-items --> dreamscape-backend/internal/handlers/public.(*PortfolioHandler).CreatePortfolioItem-fm (6 handlers)
+[GIN-debug] GET    /api/admin/portfolio-items/:id --> dreamscape-backend/internal/handlers/public.(*PortfolioHandler).GetPortfolioItem-fm (6 handlers)
+[GIN-debug] PUT    /api/admin/portfolio-items/:id --> dreamscape-backend/internal/handlers/public.(*PortfolioHandler).UpdatePortfolioItem-fm (6 handlers)
+[GIN-debug] DELETE /api/admin/portfolio-items/:id --> dreamscape-backend/internal/handlers/public.(*PortfolioHandler).DeletePortfolioItem-fm (6 handlers)
+[GIN-debug] GET    /api/admin/blog-posts     --> dreamscape-backend/internal/handlers/public.(*PortfolioHandler).GetPortfolioItems-fm (6 handlers)
+[GIN-debug] POST   /api/admin/blog-posts     --> dreamscape-backend/internal/handlers/public.(*PortfolioHandler).CreatePortfolioItem-fm (6 handlers)
+[GIN-debug] GET    /api/admin/blog-posts/:id --> dreamscape-backend/internal/handlers/public.(*PortfolioHandler).GetPortfolioItem-fm (6 handlers)
+[GIN-debug] PUT    /api/admin/blog-posts/:id --> dreamscape-backend/internal/handlers/public.(*PortfolioHandler).UpdatePortfolioItem-fm (6 handlers)
+[GIN-debug] DELETE /api/admin/blog-posts/:id --> dreamscape-backend/internal/handlers/public.(*PortfolioHandler).DeletePortfolioItem-fm (6 handlers)
+[GIN-debug] GET    /api/admin/events         --> dreamscape-backend/internal/handlers/public.(*EventHandler).GetEvents-fm (6 handlers)
+[GIN-debug] POST   /api/admin/events         --> dreamscape-backend/internal/handlers/public.(*EventHandler).CreateEvent-fm (6 handlers)
+[GIN-debug] GET    /api/admin/events/:id     --> dreamscape-backend/internal/handlers/public.(*EventHandler).GetEventByID-fm (6 handlers)
+[GIN-debug] PUT    /api/admin/events/:id     --> dreamscape-backend/internal/handlers/public.(*EventHandler).UpdateEvent-fm (6 handlers)
+[GIN-debug] DELETE /api/admin/events/:id     --> dreamscape-backend/internal/handlers/public.(*EventHandler).DeleteEvent-fm (6 handlers)
+[GIN-debug] GET    /api/admin/services       --> dreamscape-backend/internal/handlers/public.(*ServiceHandler).GetServices-fm (6 handlers)
+[GIN-debug] POST   /api/admin/services       --> dreamscape-backend/internal/handlers/public.(*ServiceHandler).CreateService-fm (6 handlers)
+[GIN-debug] GET    /api/admin/services/:id   --> dreamscape-backend/internal/handlers/public.(*ServiceHandler).GetServiceByID-fm (6 handlers)
+[GIN-debug] PUT    /api/admin/services/:id   --> dreamscape-backend/internal/handlers/public.(*ServiceHandler).UpdateService-fm (6 handlers)
+[GIN-debug] DELETE /api/admin/services/:id   --> dreamscape-backend/internal/handlers/public.(*ServiceHandler).DeleteService-fm (6 handlers)
+[GIN-debug] GET    /api/admin/bookings       --> dreamscape-backend/internal/handlers/public.(*CompleteBookingHandler).GetBookings-fm (6 handlers)
+[GIN-debug] GET    /api/admin/bookings/:id   --> dreamscape-backend/internal/handlers/public.(*CompleteBookingHandler).GetBookingByID-fm (6 handlers)
+[GIN-debug] PUT    /api/admin/bookings/:id   --> dreamscape-backend/internal/handlers/public.(*CompleteBookingHandler).UpdateBooking-fm (6 handlers)
+[GIN-debug] DELETE /api/admin/bookings/:id   --> dreamscape-backend/internal/handlers/public.(*CompleteBookingHandler).DeleteBooking-fm (6 handlers)
+[GIN-debug] PUT    /api/admin/bookings/:id/status --> dreamscape-backend/internal/handlers/public.(*CompleteBookingHandler).UpdateBookingStatus-fm (6 handlers)
+[GIN-debug] GET    /api/admin/media-library  --> dreamscape-backend/internal/handlers/public.(*MediaStorageHandler).GetMediaLibrary-fm (6 handlers)
+[GIN-debug] POST   /api/admin/media-library  --> dreamscape-backend/internal/handlers/public.(*MediaStorageHandler).CreateMedia-fm (6 handlers)
+[GIN-debug] PUT    /api/admin/media-library/:id --> dreamscape-backend/internal/handlers/public.(*MediaStorageHandler).UpdateMedia-fm (6 handlers)
+[GIN-debug] DELETE /api/admin/media-library/:id --> dreamscape-backend/internal/handlers/public.(*MediaStorageHandler).DeleteMedia-fm (6 handlers)
+[GIN-debug] GET    /api/admin/users          --> dreamscape-backend/internal/handlers/auth.(*AuthHandler).GetUsers-fm (6 handlers)
+[GIN-debug] GET    /api/admin/users/:id      --> dreamscape-backend/internal/handlers/auth.(*AuthHandler).GetUserByID-fm (6 handlers)
+[GIN-debug] PUT    /api/admin/users/:id      --> dreamscape-backend/internal/handlers/auth.(*AuthHandler).UpdateUser-fm (6 handlers)
+[GIN-debug] DELETE /api/admin/users/:id      --> dreamscape-backend/internal/handlers/auth.(*AuthHandler).DeleteUser-fm (6 handlers)
+[GIN-debug] PUT    /api/admin/users/:id/status --> dreamscape-backend/internal/handlers/auth.(*AuthHandler).UpdateUserStatus-fm (6 handlers)
+[GIN-debug] GET    /api/admin/db/tables      --> dreamscape-backend/internal/handlers/public.(*UtilitiesHandler).GetDatabaseTables-fm (6 handlers)
+[GIN-debug] GET    /api/admin/db/stats       --> dreamscape-backend/internal/handlers/public.(*UtilitiesHandler).GetDatabaseStats-fm (6 handlers)
+[GIN-debug] GET    /api/admin/health         --> dreamscape-backend/internal/handlers/public.(*UtilitiesHandler).HealthCheck-fm (6 handlers)
+[GIN-debug] GET    /health                   --> main.main.func2 (5 handlers)
+{"time":"2026-04-27T01:31:07.441579574+01:00","level":"INFO","msg":"Starting server","port":"8080","frontend_url":"http://localhost:3000","gin_mode":"debug"}
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+{"time":"2026-04-27T01:31:09.011428609+01:00","level":"INFO","msg":"Request completed","request_id":"8675788c-fe76-404c-b0c9-dd741a7e30e7","client_ip":"::1","method":"GET","path":"/health","status":200,"latency":263910616,"user_agent":"curl/8.14.1"}
+2026/04/27 01:31:28 ✅ Found user: map[created_at:2026-04-09T17:06:31.074945+00:00 deleted_at:<nil> email:admin@dreamscape.com email_verification_expires:<nil> email_verification_token:<nil> email_verified:false failed_login_attempts:0 id:07183a8c-cecb-4e73-94ed-6b5b361770fd is_active:true last_login_at:2026-04-22T10:37:47.974+00:00 last_login_ip:<nil> last_login_user_agent:<nil> locked_until:<nil> metadata:map[] name:Admin User password_hash:$2a$10$QUuVVRnYqm8HHCD8AuNsNOz3VavQxbD9EorANLO9GKjqrUZKD10C6 password_reset_expires:<nil> password_reset_token:<nil> role:admin two_factor_backup_codes:<nil> two_factor_enabled:false two_factor_secret:<nil> updated_at:2026-04-26T16:33:07.231785+00:00]
+2026/04/27 01:31:28 ✅ Parsed user: Email=admin@dreamscape.com, Role=admin, IsActive=true, Status=active
+2026/04/27 01:31:28 🔐 Password hash: $2a$10$QUuVVRnYqm8HHCD8AuNsNOz3VavQxbD9EorANLO9GKjqrUZKD10C6
+2026/04/27 01:31:28 🔍 Verifying password...
+2026/04/27 01:31:28 Warning: failed to store refresh token in database: supabase error: {"code":"PGRST205","details":null,"hint":"Perhaps you meant the table 'public.sessions'","message":"Could not find the table 'public.refresh_tokens' in the schema cache"}
+{"time":"2026-04-27T01:31:28.664903163+01:00","level":"INFO","msg":"Request completed","request_id":"71143475-9ec6-414b-8d74-14513c608b0c","client_ip":"::1","method":"POST","path":"/api/auth/login","status":200,"latency":677970723,"user_agent":"curl/8.14.1"}
+2026/04/27 01:31:30 ✅ Found user: map[created_at:2026-04-09T17:06:31.074945+00:00 deleted_at:<nil> email:admin@dreamscape.com email_verification_expires:<nil> email_verification_token:<nil> email_verified:false failed_login_attempts:0 id:07183a8c-cecb-4e73-94ed-6b5b361770fd is_active:true last_login_at:2026-04-22T10:37:47.974+00:00 last_login_ip:<nil> last_login_user_agent:<nil> locked_until:<nil> metadata:map[] name:Admin User password_hash:$2a$10$QUuVVRnYqm8HHCD8AuNsNOz3VavQxbD9EorANLO9GKjqrUZKD10C6 password_reset_expires:<nil> password_reset_token:<nil> role:admin two_factor_backup_codes:<nil> two_factor_enabled:false two_factor_secret:<nil> updated_at:2026-04-26T16:33:07.231785+00:00]
+2026/04/27 01:31:30 ✅ Parsed user: Email=admin@dreamscape.com, Role=admin, IsActive=true, Status=active
+2026/04/27 01:31:30 🔐 Password hash: $2a$10$QUuVVRnYqm8HHCD8AuNsNOz3VavQxbD9EorANLO9GKjqrUZKD10C6
+2026/04/27 01:31:30 🔍 Verifying password...
+2026/04/27 01:31:30 Warning: failed to store refresh token in database: supabase error: {"code":"PGRST205","details":null,"hint":"Perhaps you meant the table 'public.sessions'","message":"Could not find the table 'public.refresh_tokens' in the schema cache"}
+{"time":"2026-04-27T01:31:30.508418972+01:00","level":"INFO","msg":"Request completed","request_id":"4409e27c-25ca-4750-a712-dcd1a27805be","client_ip":"::1","method":"POST","path":"/api/auth/login","status":200,"latency":623195789,"user_agent":"curl/8.14.1"}
+{"time":"2026-04-27T01:31:30.772712328+01:00","level":"INFO","msg":"Request completed","request_id":"1108196b-4fbb-48f2-8afa-62c68508ff11","client_ip":"::1","method":"GET","path":"/api/admin/media-library","status":200,"latency":256158252,"user_agent":"curl/8.14.1"}
+{"time":"2026-04-27T01:31:35.808949981+01:00","level":"WARN","msg":"Request completed","request_id":"efaf7edf-d1b9-4c41-b429-1509dbd443d2","client_ip":"::1","method":"POST","path":"/api/admin/media-library/upload","status":404,"latency":5139,"user_agent":"curl/8.14.1"}
+{"time":"2026-04-27T01:31:46.056819222+01:00","level":"INFO","msg":"Request completed","request_id":"d9f70c52-0bec-427b-80f7-f666ed6ec9fc","client_ip":"::1","method":"OPTIONS","path":"/api/auth/login","status":204,"latency":48365,"user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"}
+2026/04/27 01:31:46 ✅ Found user: map[created_at:2026-04-09T17:06:31.074945+00:00 deleted_at:<nil> email:admin@dreamscape.com email_verification_expires:<nil> email_verification_token:<nil> email_verified:false failed_login_attempts:0 id:07183a8c-cecb-4e73-94ed-6b5b361770fd is_active:true last_login_at:2026-04-22T10:37:47.974+00:00 last_login_ip:<nil> last_login_user_agent:<nil> locked_until:<nil> metadata:map[] name:Admin User password_hash:$2a$10$QUuVVRnYqm8HHCD8AuNsNOz3VavQxbD9EorANLO9GKjqrUZKD10C6 password_reset_expires:<nil> password_reset_token:<nil> role:admin two_factor_backup_codes:<nil> two_factor_enabled:false two_factor_secret:<nil> updated_at:2026-04-26T16:33:07.231785+00:00]
+2026/04/27 01:31:46 ✅ Parsed user: Email=admin@dreamscape.com, Role=admin, IsActive=true, Status=active
+2026/04/27 01:31:46 🔐 Password hash: $2a$10$QUuVVRnYqm8HHCD8AuNsNOz3VavQxbD9EorANLO9GKjqrUZKD10C6
+2026/04/27 01:31:46 🔍 Verifying password...
+2026/04/27 01:31:46 Warning: failed to store refresh token in database: supabase error: {"code":"PGRST205","details":null,"hint":"Perhaps you meant the table 'public.sessions'","message":"Could not find the table 'public.refresh_tokens' in the schema cache"}
+{"time":"2026-04-27T01:31:46.715869295+01:00","level":"INFO","msg":"Request completed","request_id":"9bcdebb7-0981-40d0-9e80-126526a0b80f","client_ip":"::1","method":"POST","path":"/api/auth/login","status":200,"latency":649925980,"user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"}
+{"time":"2026-04-27T01:31:48.125107194+01:00","level":"INFO","msg":"Request completed","request_id":"326e1086-1824-41d4-ae3e-cb34e70722bd","client_ip":"::1","method":"OPTIONS","path":"/api/admin/media-library","status":204,"latency":14818,"user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"}
+{"time":"2026-04-27T01:31:48.127464129+01:00","level":"INFO","msg":"Request completed","request_id":"1e163a91-87ff-4940-9fa2-7d1c905d0db0","client_ip":"::1","method":"OPTIONS","path":"/api/admin/services","status":204,"latency":27022,"user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"}
+{"time":"2026-04-27T01:31:48.127904761+01:00","level":"INFO","msg":"Request completed","request_id":"a3246dbb-0053-4ddf-a240-0e8b0b9c2e50","client_ip":"::1","method":"OPTIONS","path":"/api/admin/events","status":204,"latency":13367,"user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"}
+{"time":"2026-04-27T01:31:48.129898342+01:00","level":"INFO","msg":"Request completed","request_id":"21ef5703-b2dd-4e1b-b442-2fd3dda3fc5c","client_ip":"::1","method":"OPTIONS","path":"/api/admin/portfolio-items","status":204,"latency":17277,"user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"}
+2026/04/27 01:31:48 Using Supabase REST API for portfolio items
+{"time":"2026-04-27T01:31:48.395701561+01:00","level":"INFO","msg":"Request completed","request_id":"25cfabc6-aaf5-462f-b962-c6b5889e2968","client_ip":"::1","method":"GET","path":"/api/admin/media-library","status":200,"latency":254356219,"user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"}
+2026/04/27 01:31:48 ✅ Retrieved 0 events via Supabase in 306.730301ms
+{"time":"2026-04-27T01:31:48.452571558+01:00","level":"INFO","msg":"Request completed","request_id":"f4723a0e-b51a-4fcd-9e0f-3cd444817ea1","client_ip":"::1","method":"GET","path":"/api/admin/events","status":200,"latency":306921918,"user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"}
+2026/04/27 01:31:48 ✅ Retrieved 5 services via Supabase in 322.841776ms
+{"time":"2026-04-27T01:31:48.467107607+01:00","level":"INFO","msg":"Request completed","request_id":"48e05ca1-f825-4a9f-8688-f8ea84e621ed","client_ip":"::1","method":"GET","path":"/api/admin/services","status":200,"latency":323170125,"user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"}
+2026/04/27 01:31:48 ✅ Retrieved 8 portfolio items via Supabase in 324.510665ms
+{"time":"2026-04-27T01:31:48.471333367+01:00","level":"INFO","msg":"Request completed","request_id":"99ca326b-3cb9-49f4-a537-74fdfacb7eb5","client_ip":"::1","method":"GET","path":"/api/admin/portfolio-items","status":200,"latency":325198394,"user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"}

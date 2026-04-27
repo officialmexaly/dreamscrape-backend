@@ -1,0 +1,55 @@
+2026/04/24 18:43:38 ✅ Supabase client initialized successfully
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /swagger/*any             --> github.com/swaggo/gin-swagger.CustomWrapHandler.func1 (5 handlers)
+[GIN-debug] GET    /api/test                 --> main.main.func1 (5 handlers)
+[GIN-debug] GET    /api/portfolio-items      --> dreamscape-backend/internal/handlers.(*PortfolioHandler).GetPortfolioItems-fm (5 handlers)
+[GIN-debug] GET    /api/portfolio-items/:id  --> dreamscape-backend/internal/handlers.(*PortfolioHandler).GetPortfolioItem-fm (5 handlers)
+[GIN-debug] GET    /api/blog-posts           --> dreamscape-backend/internal/handlers.(*PortfolioHandler).GetPortfolioItems-fm (5 handlers)
+[GIN-debug] GET    /api/blog-posts/:slug     --> dreamscape-backend/internal/handlers.(*PortfolioHandler).GetPortfolioItem-fm (5 handlers)
+[GIN-debug] GET    /api/health               --> dreamscape-backend/internal/handlers.(*UtilitiesHandler).HealthCheck-fm (5 handlers)
+[GIN-debug] GET    /api/db/tables            --> dreamscape-backend/internal/handlers.(*UtilitiesHandler).GetDatabaseTables-fm (5 handlers)
+[GIN-debug] GET    /api/db/stats             --> dreamscape-backend/internal/handlers.(*UtilitiesHandler).GetDatabaseStats-fm (5 handlers)
+[GIN-debug] GET    /api/admin/portfolio-items --> dreamscape-backend/internal/handlers.(*PortfolioHandler).GetPortfolioItems-fm (5 handlers)
+[GIN-debug] POST   /api/admin/portfolio-items --> dreamscape-backend/internal/handlers.(*PortfolioHandler).CreatePortfolioItem-fm (5 handlers)
+[GIN-debug] GET    /api/admin/portfolio-items/:id --> dreamscape-backend/internal/handlers.(*PortfolioHandler).GetPortfolioItem-fm (5 handlers)
+[GIN-debug] PUT    /api/admin/portfolio-items/:id --> dreamscape-backend/internal/handlers.(*PortfolioHandler).UpdatePortfolioItem-fm (5 handlers)
+[GIN-debug] DELETE /api/admin/portfolio-items/:id --> dreamscape-backend/internal/handlers.(*PortfolioHandler).DeletePortfolioItem-fm (5 handlers)
+[GIN-debug] GET    /api/admin/blog-posts     --> dreamscape-backend/internal/handlers.(*PortfolioHandler).GetPortfolioItems-fm (5 handlers)
+[GIN-debug] POST   /api/admin/blog-posts     --> dreamscape-backend/internal/handlers.(*PortfolioHandler).CreatePortfolioItem-fm (5 handlers)
+[GIN-debug] GET    /api/admin/blog-posts/:id --> dreamscape-backend/internal/handlers.(*PortfolioHandler).GetPortfolioItem-fm (5 handlers)
+[GIN-debug] PUT    /api/admin/blog-posts/:id --> dreamscape-backend/internal/handlers.(*PortfolioHandler).UpdatePortfolioItem-fm (5 handlers)
+[GIN-debug] DELETE /api/admin/blog-posts/:id --> dreamscape-backend/internal/handlers.(*PortfolioHandler).DeletePortfolioItem-fm (5 handlers)
+[GIN-debug] GET    /api/admin/db/tables      --> dreamscape-backend/internal/handlers.(*UtilitiesHandler).GetDatabaseTables-fm (5 handlers)
+[GIN-debug] GET    /api/admin/db/stats       --> dreamscape-backend/internal/handlers.(*UtilitiesHandler).GetDatabaseStats-fm (5 handlers)
+[GIN-debug] GET    /api/admin/health         --> dreamscape-backend/internal/handlers.(*UtilitiesHandler).HealthCheck-fm (5 handlers)
+[GIN-debug] GET    /health                   --> main.main.func2 (5 handlers)
+{"time":"2026-04-24T18:43:38.444014465+01:00","level":"INFO","msg":"Starting server","port":"8080","frontend_url":"http://localhost:3000","gin_mode":"debug"}
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+{"time":"2026-04-24T18:43:44.765556249+01:00","level":"INFO","msg":"Request completed","request_id":"05654b1e-8a4d-4656-9d49-776cce63bda5","client_ip":"::1","method":"GET","path":"/health","status":200,"latency":2435006746,"user_agent":"curl/8.14.1"}
+2026/04/24 18:43:47 DEBUG: Retrieved 8 portfolio items
+2026/04/24 18:43:47 DEBUG: Data is nil: false
+{"time":"2026-04-24T18:43:47.03560841+01:00","level":"INFO","msg":"Request completed","request_id":"7e0e258e-0e08-4b4f-81d5-dd11f7563bcf","client_ip":"::1","method":"GET","path":"/api/admin/portfolio-items","status":200,"latency":298710037,"user_agent":"curl/8.14.1"}
+{"time":"2026-04-24T18:49:38.223504606+01:00","level":"INFO","msg":"Request completed","request_id":"039f8531-ceec-4519-878f-f634aa4538b9","client_ip":"::1","method":"GET","path":"/api/admin/portfolio-items/4f8183a1-7a7e-4131-829e-f9cd6860fcb4","status":200,"latency":1698766554,"user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"}
+2026/04/24 18:49:45 DEBUG: Retrieved 8 portfolio items
+2026/04/24 18:49:45 DEBUG: Data is nil: false
+{"time":"2026-04-24T18:49:45.118850761+01:00","level":"INFO","msg":"Request completed","request_id":"14972f66-e119-4f08-bf65-80ee53e547a8","client_ip":"::1","method":"GET","path":"/api/admin/portfolio-items","status":200,"latency":925167652,"user_agent":"curl/8.14.1"}
+2026/04/24 18:49:47 DEBUG: Retrieved 8 portfolio items
+2026/04/24 18:49:47 DEBUG: Data is nil: false
+{"time":"2026-04-24T18:49:47.05250858+01:00","level":"INFO","msg":"Request completed","request_id":"d5399176-c7af-49cd-bbbe-b571a11aaa4c","client_ip":"::1","method":"GET","path":"/api/admin/portfolio-items","status":200,"latency":554324693,"user_agent":"node"}
+2026/04/24 18:49:47 DEBUG: Retrieved 8 portfolio items
+2026/04/24 18:49:47 DEBUG: Data is nil: false
+{"time":"2026-04-24T18:49:47.552721537+01:00","level":"INFO","msg":"Request completed","request_id":"21998d96-c805-4ede-8ec6-92cd7fe134a5","client_ip":"::1","method":"GET","path":"/api/admin/portfolio-items","status":200,"latency":582953893,"user_agent":"curl/8.14.1"}
+{"time":"2026-04-24T18:49:47.776475664+01:00","level":"INFO","msg":"Request completed","request_id":"7223b952-ef5c-40d8-8252-505db40d9714","client_ip":"::1","method":"GET","path":"/api/admin/portfolio-items/4f8183a1-7a7e-4131-829e-f9cd6860fcb4","status":200,"latency":616921870,"user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"}
+{"time":"2026-04-24T18:49:47.776576144+01:00","level":"INFO","msg":"Request completed","request_id":"ab339fe2-bb02-4b19-9269-c7d0941b78a5","client_ip":"::1","method":"GET","path":"/api/admin/portfolio-items/4f8183a1-7a7e-4131-829e-f9cd6860fcb4","status":200,"latency":616763969,"user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"}
+2026/04/24 18:49:49 DEBUG: Retrieved 8 portfolio items
+2026/04/24 18:49:49 DEBUG: Data is nil: false
+{"time":"2026-04-24T18:49:49.850060979+01:00","level":"INFO","msg":"Request completed","request_id":"56ddc60e-850a-41c9-aed5-99e6d916b95f","client_ip":"::1","method":"GET","path":"/api/admin/portfolio-items","status":200,"latency":272686407,"user_agent":"node"}
+2026/04/24 18:50:02 DEBUG: Retrieved 8 portfolio items
+2026/04/24 18:50:02 DEBUG: Data is nil: false
+{"time":"2026-04-24T18:50:02.830072363+01:00","level":"INFO","msg":"Request completed","request_id":"c2129185-1824-4b8a-a885-173c1d65ec46","client_ip":"::1","method":"GET","path":"/api/admin/portfolio-items","status":200,"latency":618094114,"user_agent":"node"}
+{"time":"2026-04-24T19:01:45.198287515+01:00","level":"INFO","msg":"Request completed","request_id":"39e70f80-d9fd-42ff-8784-4b3d30c19bde","client_ip":"::1","method":"GET","path":"/health","status":200,"latency":5371586070,"user_agent":"curl/8.14.1"}

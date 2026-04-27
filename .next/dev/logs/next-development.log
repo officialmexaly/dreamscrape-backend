@@ -1,0 +1,5 @@
+{"timestamp":"05:44:21.398","source":"Server","level":"LOG","message":"  Reload env: .env"}
+{"timestamp":"05:44:21.423","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, scandir '/media/xi6th/Free/Project/Dioing/Zexfa/Dreamscape-Curated-Event/app'"}
+{"timestamp":"05:44:21.429","source":"Server","level":"ERROR","message":"⨯ \"unhandledRejection:\" Error: ENOENT: no such file or directory, scandir '/media/xi6th/Free/Project/Dioing/Zexfa/Dreamscape-Curated-Event/app'"}
+{"timestamp":"05:44:21.435","source":"Server","level":"ERROR","message":"⨯ \"unhandledRejection: \" Error: ENOENT: no such file or directory, scandir '/media/xi6th/Free/Project/Dioing/Zexfa/Dreamscape-Curated-Event/app'"}
+{"timestamp":"05:44:21.543","source":"Server","level":"ERROR","message":"⨯ Module not found: Error: Can't resolve 'next-flight-client-entry-loader' in '/media/xi6th/Free/Project/Dioing/Zexfa/Dreamscape-Curated-Event'"}

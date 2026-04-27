@@ -1,401 +1,198 @@
-# Dreamscape Curated Events
+# Dreamscape Backend API
 
-A luxury event planning website featuring beautiful design, interactive components, seamless user experience, and a comprehensive admin panel.
+High-performance Go backend for Dreamscape Events management system.
 
-## 🌟 Features
+## 🏗️ Architecture
 
-### Public Pages
-- **Home Page** - Elegant landing with hero section, brand intro, services preview, featured events, and love notes
-- **About** - Meet the Executive Planner (Oseremen Ohiku) and company story
-- **Services** - Weddings, Private & Social Events, Corporate & Brand Events, Special & Public Events, Destination Experiences
-- **Portfolio (Blog)** - Showcase of curated events including Pearl & Donald's Dallas wedding
-- **Love Notes** - Client testimonials from Nneoma Achioso and Dr. Chika Obetta
-- **FAQ** - Common questions about planning, travel, and getting started
-- **Contact** - Comprehensive inquiry form, Calendly booking, WhatsApp, Instagram, and newsletter signup
+### Technology Stack
+- **Framework**: Gin Web Framework
+- **Database**: PostgreSQL with Supabase REST API integration
+- **Authentication**: JWT with OAuth2 (Google, Facebook, Apple)
+- **Documentation**: Swagger/OpenAPI 2.0
+- **Language**: Go 1.21+
 
-### Admin Panel (`/admin`)
-- **Dashboard** - Overview of all site content and metrics
-- **Content Management** - Edit all homepage, about, contact, and footer content
-- **Blog/Portfolio Management** - Create, edit, reorder, and manage portfolio items
-- **Services Management** - Full CRUD operations with preview functionality
-- **Media Library** - Upload and manage images
-- **Inquiries Management** - View and respond to event inquiries
-- **Settings** - Configure site-wide settings
-- **User Management** - Manage admin users and access control
+### Project Structure
 
-### Authentication
-- **Secure Login** - JWT-based authentication with NextAuth v5
-- **Account Protection** - Failed login attempt tracking and account lockout
-- **Session Management** - 30-day sessions with automatic refresh
-- **Audit Logging** - All authentication events logged for security
-
-### Database & CMS
-- **Supabase** - PostgreSQL database with real-time capabilities
-- **Content Management System** - All page content editable via admin panel
-- **Image Storage** - Supabase Storage for media management
-- **SWR Caching** - Intelligent data fetching with automatic revalidation
-
-## 🛠️ Tech Stack
-
-### Frontend
-- **Framework**: Next.js 16.2.1 (App Router with Turbopack)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS with custom brand colors
-- **Animations**: Framer Motion
-- **Icons**: Lucide React
-- **Forms**: React Hook Form with Zod validation
-
-### Backend
-- **API Routes**: Next.js API routes for all backend functionality
-- **Authentication**: NextAuth v5 with credentials provider
-- **Database**: PostgreSQL via Supabase
-- **Storage**: Supabase Storage for media files
-- **Email**: Resend for transactional emails
-
-### UI Components
-- Custom component library with 30+ reusable components
-- Accordion, Button, Calendar, Card, Carousel, Checkbox, Input, Label, Radio Group, Select, Separator, Sheet, Tabs, Textarea
-- Fully responsive and accessible
-
-### DevOps
-- **Deployment**: Vercel (automatic builds from `main` branch)
-- **Database**: Supabase (PostgreSQL, Storage, Auth)
-- **Environment**: Production URL: `https://dreamscapecuratedevent.com`
-
-## Tech Stack
-
-- **Framework**: Next.js 16.2.1 (with Turbopack)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **UI Components**: Custom component library with reusable components
-  - Accordion
-  - Button
-  - Calendar
-  - Card
-  - Carousel
-  - Checkbox
-  - Input
-  - Label
-  - Radio Group
-  - Select
-  - Separator
-  - Sheet
-  - Tabs
-  - Textarea
+```
+backend/
+├── cmd/
+│   └── server/
+│       └── main.go              # Application entry point
+├── internal/                    # Private application code
+│   ├── handlers/               # HTTP request handlers
+│   │   ├── admin/              # Admin-only endpoints
+│   │   ├── auth/               # Authentication & OAuth
+│   │   └── public/             # Public API endpoints
+│   ├── middleware/             # HTTP middleware (auth, cors, etc.)
+│   ├── models/                 # Data models and domain types
+│   ├── services/               # Business logic layer
+│   └── database/               # Database connection management
+├── pkg/                        # Public libraries
+│   ├── config/                 # Configuration management
+│   ├── errors/                 # Error handling utilities
+│   └── utils/                  # General utilities
+├── db/                         # Database client implementation
+├── scripts/                    # Utility scripts
+│   ├── admin/                  # Admin management tools
+│   └── debug/                  # Debugging utilities
+├── tests/                      # Test files
+│   ├── unit/                   # Unit tests
+│   └── integration/            # Integration tests
+├── docs/                       # Documentation
+│   ├── README.md               # Detailed documentation
+│   ├── STATUS.md               # Development status
+│   └── SWAGGER.md              # API documentation
+├── build/                      # Compiled binaries
+├── logs/                       # Application logs
+├── go.mod                      # Go module definition
+├── go.sum                      # Go module checksums
+├── Makefile                    # Build automation
+└── .env                        # Environment configuration
+```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+- Go 1.21 or higher
+- PostgreSQL database or Supabase account
+- Environment variables configured
 
-- **Node.js** 22.x or later
-- **npm** (comes with Node.js)
-- **Supabase account** (for database and storage)
+### Installation
 
-### 1. Clone and Install
+1. **Clone and navigate to backend**:
+   ```bash
+   cd backend
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   go mod download
+   ```
+
+3. **Configure environment**:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+4. **Run the server**:
+   ```bash
+   make run
+   # or
+   go run cmd/server/main.go
+   ```
+
+### Build
 
 ```bash
-git clone https://github.com/officialmexaly/Dreamscape-Curated-Event.git
-cd Dreamscape-Curated-Event
-npm install
+make build
+# Binary will be created in build/dreamscape-backend
 ```
 
-### 2. Environment Setup
+## 📡 API Endpoints
 
-Copy `.env.example` to `.env.local` and fill in your values:
+### Public Routes
+- `GET /api/health` - Health check
+- `GET /api/portfolio-items` - List portfolio items
+- `GET /api/events` - List events
+- `GET /api/services` - List services
+
+### Authentication Routes
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/refresh` - Refresh JWT token
+- `GET /api/auth/google/login` - Google OAuth
+- `GET /api/auth/facebook/login` - Facebook OAuth
+- `POST /api/auth/apple/callback` - Apple OAuth
+
+### Admin Routes (Protected)
+- `GET /api/admin/portfolio-items` - Manage portfolio
+- `GET /api/admin/events` - Manage events
+- `GET /api/admin/media-library` - Manage media
+- `GET /api/admin/users` - Manage users
+
+Full API documentation available at `/swagger/*` when server is running.
+
+## 🔧 Configuration
+
+Key environment variables (see `.env`):
 
 ```bash
-cp .env.example .env.local
-```
+# Server
+SERVER_PORT=8080
+GIN_MODE=release
 
-**Required Environment Variables:**
-
-```bash
-# Database (Supabase)
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+# Database
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_service_key
 
 # Authentication
-AUTH_SECRET=generate-with-openssl-rand-base64-32
-NEXTAUTH_URL=http://localhost:3000 # or your production URL
+JWT_SECRET=your_jwt_secret
+FRONTEND_URL=http://localhost:3000
 
-# Application URL
-NEXT_PUBLIC_APP_URL=http://localhost:3000 # or your production URL
-
-# Email (Resend)
-RESEND_API_KEY=re_your_api_key
-
-# Google Calendar (optional)
-GOOGLE_CALENDAR_CLIENT_EMAIL=your-email@gmail.com
+# OAuth (Optional)
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 
-### 3. Database Setup
-
-Run the media bucket setup script:
+## 🧪 Testing
 
 ```bash
-npm run storage:setup
+# Run all tests
+make test
+
+# Run specific test
+go test ./tests/unit/...
+
+# Run with coverage
+go test -cover ./...
 ```
 
-This will create the necessary storage bucket in Supabase.
+## 📝 Code Standards
 
-### 4. Run Development Server
+### Naming Conventions
+- **Files**: `snake_case.go`
+- **Packages**: lowercase, single word when possible
+- **Functions/Variables**: `camelCase` for exported, `snakeCase` for private
+- **Constants**: `PascalCase` or `UPPER_SNAKE_CASE`
+- **Interfaces**: `PascalCase` with `-er` suffix (e.g., `Handler`, `Client`)
 
-```bash
-npm run dev --webpack
-```
+### Architecture Principles
+1. **Separation of Concerns**: Clear boundaries between handlers, services, and data layers
+2. **Dependency Injection**: Pass dependencies through constructors
+3. **Error Handling**: Explicit error checks with proper HTTP status codes
+4. **Middleware**: Use for cross-cutting concerns (auth, logging, etc.)
+5. **Testing**: Write unit tests for business logic, integration tests for endpoints
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+## 🔐 Security
 
-### 5. Create Admin Account
+- JWT-based authentication with configurable expiration
+- Role-based access control (admin, super_admin)
+- CORS configuration for frontend integration
+- Rate limiting on sensitive endpoints
+- Input validation and sanitization
+- SQL injection prevention via parameterized queries
 
-Visit `/admin/setup` to create your admin account.
+## 📚 Resources
 
-## 📁 Project Structure
+- [Gin Framework Documentation](https://gin-gonic.com/docs/)
+- [Supabase Client Library](https://supabase.com/docs/reference/golang)
+- [Go Standards](https://go.dev/doc/effective_go)
 
-```
-dreamscape-curved-event/
-├── app/                           # Next.js App Router pages
-│   ├── (app)/                     # Admin panel routes
-│   │   ├── dashboard/            # Admin dashboard
-│   │   ├── content/              # Content management
-│   │   ├── blog/                 # Blog/portfolio management
-│   │   ├── services/             # Services management
-│   │   ├── media/                # Media library
-│   │   ├── inquiries/            # Inquiry management
-│   │   ├── settings/             # Site settings
-│   │   ├── login/                # Admin login
-│   │   └── setup/                # Initial setup
-│   ├── about/                    # About page
-│   ├── blog/                     # Blog listing page
-│   ├── blog/[slug]/              # Individual blog post
-│   ├── contact/                  # Contact page with inquiry form
-│   ├── consultation/             # Consultation page
-│   ├── consultation-editorial/   # Consultation with calendar
-│   ├── faq/                      # FAQ page
-│   ├── love-notes/               # Love notes/testimonials
-│   ├── portfolio/                # Portfolio listing
-│   ├── portfolio/[slug]/         # Individual portfolio item
-│   ├── services/                 # Services page
-│   └── page.tsx                  # Homepage
-├── src/
-│   ├── admin/                     # Admin panel components
-│   │   ├── pages/                # Admin page components
-│   │   ├── providers/             # React Context providers
-│   │   └── toast/                 # Toast notification system
-│   ├── components/
-│   │   ├── pages/                # Page-specific components
-│   │   │   ├── AboutPage.tsx
-│   │   │   ├── BlogPage.tsx
-│   │   │   ├── ContactPage.tsx
-│   │   │   ├── FAQPage.tsx
-│   │   │   ├── HomePage.tsx
-│   │   │   └── ServicesPage.tsx
-│   │   ├── ui/                    # Reusable UI components
-│   │   │   ├── accordion/
-│   │   │   ├── button/
-│   │   │   ├── calendar/
-│   │   │   ├── card/
-│   │   │   ├── input/
-│   │   │   ├── sheet/
-│   │   │   └── ... (30+ components)
-│   │   ├── Footer.tsx              # Site footer
-│   │   ├── InquiryForm.tsx        # Comprehensive inquiry form
-│   │   ├── Navigation.tsx         # Site navigation with mobile menu
-│   │   └── ScrollReveal.tsx       # Scroll animation wrapper
-│   ├── lib/                      # Utility libraries
-│   │   ├── supabase*.ts          # Supabase clients
-│   │   ├── cached-*.ts           # Data fetching with SWR
-│   │   ├── password.ts            # Password hashing
-│   │   ├── audit-log.ts           # Security audit logging
-│   │   └── user-service.ts        # User management
-│   └── hooks/                     # Custom React hooks
-├── scripts/                       # Utility scripts
-│   ├── migrate-content-to-db.ts # Content migration
-│   └── storage scripts
-├── public/                        # Static assets
-│   ├── logo.png
-│   └── media/                     # Uploaded images
-├── auth.ts                        # NextAuth configuration
-├── tailwind.config.js             # Tailwind CSS configuration
-└── package.json                   # Dependencies
-```
+## 🤝 Contributing
 
-### Build for Production
+1. Follow the established code structure
+2. Write tests for new features
+3. Update Swagger documentation
+4. Use meaningful commit messages
+5. Create pull requests for review
 
-```bash
-npm run build
-npm start
-```
+## 📄 License
 
-## Project Structure
+Proprietary - All rights reserved
 
-```
-dreamscrap/
-├── app/                      # Next.js App Router pages
-│   ├── about/               # About page
-│   ├── consultation/        # Consultation booking page
-│   ├── consultation-editorial/
-│   ├── contact/             # Contact page
-│   ├── love-notes/          # Testimonials page
-│   ├── portfolio/           # Portfolio pages
-│   └── services/            # Services page
-├── src/
-│   ├── components/
-│   │   ├── pages/          # Page-specific components
-│   │   ├── ui/             # Reusable UI components
-│   │   ├── Footer.tsx
-│   │   ├── Navigation.tsx
-│   │   └── ScrollReveal.tsx
-│   └── lib/                # Utility functions
-├── public/                  # Static assets
-└── tailwind.config.js       # Tailwind configuration
-```
+---
 
-## Key Features
-
-### Interactive Consultation Booking
-- Calendar-based date selection
-- Real-time availability checking
-- Time slot selection
-- Multi-step form with tabs
-- File upload support
-
-### Portfolio System
-- Dynamic routing for portfolio items
-- Individual story pages for each event
-- Responsive image galleries
-
-### Responsive Design
-- Mobile-first approach
-- Optimized for all screen sizes
-- Smooth animations and transitions
-
-
-## 📜 Available Scripts
-
-```bash
-# Development
-npm run dev --webpack          # Start dev server with webpack (recommended)
-npm run dev:low-ram          # Start dev server with limited RAM
-
-# Production
-npm run build                 # Build for production
-npm start                     # Start production server
-
-# Code Quality
-npm run lint:check            # Check linting issues
-npm run lint                  # Fix linting issues automatically
-npm run typecheck             # Run TypeScript type checking
-
-# Analysis
-npm run analyze               # Analyze bundle size
-npm run lighthouse            # Run Lighthouse performance test
-
-# Database/Storage
-npm run storage:setup         # Setup Supabase storage bucket
-npm run storage:migrate        # Migrate media to Supabase storage
-npm run storage:sync           # Sync new media to Supabase
-```
-
-## 🔐 Admin Panel
-
-### Access Admin Panel
-- URL: `/admin` or `/admin/dashboard`
-- Default credentials are set during `/admin/setup`
-
-### Features
-- **Content Management**: Edit all page content in real-time
-- **Blog/Portfolio**: Full CRUD with image uploads
-- **Services**: Manage service offerings and pricing
-- **Media Library**: Upload and organize images
-- **Inquiries**: View and respond to event inquiries
-- **Settings**: Configure site-wide settings
-- **Users**: Manage admin users and permissions
-
-### Authentication
-- JWT-based authentication
-- Secure password hashing (bcrypt)
-- Failed login attempt tracking
-- Account lockout after multiple failed attempts
-- 30-day session duration
-
-## 🚀 Deployment
-
-### Vercel Deployment
-
-This project is configured for Vercel deployment:
-
-1. **Automatic Builds**: Vercel automatically builds from the `main` branch
-2. **Production URL**: `https://dreamscapecuratedevent.com`
-3. **Environment Variables**: Set these in Vercel dashboard:
-   ```
-   NEXT_PUBLIC_APP_URL=https://dreamscapecuratedevent.com
-   NEXTAUTH_URL=https://dreamscapecuratedevent.com
-   AUTH_SECRET
-   NEXT_PUBLIC_SUPABASE_URL
-   NEXT_PUBLIC_SUPABASE_ANON_KEY
-   SUPABASE_SERVICE_ROLE_KEY
-   RESEND_API_KEY
-   ```
-
-### Manual Deployment
-
-To deploy manually:
-
-```bash
-# 1. Install Vercel CLI
-npm i -g vercel
-
-# 2. Login to Vercel
-vercel login
-
-# 3. Deploy
-vercel --prod
-```
-
-### Branch Strategy
-- **`main`**: Production branch (auto-deploys to production)
-- **`dev`**: Development branch (for testing new features)
-
-## 🎨 Brand Colors
-
-### Primary Colors
-- **Deep Purple**: `#40153F` - Main accent color
-- **Pink/Magenta**: `#C66493` - Secondary accent
-
-### Supporting Colors
-- **Orange**: `#F47C20`
-- **Yellow**: `#E7C84A`
-- **Green**: `#5C9A68`
-
-### Neutrals
-- **Dark**: `#211B25` - Text and headings
-- **Gray**: `#756B73` - Secondary text
-- **Light**: `#FCFAF7` - Backgrounds
-
-## 📱 Key Features Highlight
-
-### Mobile Responsive
-- All pages fully responsive
-- Hamburger menu with smooth animations
-- Touch-optimized buttons and interactions
-- Optimized loading performance
-
-### Performance
-- SWR for intelligent data caching
-- Image optimization with Next.js Image component
-- Static page generation where possible
-- Lazy loading for better performance
-
-### User Experience
-- Smooth scroll animations
-- Loading skeletons for better perceived performance
-- Instant admin login redirect
-- Comprehensive inquiry form with validation
-- Calendly integration for easy booking
-
-## License
-
-© 2026 Dreamscape Curated Events. All rights reserved.
-
+**Last Updated**: 2026-04-26  
+**Version**: 1.0.0  
+**Maintainer**: Dreamscape Development Team
