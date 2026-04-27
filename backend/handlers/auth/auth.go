@@ -7,9 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"dreamscape-backend/internal/models"
-	"dreamscape-backend/internal/handlers/common"
-	"dreamscape-backend/internal/services"
+	"dreamscape-backend/backend/models"
+	"dreamscape-backend/backend/handlers/common"
+	"dreamscape-backend/backend/services"
 	apperrors "dreamscape-backend/pkg/errors"
 )
 

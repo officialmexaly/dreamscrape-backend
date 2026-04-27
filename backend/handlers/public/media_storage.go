@@ -11,9 +11,9 @@ import (
 	"github.com/google/uuid"
 
 	"dreamscape-backend/db"
-	"dreamscape-backend/internal/database"
-	"dreamscape-backend/internal/handlers/common"
-	"dreamscape-backend/internal/storage"
+	"dreamscape-backend/backend/database"
+	"dreamscape-backend/backend/handlers/common"
+	"dreamscape-backend/backend/storage"
 	"dreamscape-backend/pkg/config"
 	"dreamscape-backend/pkg/errors"
 )

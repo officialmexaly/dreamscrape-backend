@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 
-	"dreamscape-backend/internal/models"
-	"dreamscape-backend/internal/services"
+	"dreamscape-backend/backend/models"
+	"dreamscape-backend/backend/services"
 	"dreamscape-backend/pkg/config"
 )
 

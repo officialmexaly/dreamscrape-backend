@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"dreamscape-backend/internal/handlers/common"
-	"dreamscape-backend/internal/models"
+	"dreamscape-backend/backend/handlers/common"
+	"dreamscape-backend/backend/models"
 	"dreamscape-backend/pkg/errors"
 )
 

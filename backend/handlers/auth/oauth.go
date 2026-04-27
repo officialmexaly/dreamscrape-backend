@@ -13,9 +13,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"dreamscape-backend/internal/models"
-	"dreamscape-backend/internal/handlers/common"
-	"dreamscape-backend/internal/services"
+	"dreamscape-backend/backend/models"
+	"dreamscape-backend/backend/handlers/common"
+	"dreamscape-backend/backend/services"
 	"dreamscape-backend/pkg/errors"
 )
 

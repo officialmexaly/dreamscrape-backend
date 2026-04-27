@@ -14,8 +14,8 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
-	"dreamscape-backend/internal/database"
-	"dreamscape-backend/internal/models"
+	"dreamscape-backend/backend/database"
+	"dreamscape-backend/backend/models"
 	"dreamscape-backend/pkg/config"
 )
 

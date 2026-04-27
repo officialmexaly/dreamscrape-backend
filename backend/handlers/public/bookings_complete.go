@@ -8,9 +8,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"dreamscape-backend/internal/database"
-	"dreamscape-backend/internal/models"
-	"dreamscape-backend/internal/handlers/common"
+	"dreamscape-backend/backend/database"
+	"dreamscape-backend/backend/models"
+	"dreamscape-backend/backend/handlers/common"
 )
 
 // CompleteBookingHandler handles complete booking CRUD operations

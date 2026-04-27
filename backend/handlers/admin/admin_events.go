@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"dreamscape-backend/internal/models"
-	"dreamscape-backend/internal/handlers/common"
+	"dreamscape-backend/backend/models"
+	"dreamscape-backend/backend/handlers/common"
 	"dreamscape-backend/pkg/errors"
 )
 

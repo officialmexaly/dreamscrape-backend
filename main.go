@@ -11,11 +11,11 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	_ "dreamscape-backend/docs" // swagger docs
-	"dreamscape-backend/internal/database"
-	"dreamscape-backend/internal/handlers/auth"
-	"dreamscape-backend/internal/handlers/public"
-	"dreamscape-backend/internal/middleware"
-	"dreamscape-backend/internal/services"
+	"dreamscape-backend/backend/database"
+	"dreamscape-backend/backend/handlers/auth"
+	"dreamscape-backend/backend/handlers/public"
+	"dreamscape-backend/backend/middleware"
+	"dreamscape-backend/backend/services"
 	"dreamscape-backend/pkg/config"
 )
 

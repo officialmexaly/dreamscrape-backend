@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"dreamscape-backend/db"
-	"dreamscape-backend/internal/database"
+	"dreamscape-backend/backend/database"
 )
 
 func main() {

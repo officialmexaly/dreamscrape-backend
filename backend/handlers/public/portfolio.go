@@ -13,8 +13,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"dreamscape-backend/internal/database"
-	"dreamscape-backend/internal/models"
+	"dreamscape-backend/backend/database"
+	"dreamscape-backend/backend/models"
 )
 
 // PortfolioHandler handles portfolio item operations

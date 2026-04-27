@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"dreamscape-backend/internal/supabase"
+	"dreamscape-backend/backend/supabase"
 )
 
 func main() {

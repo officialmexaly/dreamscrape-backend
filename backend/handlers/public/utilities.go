@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"dreamscape-backend/db"
-	"dreamscape-backend/internal/database"
-	"dreamscape-backend/internal/handlers/common"
+	"dreamscape-backend/backend/database"
+	"dreamscape-backend/backend/handlers/common"
 	"dreamscape-backend/pkg/errors"
 )
 
