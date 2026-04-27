@@ -1,0 +1,443 @@
+basePath: /
+definitions:
+  models.CreatePortfolioItemRequest:
+    properties:
+      author:
+        type: string
+      budget:
+        type: string
+      categories:
+        items:
+          type: string
+        type: array
+      client_name:
+        type: string
+      content: {}
+      description:
+        type: string
+      display_order:
+        type: integer
+      event_date:
+        type: string
+      event_type:
+        type: string
+      excerpt:
+        type: string
+      featured_image:
+        type: string
+      gallery_images:
+        items:
+          type: string
+        type: array
+      guest_count:
+        type: integer
+      images:
+        items:
+          type: string
+        type: array
+      location:
+        type: string
+      meta_description:
+        type: string
+      meta_title:
+        type: string
+      slug:
+        type: string
+      status:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      testimonial:
+        type: string
+      title:
+        type: string
+      vendors:
+        items:
+          type: string
+        type: array
+    required:
+    - slug
+    - title
+    type: object
+  models.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  models.JSONB:
+    properties:
+      data: {}
+    type: object
+  models.PortfolioItem:
+    properties:
+      author:
+        type: string
+      budget:
+        type: string
+      categories:
+        example:
+        - '['
+        items:
+          type: string
+        type: array
+      client_name:
+        type: string
+      content:
+        $ref: '#/definitions/models.JSONB'
+      created_at:
+        type: string
+      description:
+        type: string
+      display_order:
+        type: integer
+      event_date:
+        type: string
+      event_type:
+        type: string
+      excerpt:
+        type: string
+      featured_image:
+        type: string
+      gallery_images:
+        example:
+        - '['
+        items:
+          type: string
+        type: array
+      guest_count:
+        type: integer
+      id:
+        type: string
+      images:
+        example:
+        - '['
+        items:
+          type: string
+        type: array
+      location:
+        type: string
+      meta_description:
+        type: string
+      meta_title:
+        type: string
+      slug:
+        type: string
+      status:
+        example: published
+        type: string
+      tags:
+        example:
+        - '['
+        items:
+          type: string
+        type: array
+      testimonial:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      vendors:
+        example:
+        - '['
+        items:
+          type: string
+        type: array
+    type: object
+  models.PortfolioItemResponse:
+    properties:
+      item:
+        $ref: '#/definitions/models.PortfolioItem'
+    type: object
+  models.PortfolioItemsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/models.PortfolioItem'
+        type: array
+    type: object
+  models.UpdatePortfolioItemRequest:
+    properties:
+      author:
+        type: string
+      budget:
+        type: string
+      categories:
+        items:
+          type: string
+        type: array
+      client_name:
+        type: string
+      content: {}
+      description:
+        type: string
+      display_order:
+        type: integer
+      event_date:
+        type: string
+      event_type:
+        type: string
+      excerpt:
+        type: string
+      featured_image:
+        type: string
+      gallery_images:
+        items:
+          type: string
+        type: array
+      guest_count:
+        type: integer
+      images:
+        items:
+          type: string
+        type: array
+      location:
+        type: string
+      meta_description:
+        type: string
+      meta_title:
+        type: string
+      slug:
+        type: string
+      status:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      testimonial:
+        type: string
+      title:
+        type: string
+      vendors:
+        items:
+          type: string
+        type: array
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@dreamscape-events.com
+    name: API Support
+    url: http://www.dreamscape-events.com/support
+  description: API for Dreamscape Events - Event Planning and Management System
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Dreamscape Events API
+  version: "1.0"
+paths:
+  /api/db/stats:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve statistics about database tables
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'stats: table statistics'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get database statistics
+      tags:
+      - admin
+  /api/db/tables:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve information about database tables and row counts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'tables: array of table information'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get database tables
+      tags:
+      - admin
+  /api/health:
+    get:
+      consumes:
+      - application/json
+      description: Check if the API and database connections are healthy
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'status: healthy/unhealthy'
+          schema:
+            additionalProperties: true
+            type: object
+        "503":
+          description: 'status: unhealthy with error details'
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Health check
+      tags:
+      - health
+  /api/portfolio-items:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all portfolio items with optional filtering
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PortfolioItemsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get all portfolio items
+      tags:
+      - portfolio
+    post:
+      consumes:
+      - application/json
+      description: Create a new portfolio item
+      parameters:
+      - description: Portfolio item data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreatePortfolioItemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.PortfolioItemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Create a portfolio item
+      tags:
+      - portfolio
+  /api/portfolio-items/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a portfolio item by ID or slug
+      parameters:
+      - description: Portfolio item ID or slug
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PortfolioItemResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Delete a portfolio item
+      tags:
+      - portfolio
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single portfolio item by ID or slug
+      parameters:
+      - description: Portfolio item ID or slug
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PortfolioItemResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get a portfolio item
+      tags:
+      - portfolio
+    put:
+      consumes:
+      - application/json
+      description: Update an existing portfolio item by ID or slug
+      parameters:
+      - description: Portfolio item ID or slug
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Portfolio item data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdatePortfolioItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PortfolioItemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Update a portfolio item
+      tags:
+      - portfolio
+securityDefinitions:
+  Bearer:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
