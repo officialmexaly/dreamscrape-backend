@@ -1,8 +1,7 @@
 'use client'
 
 import React from 'react'
-import { SessionProvider } from 'next-auth/react'
-import { AuthProvider } from './AuthProvider'
+import { GolangAuthProvider } from './GolangAuthProvider'
 import { BlogPostsProvider } from './BlogPostsProvider'
 import { EventsProvider } from './EventsProvider'
 import { ServicesProvider } from './ServicesProvider'
@@ -18,23 +17,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SuppressHydrationWarnings>
       <div suppressHydrationWarning>
         <ToastProvider>
-          <SessionProvider>
-            <AuthProvider>
-              <BlogPostsProvider>
-                <EventsProvider>
-                  <ServicesProvider>
-                    <InquiriesProvider>
-                      <MediaProvider>
-                        <SiteContentProvider>
-                          <SettingsProvider>{children}</SettingsProvider>
-                        </SiteContentProvider>
-                      </MediaProvider>
-                    </InquiriesProvider>
-                  </ServicesProvider>
-                </EventsProvider>
-              </BlogPostsProvider>
-            </AuthProvider>
-          </SessionProvider>
+          <GolangAuthProvider>
+            <BlogPostsProvider>
+              <EventsProvider>
+                <ServicesProvider>
+                  <InquiriesProvider>
+                    <MediaProvider>
+                      <SiteContentProvider>
+                        <SettingsProvider>{children}</SettingsProvider>
+                      </SiteContentProvider>
+                    </MediaProvider>
+                  </InquiriesProvider>
+                </ServicesProvider>
+              </EventsProvider>
+            </BlogPostsProvider>
+          </GolangAuthProvider>
         </ToastProvider>
       </div>
     </SuppressHydrationWarnings>

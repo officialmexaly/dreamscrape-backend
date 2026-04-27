@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
-import { useAuth } from './AuthProvider';
+import { useAuth } from '@/src/admin/providers/GolangAuthProvider';
 
 type SettingsContextValue = {
   settings: any;

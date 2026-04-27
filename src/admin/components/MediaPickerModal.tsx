@@ -157,11 +157,10 @@ export function MediaPickerModal({
               {filtered.map((item, index) => {
                 const isSelected = selected === item.url
                 return (
-                  <button
+                  <div
                     key={item.id}
-                    type="button"
                     className={cn(
-                      'group overflow-hidden rounded-xl border bg-background text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(64,21,63,0.10)]',
+                      'group overflow-hidden rounded-xl border bg-background text-left shadow-sm transition cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(64,21,63,0.10)]',
                       isSelected
                         ? 'border-primary'
                         : 'border-border/70 hover:border-primary/50'
@@ -173,6 +172,8 @@ export function MediaPickerModal({
                         onClose()
                       }
                     }}
+                    role="button"
+                    tabIndex={0}
                   >
                     <div className="relative">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -210,7 +211,7 @@ export function MediaPickerModal({
                         {item.name}
                       </div>
                     </div>
-                  </button>
+                  </div>
                 )
               })}
             </div>

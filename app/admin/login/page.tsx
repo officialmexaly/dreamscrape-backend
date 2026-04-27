@@ -1,11 +1,7 @@
 'use client'
 
-import { useSearchParams } from 'next/navigation'
-import { LoginPage } from '@/src/admin/pages/LoginPage'
+import GolangLoginPage from '@/src/admin/pages/GolangLoginPage'
 
 export default function LoginRoute() {
-  const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || '/admin/dashboard'
-
-  return <LoginPage callbackUrl={callbackUrl} />
+  return <GolangLoginPage />
 }

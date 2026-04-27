@@ -284,8 +284,14 @@ export function BlogEditorPage({
         variant: 'success',
         duration: 2500,
       })
+
+      // Update local state silently instead of reloading
       if (isNew) {
-        router.push(`/admin/blog/${saved.id}/edit`)
+        setPost((prev) => ({
+          ...prev,
+          id: saved.id || prev.id,
+          __raw: saved.__raw || prev.__raw,
+        }))
       }
     } catch (error) {
       toast({

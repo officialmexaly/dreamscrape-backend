@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
       console.error('Failed to send business email after retries:', businessEmailResult.error);
     }
 
-    // Add to Google Calendar
+    // Add to Google Calendar (skipped if credentials not configured)
     try {
       await ErrorHandler.retry(
         () => createCalendarEvent(newBooking),
@@ -232,7 +232,6 @@ export async function POST(request: NextRequest) {
         1000,
         { bookingId: newBooking.id }
       );
-      // Calendar event created successfully
     } catch (calendarError) {
       const calendarErr = ErrorHandler.createError(
         'Failed to sync with Google Calendar',

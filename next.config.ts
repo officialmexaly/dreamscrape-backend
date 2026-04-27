@@ -35,6 +35,44 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
 
+  // Proxy API requests to Go backend
+  async rewrites() {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+
+    return [
+      // Portfolio items (Go backend)
+      {
+        source: '/api/portfolio-items/:path*',
+        destination: `${backendUrl}/api/portfolio-items/:path*`,
+      },
+      // Blog posts (Go backend)
+      {
+        source: '/api/blog-posts/:path*',
+        destination: `${backendUrl}/api/blog-posts/:path*`,
+      },
+      // Admin portfolio items (Go backend)
+      {
+        source: '/api/admin/portfolio-items/:path*',
+        destination: `${backendUrl}/api/admin/portfolio-items/:path*`,
+      },
+      // Admin blog posts (Go backend)
+      {
+        source: '/api/admin/blog-posts/:path*',
+        destination: `${backendUrl}/api/admin/blog-posts/:path*`,
+      },
+      // Admin database utilities (Go backend)
+      {
+        source: '/api/admin/db/:path*',
+        destination: `${backendUrl}/api/admin/db/:path*`,
+      },
+      // Admin health check (Go backend)
+      {
+        source: '/api/admin/health',
+        destination: `${backendUrl}/api/admin/health`,
+      },
+    ];
+  },
+
   // Headers for caching static assets
   async headers() {
     // IMPORTANT:

@@ -1,60 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/src/lib/supabase-admin';
-import { protectAdminRoute } from '@/src/lib/server-auth';
 
-export async function GET() {
-  const errorResponse = await protectAdminRoute();
-  if (errorResponse) return errorResponse;
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
-  const { data, error } = await supabaseAdmin()
-    .from('portfolio_items')
-    .select('*')
-    .order('display_order', { ascending: true })
-    .order('event_date', { ascending: false, nullsFirst: false });
+/**
+ * GET /api/admin/portfolio-items
+ * List all portfolio items from the Go backend
+ * Note: Authentication is handled by the Go backend middleware
+ */
+export async function GET(request: NextRequest) {
+  try {
+    // Forward the request with authentication cookies
+    const response = await fetch(`${BACKEND_URL}/api/admin/portfolio-items`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': request.headers.get('cookie') || '',
+      },
+    });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Backend portfolio items list error:', error);
+      return NextResponse.json(
+        { error: error.error || 'Failed to load portfolio items' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json({ items: data.data ?? data.items ?? [] });
+  } catch (err) {
+    console.error('Portfolio items list unexpected error:', err);
+    return NextResponse.json(
+      { error: 'Failed to connect to backend server' },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ items: data ?? [] });
 }
 
+/**
+ * POST /api/admin/portfolio-items
+ * Create a new portfolio item via the Go backend
+ */
 export async function POST(request: NextRequest) {
   const errorResponse = await protectAdminRoute();
   if (errorResponse) return errorResponse;
 
-  const body = await request.json();
+  try {
+    const body = await request.json();
 
-  const insert = {
-    slug: body.slug,
-    title: body.title,
-    client_name: body.client_name ?? null,
-    event_date: body.event_date ?? null,
-    event_type: body.event_type,
-    location: body.location ?? null,
-    description: body.description ?? '',
-    images: body.images ?? [],
-    featured_image: body.featured_image ?? '',
-    gallery_images: body.gallery_images ?? [],
-    budget: body.budget ?? null,
-    guest_count: body.guest_count ?? null,
-    vendors: body.vendors ?? [],
-    testimonial: body.testimonial ?? null,
-    meta_title: body.meta_title ?? null,
-    meta_description: body.meta_description ?? null,
-    status: body.status ?? 'draft',
-    display_order: body.display_order ?? 0,
-  };
+    const response = await fetch(`${BACKEND_URL}/api/admin/portfolio-items`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
 
-  const { data, error } = await supabaseAdmin()
-    .from('portfolio_items')
-    .insert([insert] as any)
-    .select('*')
-    .single();
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Backend portfolio items create error:', error);
+      return NextResponse.json(
+        { error: error.error || 'Failed to create portfolio item' },
+        { status: response.status }
+      );
+    }
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    const data = await response.json();
+    return NextResponse.json(data, { status: 201 });
+  } catch (err) {
+    console.error('Portfolio items create unexpected error:', err);
+    return NextResponse.json(
+      { error: 'Failed to connect to backend server' },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ item: data }, { status: 201 });
 }

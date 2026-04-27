@@ -75,18 +75,23 @@ const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
 
             const status = getStatus(day);
 
+            const isBooked = status === "booked";
+            const isPast = new Date(year, monthIdx, day) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const isDisabled = isBooked || isPast;
+
             return (
               <div key={i} className="flex size-10 items-center justify-center">
                 <button
                   type="button"
-                  onClick={() => onSelect?.(new Date(year, monthIdx, day))}
+                  disabled={isDisabled}
+                  onClick={() => !isDisabled && onSelect?.(new Date(year, monthIdx, day))}
                   className={cn(
-                    "relative inline-flex size-10 items-center justify-center rounded-xl text-sm transition-colors hover:bg-muted",
-                    status === "available" && "bg-brand-purple/6 text-brand-dark",
-                    status === "booked" && "bg-brand-gray/10 text-brand-gray",
-                    isToday(day) && "bg-muted font-medium",
-                    isSelected(day) && status !== "booked" && "bg-primary text-primary-foreground hover:bg-primary/80",
-                    isSelected(day) && status === "booked" && "bg-brand-gray/75 text-white hover:bg-brand-gray/75"
+                    "relative inline-flex size-10 items-center justify-center rounded-xl text-sm transition-colors",
+                    !isDisabled && "hover:bg-muted",
+                    status === "available" && !isPast && "bg-brand-purple/6 text-brand-dark",
+                    isDisabled && "opacity-35 cursor-not-allowed",
+                    isToday(day) && !isDisabled && "bg-muted font-medium",
+                    isSelected(day) && !isDisabled && "bg-primary text-primary-foreground hover:bg-primary/80",
                   )}>
                   <span>{day}</span>
                 </button>

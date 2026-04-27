@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/auth'
+import { getSession as getGolangSession } from '@/src/lib/golang-auth'
 
 /**
  * Server-side authentication utilities for API routes
@@ -16,7 +16,7 @@ export interface AdminUser {
  * Get the current session from the request
  */
 export async function getSession() {
-  return await auth()
+  return await getGolangSession()
 }
 
 /**
@@ -24,7 +24,7 @@ export async function getSession() {
  * @returns Admin user if authenticated and is admin, null otherwise
  */
 export async function getAdminUser(): Promise<AdminUser | null> {
-  const session = await auth()
+  const session = await getGolangSession()
 
   const role = session?.user?.role
   if (!session?.user || (role !== 'admin' && role !== 'super_admin')) {
@@ -34,7 +34,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
   return {
     id: session.user.id,
     email: session.user.email,
-    name: session.user.name,
+    name: `${session.user.first_name} ${session.user.last_name}`,
     role: session.user.role,
   }
 }

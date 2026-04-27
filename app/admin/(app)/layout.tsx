@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Layout } from '@/src/admin/components/Layout';
-import { useAuth } from '@/src/admin/providers/AuthProvider';
+import { useAuth } from '@/src/admin/providers/GolangAuthProvider';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();

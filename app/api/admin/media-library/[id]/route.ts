@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { moveFile, deleteFile, listMedia, MediaItem } from '@/src/lib/supabase-storage-admin';
+import { protectAdminRoute } from '@/src/lib/server-auth';
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
   try {
     const { id } = await params;
     const body = await request.json();
@@ -37,6 +40,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
   try {
     const { id } = await params;
     const path = id;

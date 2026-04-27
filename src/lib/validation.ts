@@ -26,7 +26,9 @@ export const bookingSchema = z.object({
 
   event_date: z.string().optional().refine((val) => {
     if (!val) return true;
-    const date = new Date(val);
+    // Parse as local date (YYYY-MM-DD) to avoid UTC-vs-local midnight mismatch
+    const [y, m, d] = val.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return date >= today;

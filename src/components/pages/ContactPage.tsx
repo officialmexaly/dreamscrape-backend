@@ -6,6 +6,9 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { ScrollReveal } from '../ScrollReveal';
+import CalendlyEmbed from '../CalendlyEmbed';
+
+const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_URL ?? '';
 
 const DEFAULT_CONTACT_CARDS = [
   {
@@ -30,18 +33,29 @@ const DEFAULT_CONTACT_CARDS = [
   }
 ] as const;
 
+const PROCESS_STEPS = [
+  'Send your event details and preferred date.',
+  'We review the scope and follow up within 24 to 48 hours.',
+  'We book a consultation and shape the experience from there.'
+];
+
+const RESPONSE_NOTES = [
+  { label: 'Coverage', value: 'GTA, Canada & worldwide' },
+  { label: 'Reply window', value: '24 to 48 hours' },
+  { label: 'Best for', value: 'Weddings, private events, brand activations' }
+];
+
 type ContactCard = { label: string; value: string; href: string };
 
 interface ContactPageProps {
   initialCards?: ContactCard[];
 }
 
-export default function ContactPage({ initialCards }: ContactPageProps) {
+export function ContactPage({ initialCards }: ContactPageProps) {
   const [contactCards] = useState<ContactCard[]>(
     initialCards?.length ? initialCards : [...DEFAULT_CONTACT_CARDS]
   );
 
-  // Form state
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -53,22 +67,22 @@ export default function ContactPage({ initialCards }: ContactPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     setIsSubmitting(false);
     setSubmitted(true);
 
-    // Reset form after 3 seconds
     setTimeout(() => {
       setSubmitted(false);
       setFormData({
@@ -83,92 +97,166 @@ export default function ContactPage({ initialCards }: ContactPageProps) {
   };
 
   return (
-    <div className="w-full bg-brand-light min-h-screen pt-40 md:pt-44 pb-24">
-      <div className="container mx-auto max-w-6xl px-4 sm:px-6">
-        {/* Header */}
-        <ScrollReveal direction="up" className="mb-24 text-center">
-          <p className="mb-4 text-xs uppercase tracking-[0.24em] text-brand-pink">
-            Contact
-          </p>
-          <h1 className="mx-auto mb-5 max-w-3xl text-4xl font-serif leading-tight text-brand-dark sm:text-5xl md:text-6xl">
-            Let's Plan Your Experience
-          </h1>
-          <p className="mx-auto max-w-2xl text-base leading-relaxed text-brand-gray sm:text-lg">
-            Dreamscape Curated Events plans weddings, private celebrations, and
-            elevated brand experiences with clarity, elegance, and structure.
-          </p>
+    <div className="relative w-full overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(196,100,147,0.12),transparent_30%),radial-gradient(circle_at_left_top,rgba(64,21,63,0.06),transparent_26%),linear-gradient(180deg,#fcfaf7_0%,#f7f1ec_100%)] pt-36 pb-24 md:pt-44">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[-8rem] top-24 h-72 w-72 rounded-full bg-brand-pink/10 blur-3xl" />
+        <div className="absolute right-[-7rem] top-[30rem] h-80 w-80 rounded-full bg-brand-purple/10 blur-3xl" />
+      </div>
+
+      <div className="relative container mx-auto max-w-6xl px-4 sm:px-6">
+        <ScrollReveal direction="up" className="mb-14">
+          <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+            <div>
+              <p className="mb-4 text-[0.72rem] uppercase tracking-[0.34em] text-brand-pink">
+                Contact
+              </p>
+              <h1 className="max-w-3xl text-4xl font-serif leading-[0.96] text-brand-dark sm:text-5xl md:text-6xl lg:text-7xl">
+                Sleek, responsive planning starts with one conversation.
+              </h1>
+              <p className="mt-6 max-w-2xl text-base leading-8 text-brand-gray sm:text-lg">
+                Dreamscape Curated Events creates weddings, private celebrations, and
+                branded experiences with a calm process and a polished finish.
+              </p>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-white/70 bg-white/80 p-5 shadow-[0_24px_70px_rgba(64,21,63,0.08)] backdrop-blur-xl">
+              <div className="mb-4 flex items-center justify-between">
+                <span className="text-[0.7rem] uppercase tracking-[0.28em] text-brand-pink">
+                  Direct access
+                </span>
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+              </div>
+              <div className="space-y-3">
+                {RESPONSE_NOTES.map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-start justify-between gap-4 rounded-2xl border border-brand-purple/8 bg-brand-light/70 px-4 py-3"
+                  >
+                    <p className="text-[0.7rem] uppercase tracking-[0.22em] text-brand-pink">
+                      {item.label}
+                    </p>
+                    <p className="max-w-[16rem] text-right text-sm leading-6 text-brand-dark">
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </ScrollReveal>
 
-        {/* Contact Details */}
-        <ScrollReveal direction="up" className="mb-24 pt-4 md:pt-6">
-          <section>
-            <div className="mb-8 max-w-2xl">
-              <p className="mb-3 text-base uppercase tracking-[0.24em] text-brand-pink md:text-lg">
-                Contact Details
-              </p>
-              <h2 className="mb-4 text-4xl font-serif leading-tight text-brand-dark sm:text-5xl">
-                Reach Dreamscape directly
-              </h2>
-              <p className="text-base leading-relaxed text-brand-gray">
-                Serving the Greater Toronto Area (GTA), Canada & Worldwide.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {contactCards.map((card) => (
-                <a
-                  key={card.label}
-                  href={card.href}
-                  className="border-t border-brand-purple/10 px-0 py-5 transition-colors hover:border-brand-pink/30 md:pr-6"
-                >
-                  <p className="mb-2 text-[0.68rem] uppercase tracking-[0.18em] text-brand-pink">
+        <ScrollReveal direction="up" delay={80} className="mb-16">
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {contactCards.map((card) => (
+              <a
+                key={card.label}
+                href={card.href}
+                className="group rounded-[1.5rem] border border-white/70 bg-white/75 p-5 shadow-[0_16px_50px_rgba(64,21,63,0.05)] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-brand-pink/30 hover:shadow-[0_20px_60px_rgba(64,21,63,0.12)]"
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-[0.68rem] uppercase tracking-[0.24em] text-brand-pink">
                     {card.label}
                   </p>
-                  <p className="text-sm leading-relaxed text-brand-dark sm:text-base">
-                    {card.value}
-                  </p>
-                </a>
-              ))}
-            </div>
+                  <span className="rounded-full border border-brand-pink/15 px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.18em] text-brand-pink transition-colors group-hover:bg-brand-pink group-hover:text-white">
+                    Open
+                  </span>
+                </div>
+                <p className="text-sm leading-6 text-brand-dark sm:text-[0.96rem]">
+                  {card.value}
+                </p>
+              </a>
+            ))}
           </section>
         </ScrollReveal>
 
-        {/* Inquiry Form */}
-        <ScrollReveal direction="up" className="mb-24">
-          <section>
-            <div className="mb-8 max-w-2xl">
-              <p className="mb-3 text-base uppercase tracking-[0.24em] text-brand-pink md:text-lg">
-                Inquiry Form
-              </p>
-              <h2 className="mb-4 text-4xl font-serif leading-tight text-brand-dark sm:text-5xl">
-                Let's Begin Your Dreamscape Experience
-              </h2>
-              <p className="text-base leading-relaxed text-brand-gray">
-                Please share a few details so we can thoughtfully design and curate your event.
-              </p>
+        <ScrollReveal direction="up" delay={120} className="mb-20">
+          <section className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr]">
+            <div className="space-y-8">
+              <div className="rounded-[1.75rem] border border-white/70 bg-brand-dark px-6 py-7 text-white shadow-[0_20px_60px_rgba(64,21,63,0.16)]">
+                <p className="text-[0.7rem] uppercase tracking-[0.28em] text-white/55">
+                  What happens next
+                </p>
+                <div className="mt-6 space-y-4">
+                  {PROCESS_STEPS.map((step, index) => (
+                    <div
+                      key={step}
+                      className="flex gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 text-sm font-medium text-white/85">
+                        0{index + 1}
+                      </div>
+                      <p className="text-sm leading-7 text-white/82">{step}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[1.75rem] border border-brand-purple/10 bg-white/80 p-6 shadow-[0_20px_60px_rgba(64,21,63,0.05)] backdrop-blur-md">
+                <p className="text-[0.7rem] uppercase tracking-[0.28em] text-brand-pink">
+                  Ideal for
+                </p>
+                <h2 className="mt-3 font-serif text-3xl leading-tight text-brand-dark">
+                  Weddings, private parties, corporate launches, and editorial-style
+                  moments.
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-brand-gray">
+                  If you already know your date, venue, or guest count, include those
+                  details in the form. If not, we can help shape the scope after the
+                  first inquiry.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {['Event design', 'Production', 'Coordination', 'Creative direction'].map((item) => (
+                    <span
+                      key={item}
+                      className="rounded-full border border-brand-purple/10 bg-brand-light px-3 py-2 text-[0.68rem] uppercase tracking-[0.18em] text-brand-dark"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-6 md:p-8 lg:p-12">
+            <div className="rounded-[2rem] border border-white/80 bg-white/90 p-5 shadow-[0_24px_80px_rgba(64,21,63,0.10)] backdrop-blur-xl sm:p-7 lg:p-8">
+              <div className="mb-8">
+                <p className="mb-3 text-[0.7rem] uppercase tracking-[0.28em] text-brand-pink">
+                  Inquiry Form
+                </p>
+                <h2 className="max-w-2xl font-serif text-3xl leading-tight text-brand-dark sm:text-4xl">
+                  Tell us what you are planning.
+                </h2>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-brand-gray sm:text-base">
+                  Share the essentials and we will respond with a tailored next step.
+                </p>
+              </div>
+
               {submitted ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-brand-pink/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-8 h-8 text-brand-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <div className="flex flex-col items-center justify-center rounded-[1.5rem] border border-brand-pink/15 bg-brand-light/70 px-6 py-14 text-center">
+                  <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-brand-pink/10">
+                    <svg
+                      className="h-8 w-8 text-brand-pink"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-serif text-brand-dark mb-4">
-                    Thank You!
-                  </h3>
-                  <p className="text-brand-gray">
-                    We've received your inquiry and will respond within 24-48 hours.
+                  <h3 className="font-serif text-2xl text-brand-dark">Inquiry received</h3>
+                  <p className="mt-3 max-w-md text-sm leading-7 text-brand-gray">
+                    We will get back to you within 24 to 48 hours.
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Name and Email */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-brand-dark mb-2">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label htmlFor="name" className="text-sm font-medium text-brand-dark">
                         Full Name *
                       </label>
                       <Input
@@ -179,11 +267,11 @@ export default function ContactPage({ initialCards }: ContactPageProps) {
                         value={formData.name}
                         onChange={handleInputChange}
                         placeholder="Jane Doe"
-                        className="w-full"
+                        className="h-12 rounded-xl border-brand-purple/12 bg-white/80 px-4 text-sm shadow-sm placeholder:text-brand-gray/45 focus-visible:border-brand-pink/35 focus-visible:ring-brand-pink/15"
                       />
                     </div>
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-brand-dark mb-2">
+                    <div className="space-y-2">
+                      <label htmlFor="email" className="text-sm font-medium text-brand-dark">
                         Email Address *
                       </label>
                       <Input
@@ -194,15 +282,14 @@ export default function ContactPage({ initialCards }: ContactPageProps) {
                         value={formData.email}
                         onChange={handleInputChange}
                         placeholder="jane@example.com"
-                        className="w-full"
+                        className="h-12 rounded-xl border-brand-purple/12 bg-white/80 px-4 text-sm shadow-sm placeholder:text-brand-gray/45 focus-visible:border-brand-pink/35 focus-visible:ring-brand-pink/15"
                       />
                     </div>
                   </div>
 
-                  {/* Phone and Event Type */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="phone" className="block text-sm font-medium text-brand-dark mb-2">
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label htmlFor="phone" className="text-sm font-medium text-brand-dark">
                         Phone Number
                       </label>
                       <Input
@@ -212,11 +299,11 @@ export default function ContactPage({ initialCards }: ContactPageProps) {
                         value={formData.phone}
                         onChange={handleInputChange}
                         placeholder="+1 (555) 123-4567"
-                        className="w-full"
+                        className="h-12 rounded-xl border-brand-purple/12 bg-white/80 px-4 text-sm shadow-sm placeholder:text-brand-gray/45 focus-visible:border-brand-pink/35 focus-visible:ring-brand-pink/15"
                       />
                     </div>
-                    <div>
-                      <label htmlFor="eventType" className="block text-sm font-medium text-brand-dark mb-2">
+                    <div className="space-y-2">
+                      <label htmlFor="eventType" className="text-sm font-medium text-brand-dark">
                         Event Type *
                       </label>
                       <select
@@ -225,7 +312,7 @@ export default function ContactPage({ initialCards }: ContactPageProps) {
                         required
                         value={formData.eventType}
                         onChange={handleInputChange}
-                        className="w-full h-10 rounded-md border border-brand-purple/12 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-brand-gray/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/20"
+                        className="h-12 w-full rounded-xl border border-brand-purple/12 bg-white/80 px-4 text-sm text-brand-dark shadow-sm outline-none transition focus:border-brand-pink/35 focus:ring-4 focus:ring-brand-pink/10"
                       >
                         <option value="">Select event type</option>
                         <option value="wedding">Wedding</option>
@@ -237,9 +324,8 @@ export default function ContactPage({ initialCards }: ContactPageProps) {
                     </div>
                   </div>
 
-                  {/* Event Date */}
-                  <div>
-                    <label htmlFor="eventDate" className="block text-sm font-medium text-brand-dark mb-2">
+                  <div className="space-y-2">
+                    <label htmlFor="eventDate" className="text-sm font-medium text-brand-dark">
                       Preferred Event Date
                     </label>
                     <Input
@@ -248,13 +334,12 @@ export default function ContactPage({ initialCards }: ContactPageProps) {
                       type="date"
                       value={formData.eventDate}
                       onChange={handleInputChange}
-                      className="w-full"
+                      className="h-12 rounded-xl border-brand-purple/12 bg-white/80 px-4 text-sm shadow-sm focus-visible:border-brand-pink/35 focus-visible:ring-brand-pink/15"
                     />
                   </div>
 
-                  {/* Message */}
-                  <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-brand-dark mb-2">
+                  <div className="space-y-2">
+                    <label htmlFor="message" className="text-sm font-medium text-brand-dark">
                       Tell Us About Your Event *
                     </label>
                     <Textarea
@@ -263,18 +348,21 @@ export default function ContactPage({ initialCards }: ContactPageProps) {
                       required
                       value={formData.message}
                       onChange={handleInputChange}
-                      placeholder="Share your vision, guest count, style preferences, and any special requirements..."
-                      rows={6}
-                      className="w-full"
+                      placeholder="Share your vision, guest count, style preferences, venue details, and any special requirements..."
+                      rows={7}
+                      className="min-h-40 rounded-2xl border-brand-purple/12 bg-white/80 px-4 py-3 text-sm shadow-sm placeholder:text-brand-gray/45 focus-visible:border-brand-pink/35 focus-visible:ring-brand-pink/15"
                     />
                   </div>
 
-                  {/* Submit Button */}
-                  <div className="pt-4">
+                  <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs leading-6 text-brand-gray">
+                      Prefer a direct conversation? You can book a consultation below
+                      instead.
+                    </p>
                     <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full sm:w-auto rounded-full px-12 py-4 bg-brand-purple text-white hover:bg-brand-pink disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-12 rounded-full bg-brand-dark px-8 text-xs uppercase tracking-[0.16em] text-white shadow-[0_14px_30px_rgba(64,21,63,0.22)] transition-colors hover:bg-brand-pink disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {isSubmitting ? 'Sending...' : 'Send Inquiry'}
                     </Button>
@@ -285,69 +373,66 @@ export default function ContactPage({ initialCards }: ContactPageProps) {
           </section>
         </ScrollReveal>
 
-        {/* Calendly Booking Section */}
-        <ScrollReveal direction="up" className="mb-24">
-          <section className="bg-brand-purple text-white rounded-2xl p-8 md:p-12 lg:p-16 text-center">
-            <p className="mb-3 text-base uppercase tracking-[0.24em] text-brand-pink md:text-lg">
-              Quick Booking
-            </p>
-            <h2 className="mb-4 text-3xl md:text-4xl font-serif leading-tight sm:text-5xl">
-              Prefer to Book a Call Directly?
-            </h2>
-            <p className="text-base md:text-lg leading-relaxed text-white/80 mb-8 max-w-2xl mx-auto">
-              Schedule a consultation at your convenience using our Calendly booking system.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                asChild
-                className="rounded-full px-8 py-4 bg-white text-brand-purple hover:bg-brand-light"
-              >
-                <a
-                  href="https://calendly.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Book via Calendly
-                </a>
-              </Button>
+        <ScrollReveal direction="up" delay={160} className="mb-16">
+          <section className="rounded-[2rem] border border-white/70 bg-white/78 p-6 shadow-[0_20px_60px_rgba(64,21,63,0.06)] backdrop-blur-xl md:p-8">
+            <div className="mb-8 max-w-2xl">
+              <p className="mb-3 text-[0.7rem] uppercase tracking-[0.28em] text-brand-pink">
+                Quick Booking
+              </p>
+              <h2 className="font-serif text-3xl leading-tight text-brand-dark sm:text-4xl">
+                Prefer to book a call directly?
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-brand-gray sm:text-base">
+                Schedule a 30-minute consultation when it is easier for you to talk
+                through the details live.
+              </p>
+            </div>
+
+            <div className="overflow-hidden rounded-[1.5rem] border border-brand-purple/8 bg-white">
+              <CalendlyEmbed url={CALENDLY_URL} />
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
               <Button
                 asChild
                 variant="outline"
-                className="rounded-full px-8 py-4 border-white text-white hover:bg-white/10"
+                className="h-12 rounded-full border-brand-purple/15 bg-white/80 px-6 text-xs uppercase tracking-[0.14em] text-brand-purple hover:border-brand-pink/30 hover:bg-brand-pink/5"
               >
                 <Link href="/consultation-editorial">
-                  Consultation Form
+                  Browse consultation types instead
                 </Link>
               </Button>
             </div>
           </section>
         </ScrollReveal>
 
-        {/* Newsletter Section */}
         <ScrollReveal direction="up">
-          <section className="border-t border-b border-brand-purple/10 py-12 md:py-16">
-            <div className="max-w-2xl mx-auto text-center">
-              <p className="mb-3 text-base uppercase tracking-[0.24em] text-brand-pink md:text-lg">
-                Stay Connected
-              </p>
-              <h2 className="mb-4 text-3xl md:text-4xl font-serif leading-tight text-brand-dark">
-                Join Our Newsletter
-              </h2>
-              <p className="text-base leading-relaxed text-brand-gray mb-8">
-                Be the first to know about new services, planning tips, and exclusive offers.
-              </p>
+          <section className="rounded-[2rem] border border-brand-purple/10 bg-brand-dark px-6 py-10 text-white shadow-[0_24px_80px_rgba(64,21,63,0.18)] md:px-8 md:py-12">
+            <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div>
+                <p className="text-[0.7rem] uppercase tracking-[0.28em] text-white/55">
+                  Stay connected
+                </p>
+                <h2 className="mt-3 max-w-2xl font-serif text-3xl leading-tight sm:text-4xl">
+                  Want planning notes, launch updates, and occasional offers?
+                </h2>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-white/72 sm:text-base">
+                  Join the newsletter for occasional updates from the Dreamscape team.
+                </p>
+              </div>
+
               <form
-                className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto"
+                className="flex w-full max-w-xl flex-col gap-3 sm:flex-row lg:w-[32rem]"
                 onSubmit={(e) => e.preventDefault()}
               >
                 <Input
                   type="email"
                   placeholder="your@email.com"
-                  className="flex-1 h-12 rounded-full border-brand-purple/12 bg-white px-5"
+                  className="h-12 rounded-full border-white/10 bg-white/10 px-5 text-white placeholder:text-white/45 focus-visible:border-brand-pink/40 focus-visible:ring-brand-pink/15"
                 />
                 <Button
                   type="submit"
-                  className="h-12 rounded-full bg-brand-purple px-8 text-sm uppercase tracking-[0.14em] text-white hover:bg-brand-pink whitespace-nowrap"
+                  className="h-12 rounded-full bg-white px-6 text-xs uppercase tracking-[0.16em] text-brand-dark hover:bg-brand-pink hover:text-white"
                 >
                   Subscribe
                 </Button>
@@ -359,3 +444,5 @@ export default function ContactPage({ initialCards }: ContactPageProps) {
     </div>
   );
 }
+
+export default ContactPage;

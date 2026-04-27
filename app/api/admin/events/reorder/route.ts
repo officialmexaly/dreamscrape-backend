@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/src/lib/supabase-admin';
+import { protectAdminRoute } from '@/src/lib/server-auth';
 
 export async function PATCH(request: NextRequest) {
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
   const body = await request.json();
   const { order } = body;
 

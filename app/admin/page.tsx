@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/src/admin/providers/AuthProvider';
+import { useAuth } from '@/src/admin/providers/GolangAuthProvider';
 
 export default function HomePage() {
   const router = useRouter();
@@ -11,7 +11,12 @@ export default function HomePage() {
   useEffect(() => {
     // Only redirect after loading is complete
     if (!isLoading) {
-      router.replace(isAuthenticated ? '/admin/dashboard' : '/admin/login');
+      if (isAuthenticated) {
+        // Use replace to avoid back button issues
+        router.replace('/admin/dashboard');
+      } else {
+        router.replace('/admin/login');
+      }
     }
   }, [isAuthenticated, isLoading, router]);
 

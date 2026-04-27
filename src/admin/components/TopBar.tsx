@@ -3,10 +3,10 @@
 import * as React from 'react'
 import { usePathname } from 'next/navigation'
 import { Bell, LogOut, Search, Menu } from 'lucide-react'
-import { signOut, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/src/admin/toast/ToastProvider'
+import { useAuth } from '@/src/admin/providers/GolangAuthProvider'
 
 function getPageTitle(pathname: string) {
   const segments = pathname.split('/').filter(Boolean)
@@ -31,15 +31,17 @@ interface TopBarProps {
 
 export function TopBar({ onMobileMenuToggle }: TopBarProps) {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const { user, logout } = useAuth()
   const { toast } = useToast()
 
-  const userName = session?.user?.name || 'Admin'
-  const userEmail = session?.user?.email || 'admin@dreamscape.com'
+  const userName = user?.first_name && user?.last_name
+    ? `${user.first_name} ${user.last_name}`
+    : user?.email?.split('@')[0] || 'Admin'
+  const userEmail = user?.email || 'admin@dreamscape.com'
 
   const handleLogout = async () => {
     try {
-      await signOut({ callbackUrl: '/admin/login' })
+      await logout()
       toast({ title: 'Logged out', variant: 'success', duration: 2000 })
     } catch {
       toast({ title: 'Error logging out', variant: 'error', duration: 3000 })

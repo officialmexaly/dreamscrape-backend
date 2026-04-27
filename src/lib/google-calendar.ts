@@ -3,13 +3,18 @@ import type { CalendarBooking, CalendarEvent } from '@/src/types';
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar'];
 
-export async function createCalendarEvent(booking: CalendarBooking): Promise<CalendarEvent> {
-  try {
-    // Decode the base64 encoded private key from environment variable
-    const privateKey = process.env.GOOGLE_CALENDAR_PRIVATE_KEY?.replace(/\\n/g, '\n');
+export async function createCalendarEvent(booking: CalendarBooking): Promise<CalendarEvent | null> {
+  const privateKey = process.env.GOOGLE_CALENDAR_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  const clientEmail = process.env.GOOGLE_CALENDAR_CLIENT_EMAIL;
 
+  if (!privateKey || !clientEmail) {
+    // Calendly manages scheduling — Google Calendar is optional
+    return null;
+  }
+
+  try {
     const auth = new google.auth.JWT({
-      email: process.env.GOOGLE_CALENDAR_CLIENT_EMAIL,
+      email: clientEmail,
       key: privateKey,
       scopes: SCOPES,
     });

@@ -1,21 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/src/lib/supabase-admin';
+import { protectAdminRoute } from '@/src/lib/server-auth';
 
 export async function GET() {
-  const { data, error } = await supabaseAdmin()
-    .from('events')
-    .select('*')
-    .order('display_order', { ascending: true })
-    .order('event_date', { ascending: false, nullsFirst: false });
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const { data, error } = await supabaseAdmin()
+      .from('events')
+      .select('*')
+      .order('display_order', { ascending: true })
+      .order('event_date', { ascending: false, nullsFirst: false });
+
+    // If table doesn't exist, return empty array
+    if (error && error.code === '42P01') {
+      return NextResponse.json({ items: [] });
+    }
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ items: data ?? [] });
+  } catch (err) {
+    return NextResponse.json({ items: [] });
   }
-
-  return NextResponse.json({ items: data ?? [] });
 }
 
 export async function POST(request: NextRequest) {
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
+
   const body = await request.json();
 
   const insert = {

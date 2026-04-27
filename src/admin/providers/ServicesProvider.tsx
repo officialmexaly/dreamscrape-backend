@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
-import { useAuth } from './AuthProvider';
+import { useAuth } from '@/src/admin/providers/GolangAuthProvider';
+import { getAccessToken } from '@/src/lib/golang-auth';
 
 export type ServiceItem = {
   id: string;
@@ -41,7 +42,21 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
 
     setIsLoading(true);
     try {
-      const res = await fetch('/api/admin/services', { cache: 'no-store' });
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+      const token = getAccessToken();
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${backendUrl}/api/admin/services`, {
+        cache: 'no-store',
+        headers
+      });
       const json = await res.json();
       if (res.ok) {
         setServices(json.items || []);
@@ -58,9 +73,20 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, refresh]);
 
   const createService = async (payload: Partial<ServiceItem>) => {
-    const res = await fetch('/api/admin/services', {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+    const token = getAccessToken();
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${backendUrl}/api/admin/services`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers,
       body: JSON.stringify(payload),
     });
     const json = await res.json();
@@ -70,16 +96,27 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateService = async (id: string, payload: Partial<ServiceItem>) => {
-    let res = await fetch(`/api/admin/services/${id}`, {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+    const token = getAccessToken();
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    let res = await fetch(`${backendUrl}/api/admin/services/${id}`, {
       method: 'PUT',
-      headers: { 'content-type': 'application/json' },
+      headers,
       body: JSON.stringify(payload),
     });
     let json = await res.json();
     if (!res.ok && payload.slug) {
-      res = await fetch(`/api/admin/services/${payload.slug}`, {
+      res = await fetch(`${backendUrl}/api/admin/services/${payload.slug}`, {
         method: 'PUT',
-        headers: { 'content-type': 'application/json' },
+        headers,
         body: JSON.stringify(payload),
       });
       json = await res.json();
@@ -90,7 +127,21 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteService = async (id: string) => {
-    const res = await fetch(`/api/admin/services/${id}`, { method: 'DELETE' });
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+    const token = getAccessToken();
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${backendUrl}/api/admin/services/${id}`, {
+      method: 'DELETE',
+      headers
+    });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || 'Failed to delete service');
     setServices((prev) => prev.filter((s) => s.id !== id));

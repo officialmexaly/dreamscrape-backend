@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Upload as UploadIcon, X, File } from 'lucide-react';
@@ -11,10 +11,8 @@ import { Label } from '../ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { Calendar } from '../ui/calendar';
 import { Checkbox } from '../ui/checkbox';
-import { useAvailability } from '@/src/lib/hooks/useAvailability';
+import { useCalendlyAvailability } from '@/src/lib/hooks/useCalendlyAvailability';
 import { useFileUpload } from '@/src/lib/hooks/useFileUpload';
-
-const DEFAULT_TIME_OPTIONS = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'] as const;
 
 const DEFAULT_CONSULTATION_CONTENT = {
   'wedding-destination-social': {
@@ -59,62 +57,37 @@ const DEFAULT_EVENT_TYPE_OPTIONS = [
   { id: 'pick-my-brain', label: 'Pick My Brain Session' }
 ];
 
-const DEFAULT_DATE_RANGE = {
-  start_date: '2026-03-01',
-  end_date: '2026-12-31'
-};
-
-function formatDateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-}
-
 function formatLongDate(date?: Date) {
   if (!date) return 'Choose a day on the calendar';
-
-  return date.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric'
-  });
+  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 export function ConsultationPage({
-  initialTimeOptions,
   initialEventTypeOptions,
   initialConsultationContent,
-  initialDateRange,
 }: {
-  initialTimeOptions?: string[];
   initialEventTypeOptions?: { id: string; label: string }[];
   initialConsultationContent?: typeof DEFAULT_CONSULTATION_CONTENT;
-  initialDateRange?: typeof DEFAULT_DATE_RANGE;
 }) {
   const eventDatePickerRef = useRef<HTMLDivElement | null>(null);
   const searchParams = useSearchParams();
   const selectedService = searchParams.get('service') as keyof typeof DEFAULT_CONSULTATION_CONTENT | null;
 
-  // Database-driven state
-  const [timeOptions, setTimeOptions] = useState<string[]>(
-    initialTimeOptions?.length ? initialTimeOptions : [...DEFAULT_TIME_OPTIONS]
-  );
   const [eventTypeOptions, setEventTypeOptions] = useState(
     initialEventTypeOptions?.length ? initialEventTypeOptions : DEFAULT_EVENT_TYPE_OPTIONS
   );
   const [consultationContent, setConsultationContent] = useState(
     initialConsultationContent ?? DEFAULT_CONSULTATION_CONTENT
   );
-  const [dateRange, setDateRange] = useState(initialDateRange ?? DEFAULT_DATE_RANGE);
 
-  const [date, setDate] = useState<Date | undefined>(new Date(2026, 2, 31));
-  const [selectedTime, setSelectedTime] = useState<string>('12:00');
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [selectedTime, setSelectedTime] = useState<string>('');
   const [activeTab, setActiveTab] = useState('availability');
   const [isEventDatePickerOpen, setIsEventDatePickerOpen] = useState(false);
 
-  // File upload hook
+  const { isDateBooked, isSlotBooked, getAvailableTimes, onMonthChange, removeSlot, loading } =
+    useCalendlyAvailability();
+
   const {
     uploads,
     successfulUploads,
@@ -126,15 +99,15 @@ export function ConsultationPage({
     clearUploads,
   } = useFileUpload({
     maxFiles: 5,
-    onUploadComplete: (files) => {
-      // Files uploaded successfully
-    },
+    onUploadComplete: () => {},
   });
+
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>(
-    selectedService ? [...(SERVICE_EVENT_TYPE_MAP[selectedService as keyof typeof SERVICE_EVENT_TYPE_MAP] ?? [])] : []
+    selectedService
+      ? [...(SERVICE_EVENT_TYPE_MAP[selectedService as keyof typeof SERVICE_EVENT_TYPE_MAP] ?? [])]
+      : []
   );
 
-  // Form state
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -148,74 +121,34 @@ export function ConsultationPage({
     additionalDetails: ''
   });
 
-  // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [submitMessage, setSubmitMessage] = useState('');
 
-  // Real-time availability from database
-  const startDate = useMemo(() => new Date(dateRange.start_date), [dateRange.start_date]);
-  const endDate = useMemo(() => new Date(dateRange.end_date), [dateRange.end_date]);
-  const { isDateBooked, isSlotBooked, getAvailableTimes } = useAvailability(startDate, endDate);
-
-  // Fetch consultation configuration from database
   useEffect(() => {
-    const hasInitial =
-      (initialTimeOptions?.length ?? 0) > 0 ||
-      (initialEventTypeOptions?.length ?? 0) > 0 ||
-      Boolean(initialConsultationContent) ||
-      Boolean(initialDateRange);
+    const hasInitial = (initialEventTypeOptions?.length ?? 0) > 0 || Boolean(initialConsultationContent);
     if (hasInitial) return;
 
     const fetchConsultationConfig = async () => {
       try {
-        // Fetch time options
-        const timeRes = await fetch('/api/site-content?page=consultation&section=time_options', { cache: 'no-store' });
-        if (timeRes.ok) {
-          const timeJson = await timeRes.json();
-          const timeData = timeJson.grouped?.consultation_time_options || {};
-          const times = timeData.options?.value || [];
-          if (times.length > 0) setTimeOptions(times);
-        }
-
-        // Fetch event type options
         const eventRes = await fetch('/api/site-content?page=consultation&section=event_types', { cache: 'no-store' });
         if (eventRes.ok) {
           const eventJson = await eventRes.json();
-          const eventData = eventJson.grouped?.consultation_event_types || {};
-          const events = eventData.options?.value || [];
+          const events = eventJson.grouped?.consultation_event_types?.options?.value ?? [];
           if (events.length > 0) setEventTypeOptions(events);
         }
 
-        // Fetch consultation types content
         const contentRes = await fetch('/api/site-content?page=consultation&section=consultation_types', { cache: 'no-store' });
         if (contentRes.ok) {
           const contentJson = await contentRes.json();
-          const contentData = contentJson.grouped?.consultation_consultation_types || {};
-          const types = contentData.types?.value || {};
+          const types = contentJson.grouped?.consultation_consultation_types?.types?.value ?? {};
           if (Object.keys(types).length > 0) {
-            // Transform the database format to match our component structure
-            const transformedContent = Object.entries(types).reduce((acc, [key, value]) => {
-              const stringValue = typeof value === 'string' ? value : String(value);
-              acc[key] = {
-                title: stringValue,
-                subtitle: 'Dreamscape Curated Events',
-                description: stringValue
-              };
+            const transformed = Object.entries(types).reduce((acc, [key, value]) => {
+              const str = typeof value === 'string' ? value : String(value);
+              acc[key] = { title: str, subtitle: 'Dreamscape Curated Events', description: str };
               return acc;
             }, {} as Record<string, { title: string; subtitle: string; description: string }>);
-            setConsultationContent(transformedContent as typeof DEFAULT_CONSULTATION_CONTENT);
-          }
-        }
-
-        // Fetch date range
-        const dateRes = await fetch('/api/site-content?page=consultation&section=date_range', { cache: 'no-store' });
-        if (dateRes.ok) {
-          const dateJson = await dateRes.json();
-          const dateData = dateJson.grouped?.consultation_date_range || {};
-          const range = dateData.config?.value || {};
-          if (range.start_date && range.end_date) {
-            setDateRange(range);
+            setConsultationContent(transformed as typeof DEFAULT_CONSULTATION_CONTENT);
           }
         }
       } catch (error) {
@@ -224,25 +157,22 @@ export function ConsultationPage({
     };
 
     fetchConsultationConfig();
-  }, [initialTimeOptions?.length, initialEventTypeOptions?.length, initialConsultationContent, initialDateRange]);
+  }, [initialEventTypeOptions?.length, initialConsultationContent]);
 
   const consultationIntro =
     (selectedService && consultationContent[selectedService]) ||
     consultationContent['wedding-destination-social'];
+
   const lockedEventTypes = selectedService
     ? new Set(SERVICE_EVENT_TYPE_MAP[selectedService as keyof typeof SERVICE_EVENT_TYPE_MAP] ?? [])
     : null;
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
-      if (
-        eventDatePickerRef.current &&
-        !eventDatePickerRef.current.contains(event.target as Node)
-      ) {
+      if (eventDatePickerRef.current && !eventDatePickerRef.current.contains(event.target as Node)) {
         setIsEventDatePickerOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handlePointerDown);
     return () => document.removeEventListener('mousedown', handlePointerDown);
   }, []);
@@ -253,12 +183,14 @@ export function ConsultationPage({
     }
   }, [selectedService]);
 
+  // Reset selected time when date changes
+  useEffect(() => {
+    setSelectedTime('');
+  }, [date]);
+
   const toggleEventType = (value: string, checked: boolean | string) => {
     setSelectedEventTypes((current) => {
-      if (checked) {
-        return current.includes(value) ? current : [...current, value];
-      }
-
+      if (checked) return current.includes(value) ? current : [...current, value];
       return current.filter((item) => item !== value);
     });
   };
@@ -271,7 +203,6 @@ export function ConsultationPage({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
       setSubmitStatus('error');
       setSubmitMessage('Please fill in all required fields.');
@@ -290,9 +221,7 @@ export function ConsultationPage({
     try {
       const response = await fetch('/api/bookings', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           first_name: formData.firstName,
           last_name: formData.lastName,
@@ -313,37 +242,37 @@ export function ConsultationPage({
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create booking');
-      }
+      if (!response.ok) throw new Error(data.error || 'Failed to create booking');
 
       setSubmitStatus('success');
       setSubmitMessage('Your consultation has been booked successfully! You will receive a confirmation email shortly.');
 
-      // Reset form
       setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        eventDate: undefined,
-        eventLocation: '',
-        budget: '',
-        guests: '',
-        howDidYouHear: '',
-        additionalDetails: ''
+        firstName: '', lastName: '', email: '', phone: '',
+        eventDate: undefined, eventLocation: '', budget: '',
+        guests: '', howDidYouHear: '', additionalDetails: ''
       });
       clearUploads();
 
     } catch (error) {
       console.error('Booking error:', error);
+      const msg = error instanceof Error ? error.message : 'Failed to create booking. Please try again.';
+      const isConflict = msg.toLowerCase().includes('no longer available') || msg.includes('409');
+      if (isConflict && date && selectedTime) {
+        // Immediately drop the taken slot from local state so it disappears from the UI
+        removeSlot(date, selectedTime);
+        setSelectedTime('');
+        setSubmitMessage('That time slot was just booked. Please pick another available time.');
+      } else {
+        setSubmitMessage(msg);
+      }
       setSubmitStatus('error');
-      setSubmitMessage(error instanceof Error ? error.message : 'Failed to create booking. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const availableTimesForDate = date ? getAvailableTimes(date) : [];
 
   return (
     <div className="w-full bg-brand-light min-h-screen pt-40 md:pt-44 pb-24">
@@ -375,13 +304,11 @@ export function ConsultationPage({
             <TabsTrigger
               value="availability"
               className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-brand-pink data-[state=active]:text-brand-dark data-[state=active]:shadow-none bg-transparent py-4 px-0 text-sm font-semibold tracking-[0.18em] uppercase">
-              
               Availability
             </TabsTrigger>
             <TabsTrigger
               value="form"
               className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-brand-pink data-[state=active]:text-brand-dark data-[state=active]:shadow-none bg-transparent py-4 px-0 text-sm font-semibold tracking-[0.18em] uppercase">
-              
               Form
             </TabsTrigger>
           </TabsList>
@@ -393,6 +320,7 @@ export function ConsultationPage({
                   <Calendar
                     selected={date}
                     onSelect={setDate}
+                    onMonthChange={onMonthChange}
                     getDayStatus={(calendarDate) =>
                       isDateBooked(calendarDate) ? 'booked' : 'available'
                     }
@@ -414,9 +342,7 @@ export function ConsultationPage({
 
               <div className="flex flex-col">
                 <h3 className="text-2xl text-brand-dark mb-1">
-                  {date
-                    ? date.toLocaleDateString('en-US', { weekday: 'long' })
-                    : 'Select a Date'}
+                  {date ? date.toLocaleDateString('en-US', { weekday: 'long' }) : 'Select a Date'}
                 </h3>
                 <p className="text-brand-gray mb-6">{formatLongDate(date)}</p>
 
@@ -425,52 +351,66 @@ export function ConsultationPage({
                     Selected Appointment
                   </p>
                   <p className="text-lg font-serif text-brand-dark">
-                    {date ? `${formatLongDate(date)} at ${selectedTime}` : 'Select a date and time'}
+                    {date && selectedTime
+                      ? `${formatLongDate(date)} at ${selectedTime}`
+                      : 'Select a date and time'}
                   </p>
-                  {date &&
+                  {date && (
                     <p className={`mt-2 text-sm ${isDateBooked(date) ? 'text-brand-gray' : 'text-brand-pink'}`}>
-                      {isDateBooked(date) ? 'This day is fully booked.' : 'This day is available for consultation.'}
+                      {isDateBooked(date)
+                        ? 'This day is fully booked.'
+                        : loading
+                        ? 'Checking availability…'
+                        : 'This day is available for consultation.'}
                     </p>
-                  }
+                  )}
                 </div>
 
                 <div className="max-w-[420px] mb-4">
                   <p className="text-xs tracking-[0.18em] uppercase text-brand-pink mb-3">
                     Available Times
                   </p>
-                  <p className="text-sm text-brand-gray">
-                    Monday to Friday, 8:00 AM to 5:00 PM
-                  </p>
+                  {loading && !date ? (
+                    <p className="text-sm text-brand-gray">Loading availability…</p>
+                  ) : (
+                    <p className="text-sm text-brand-gray">
+                      {date && availableTimesForDate.length > 0
+                        ? `${availableTimesForDate.length} slot${availableTimesForDate.length === 1 ? '' : 's'} available`
+                        : 'Monday to Friday, 8:00 AM to 5:00 PM'}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid max-w-[420px] grid-cols-2 gap-3 sm:grid-cols-4">
-                  {timeOptions.map((time) => {
-                    const isSelected = selectedTime === time;
-                    const isBookedTime = date ? isSlotBooked(date, time) : false;
-                    const isDisabled = !date || isDateBooked(date) || isBookedTime;
-
-                    return (
-                      <button
-                        key={time}
-                        type="button"
-                        disabled={isDisabled}
-                        onClick={() => setSelectedTime(time)}
-                        className={`h-11 rounded-lg border text-sm transition-colors ${
-                          isDisabled
-                            ? 'border-brand-gray/10 bg-brand-gray/5 text-brand-gray/45 cursor-not-allowed'
-                            : isSelected
-                            ? 'border-brand-purple bg-brand-purple text-white'
-                            : 'border-brand-purple/10 bg-[#f6f4f2] text-brand-dark hover:border-brand-pink hover:text-brand-pink'
-                        }`}>
-                        {time}
-                      </button>
-                    );
-                  })}
+                  {availableTimesForDate.length > 0
+                    ? availableTimesForDate.map((time) => {
+                        const isSelected = selectedTime === time;
+                        return (
+                          <button
+                            key={time}
+                            type="button"
+                            onClick={() => setSelectedTime(time)}
+                            className={`h-11 rounded-lg border text-sm transition-colors ${
+                              isSelected
+                                ? 'border-brand-purple bg-brand-purple text-white'
+                                : 'border-brand-purple/10 bg-[#f6f4f2] text-brand-dark hover:border-brand-pink hover:text-brand-pink'
+                            }`}>
+                            {time}
+                          </button>
+                        );
+                      })
+                    : date && !loading
+                    ? (
+                      <p className="col-span-4 text-sm text-brand-gray/60 italic">
+                        No availability on this date.
+                      </p>
+                    )
+                    : null}
                 </div>
 
                 <Button
                   className="mt-8 w-full max-w-[320px] bg-brand-purple hover:bg-brand-pink text-white h-12 rounded-full font-medium tracking-[0.14em] uppercase"
-                  disabled={!date || isDateBooked(date)}
+                  disabled={!date || !selectedTime || isDateBooked(date)}
                   onClick={() => setActiveTab('form')}>
                   Submit and Next
                 </Button>
@@ -571,12 +511,17 @@ export function ConsultationPage({
                         <Calendar
                           selected={formData.eventDate}
                           onSelect={(selectedDate) => {
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            if (selectedDate < today) return;
                             setFormData({...formData, eventDate: selectedDate});
                             setIsEventDatePickerOpen(false);
                           }}
-                          getDayStatus={(calendarDate) =>
-                            isDateBooked(calendarDate) ? 'booked' : 'available'
-                          }
+                          getDayStatus={(calendarDate) => {
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            return calendarDate < today ? 'booked' : 'available';
+                          }}
                           className="w-full bg-transparent p-0"
                         />
                       </div>
@@ -610,8 +555,7 @@ export function ConsultationPage({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-brand-gray font-normal text-sm">
-                    Estimated Number of Guests:
-                    <span className="text-red-500">*</span>
+                    Estimated Number of Guests:<span className="text-red-500">*</span>
                   </Label>
                   <Input
                     placeholder="100"
@@ -637,11 +581,9 @@ export function ConsultationPage({
                         onCheckedChange={(checked) => toggleEventType(option.id, checked)}
                         disabled={isEventTypeDisabled(option.id)}
                         className="border-brand-purple/20 rounded-sm" />
-
                       <Label
                         htmlFor={option.id}
                         className={`font-normal text-sm ${isEventTypeDisabled(option.id) ? 'cursor-not-allowed text-brand-gray/45' : 'cursor-pointer text-brand-gray'}`}>
-
                         {option.label}
                       </Label>
                     </div>
@@ -697,7 +639,6 @@ export function ConsultationPage({
                   </p>
                 </div>
 
-                {/* Uploaded files list */}
                 {uploads.length > 0 && (
                   <div className="w-full max-w-xl mt-4 space-y-2">
                     <p className="text-sm font-medium text-brand-gray">Uploaded Files:</p>
@@ -709,31 +650,16 @@ export function ConsultationPage({
                         <div className="flex items-center space-x-3 flex-1 min-w-0">
                           <File className="h-5 w-5 text-brand-purple flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-brand-dark truncate">
-                              {upload.file.name}
-                            </p>
-                            <p className="text-xs text-brand-gray">
-                              {(upload.file.size / 1024).toFixed(1)} KB
-                            </p>
+                            <p className="text-sm font-medium text-brand-dark truncate">{upload.file.name}</p>
+                            <p className="text-xs text-brand-gray">{(upload.file.size / 1024).toFixed(1)} KB</p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
                           {upload.status === 'success' && upload.url && (
-                            <a
-                              href={upload.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-brand-pink hover:underline"
-                            >
-                              View
-                            </a>
+                            <a href={upload.url} target="_blank" rel="noopener noreferrer" className="text-xs text-brand-pink hover:underline">View</a>
                           )}
-                          {upload.status === 'error' && (
-                            <span className="text-xs text-red-500">{upload.error}</span>
-                          )}
-                          {upload.status === 'uploading' && (
-                            <span className="text-xs text-brand-gray">Uploading...</span>
-                          )}
+                          {upload.status === 'error' && <span className="text-xs text-red-500">{upload.error}</span>}
+                          {upload.status === 'uploading' && <span className="text-xs text-brand-gray">Uploading...</span>}
                           <button
                             type="button"
                             onClick={() => removeUpload(index)}
@@ -762,8 +688,8 @@ export function ConsultationPage({
           </TabsContent>
         </Tabs>
       </div>
-    </div>);
-
+    </div>
+  );
 }
 
 export default ConsultationPage;

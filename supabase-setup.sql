@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   consultation_time TEXT NOT NULL,
   file_urls TEXT[] DEFAULT '{}',
   file_names TEXT[] DEFAULT '{}',
+  status TEXT NOT NULL DEFAULT 'New' CHECK (status IN ('New', 'Contacted', 'Booked', 'Closed', 'Cancelled')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -34,6 +35,12 @@ CREATE POLICY "Allow insert bookings" ON bookings
   FOR INSERT
   TO anon
   WITH CHECK (true);
+
+-- Allow anon to read availability fields (consultation_date/time) for the UI
+CREATE POLICY "Allow anon to read bookings" ON bookings
+  FOR SELECT
+  TO anon
+  USING (true);
 
 -- Create policy to allow service role to read all bookings
 CREATE POLICY "Allow service role to read all bookings" ON bookings

@@ -1,13 +1,22 @@
 'use client'
 
 import * as React from 'react'
-import { Mail, Plus, RefreshCw } from 'lucide-react'
+import { Mail, Phone, Plus, RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/src/admin/toast/ToastProvider'
 import { useInquiries } from '../providers/InquiriesProvider'
-import { formatAdminDate } from '@/src/admin/utils/formatDate'
 import { ActionButtons, DataTable, StatusBadge } from '@/src/admin/components/shared'
 import { Button } from '@/components/ui/button'
+
+function formatConsultationDate(dateStr: string | null) {
+  if (!dateStr) return '—'
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
 
 export function InquiriesPage() {
   const router = useRouter()
@@ -16,9 +25,9 @@ export function InquiriesPage() {
   const [isRefreshing, setIsRefreshing] = React.useState(false)
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this inquiry?')) return
+    if (!window.confirm('Delete this booking?')) return
     await deleteInquiry(id)
-    toast({ title: 'Inquiry deleted', variant: 'info', duration: 2000 })
+    toast({ title: 'Booking deleted', variant: 'info', duration: 2000 })
   }
 
   const handleRefresh = async () => {
@@ -40,37 +49,55 @@ export function InquiriesPage() {
 
   const columns = [
     {
-      key: 'name',
+      key: 'client',
       header: 'Client',
       cell: (inquiry: any) => (
-        <div className="font-medium text-foreground">{inquiry.name}</div>
+        <div>
+          <div className="font-medium text-foreground">{inquiry.name}</div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+            <Mail size={11} />
+            {inquiry.email}
+          </div>
+          {inquiry.phone && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Phone size={11} />
+              {inquiry.phone}
+            </div>
+          )}
+        </div>
       ),
     },
     {
-      key: 'contact',
-      header: 'Contact',
+      key: 'consultation',
+      header: 'Consultation',
       cell: (inquiry: any) => (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Mail size={14} />
-          <span className="text-sm">{inquiry.email}</span>
+        <div>
+          <div className="text-sm font-medium text-foreground">
+            {formatConsultationDate(inquiry.consultationDate)}
+          </div>
+          <div className="text-xs text-muted-foreground">{inquiry.consultationTime ?? '—'}</div>
         </div>
       ),
     },
     {
       key: 'eventType',
       header: 'Event Type',
-      cell: (inquiry: any) => inquiry.eventType,
+      cell: (inquiry: any) => (
+        <div className="text-sm text-foreground">{inquiry.eventType}</div>
+      ),
     },
     {
-      key: 'date',
-      header: 'Date',
-      cell: (inquiry: any) => formatAdminDate(inquiry.date),
+      key: 'budget',
+      header: 'Budget',
+      cell: (inquiry: any) => (
+        <div className="text-sm text-foreground">{inquiry.budget ?? '—'}</div>
+      ),
     },
     {
       key: 'status',
       header: 'Status',
       cell: (inquiry: any) => (
-        <StatusBadge status={String(inquiry.status || 'new')} />
+        <StatusBadge status={String(inquiry.status || 'New')} />
       ),
     },
     {
@@ -82,7 +109,7 @@ export function InquiriesPage() {
           <ActionButtons
             onEdit={() => router.push(`/admin/inquiries/${inquiry.id}/edit`)}
             onDelete={() => handleDelete(inquiry.id)}
-            deleteConfirmMessage="Delete this inquiry?"
+            deleteConfirmMessage="Delete this booking?"
             editLabel="Open"
           />
         </div>
@@ -95,10 +122,10 @@ export function InquiriesPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="font-serif text-xl sm:text-2xl font-semibold text-foreground">
-            Consultation Inquiries
+            Consultation Bookings
           </div>
           <div className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            Manage client inquiries and bookings
+            All submitted consultation requests
           </div>
         </div>
 
@@ -114,7 +141,7 @@ export function InquiriesPage() {
           </Button>
           <Button size="sm" onClick={() => router.push('/admin/inquiries/new')}>
             <Plus size={14} />
-            <span className="hidden sm:inline">Add Inquiry</span>
+            <span className="hidden sm:inline">Add Booking</span>
           </Button>
         </div>
       </div>
@@ -124,7 +151,7 @@ export function InquiriesPage() {
         columns={columns}
         keyExtractor={(inquiry: any) => inquiry.id}
         isLoading={isLoading}
-        emptyMessage="No inquiries yet."
+        emptyMessage="No bookings yet."
       />
     </div>
   )

@@ -4,8 +4,11 @@ import {
   uploadFile,
   MediaItem,
 } from '@/src/lib/supabase-storage-admin';
+import { protectAdminRoute } from '@/src/lib/server-auth';
 
 export async function GET() {
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
   try {
     const { data: items, error } = await listMedia();
 
@@ -25,6 +28,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;

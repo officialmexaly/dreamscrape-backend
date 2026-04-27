@@ -1,37 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/src/lib/supabase-admin';
 import { protectAdminRoute } from '@/src/lib/server-auth';
+import { revalidateTag } from 'next/cache';
+import { CACHE_TAGS } from '@/src/lib/cached-posts';
 
-function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value
-  );
-}
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+/**
+ * GET /api/admin/portfolio-items/[id]
+ * Get a single portfolio item by ID or slug from the Go backend
+ */
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const errorResponse = await protectAdminRoute();
   if (errorResponse) return errorResponse;
 
   const { id } = await params;
   const key = (id || '').trim().replace(/\s+/g, '');
 
-  const query = supabaseAdmin().from('portfolio_items').select('*');
-  const { data, error } = isUuid(key)
-    ? await query.eq('id', key).maybeSingle<any>()
-    : await query.eq('slug', key).maybeSingle<any>();
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/admin/portfolio-items/${key}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!response.ok) {
+      if (response.status === 404) {
+        return NextResponse.json({ error: 'Portfolio item not found' }, { status: 404 });
+      }
+      const error = await response.json();
+      console.error('Backend portfolio items fetch error:', error);
+      return NextResponse.json(
+        { error: error.error || 'Failed to fetch portfolio item' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json({ item: data.item ?? data });
+  } catch (err) {
+    console.error('Portfolio items unexpected error:', err);
+    return NextResponse.json(
+      { error: 'Failed to connect to backend server' },
+      { status: 500 }
+    );
   }
-
-  if (!data) {
-    return NextResponse.json({ error: 'Portfolio item not found' }, { status: 404 });
-  }
-
-  return NextResponse.json({ item: data });
 }
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+/**
+ * PUT /api/admin/portfolio-items/[id]
+ * Update a portfolio item via the Go backend
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const errorResponse = await protectAdminRoute();
   if (errorResponse) return errorResponse;
 
@@ -39,69 +66,103 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const key = (id || '').trim().replace(/\s+/g, '');
   const body = await request.json();
 
-  const update = {
-    slug: body.slug,
-    title: body.title,
-    client_name: body.client_name ?? null,
-    event_date: body.event_date ?? null,
-    event_type: body.event_type,
-    location: body.location ?? null,
-    description: body.description ?? '',
-    images: body.images ?? [],
-    featured_image: body.featured_image ?? '',
-    gallery_images: body.gallery_images ?? [],
-    budget: body.budget ?? null,
-    guest_count: body.guest_count ?? null,
-    vendors: body.vendors ?? [],
-    testimonial: body.testimonial ?? null,
-    meta_title: body.meta_title ?? null,
-    meta_description: body.meta_description ?? null,
-    status: body.status ?? 'draft',
-    display_order: body.display_order ?? 0,
-  };
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/admin/portfolio-items/${key}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
 
-  const updateQuery = supabaseAdmin().from('portfolio_items')
-    // @ts-ignore - Supabase type inference issue with dynamic updates
-    .update(update as any).select('*');
-  const { data, error } = isUuid(key)
-    ? await updateQuery.eq('id', key).maybeSingle<any>()
-    : await updateQuery.eq('slug', key).maybeSingle<any>();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-  if (!data) {
-    if (!isUuid(key) && update.slug) {
-      const { data: upserted, error: upsertError } = await supabaseAdmin()
-        .from('portfolio_items')
-        // @ts-ignore - Supabase type inference issue with upsert
-        .upsert(update as any, { onConflict: 'slug' })
-        .select('*')
-        .single();
-      if (upsertError) return NextResponse.json({ error: upsertError.message }, { status: 400 });
-      return NextResponse.json({ item: upserted });
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Backend portfolio items update error:', error);
+      return NextResponse.json(
+        { error: error.error || 'Failed to update portfolio item' },
+        { status: response.status }
+      );
     }
-    return NextResponse.json({ error: 'Portfolio item not found' }, { status: 404 });
-  }
 
-  return NextResponse.json({ item: data });
+    const data = await response.json();
+    const item = data.item ?? data;
+
+    // Revalidate cache after update
+    revalidateTag(CACHE_TAGS.BLOG_LIST);
+    revalidateTag(CACHE_TAGS.PORTFOLIO_LIST);
+    if (item?.slug) {
+      revalidateTag(CACHE_TAGS.BLOG_POST(item.slug));
+      revalidateTag(CACHE_TAGS.PORTFOLIO_ITEM(item.slug));
+    }
+    if (item?.id) {
+      revalidateTag(CACHE_TAGS.BLOG_POST(item.id));
+      revalidateTag(CACHE_TAGS.PORTFOLIO_ITEM(item.id));
+    }
+
+    return NextResponse.json({ item });
+  } catch (err) {
+    console.error('Portfolio items update unexpected error:', err);
+    return NextResponse.json(
+      { error: 'Failed to connect to backend server' },
+      { status: 500 }
+    );
+  }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+/**
+ * DELETE /api/admin/portfolio-items/[id]
+ * Delete a portfolio item via the Go backend
+ */
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const errorResponse = await protectAdminRoute();
   if (errorResponse) return errorResponse;
 
   const { id } = await params;
   const key = (id || '').trim().replace(/\s+/g, '');
 
-  const query = supabaseAdmin().from('portfolio_items').delete().select('*');
-  const { data, error } = isUuid(key)
-    ? await query.eq('id', key).maybeSingle<any>()
-    : await query.eq('slug', key).maybeSingle<any>();
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/admin/portfolio-items/${key}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Backend portfolio items delete error:', error);
+      return NextResponse.json(
+        { error: error.error || 'Failed to delete portfolio item' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    const item = data.item ?? data;
+
+    // Revalidate cache after delete
+    revalidateTag(CACHE_TAGS.BLOG_LIST);
+    revalidateTag(CACHE_TAGS.PORTFOLIO_LIST);
+    if (item?.slug) {
+      revalidateTag(CACHE_TAGS.BLOG_POST(item.slug));
+      revalidateTag(CACHE_TAGS.PORTFOLIO_ITEM(item.slug));
+    }
+    if (item?.id) {
+      revalidateTag(CACHE_TAGS.BLOG_POST(item.id));
+      revalidateTag(CACHE_TAGS.PORTFOLIO_ITEM(item.id));
+    }
+
+    return NextResponse.json({ item });
+  } catch (err) {
+    console.error('Portfolio items delete unexpected error:', err);
+    return NextResponse.json(
+      { error: 'Failed to connect to backend server' },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ item: data });
 }

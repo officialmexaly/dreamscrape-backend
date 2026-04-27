@@ -1,54 +1,97 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/src/lib/supabase-admin';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAGS } from '@/src/lib/cached-posts';
 import { protectAdminRoute } from '@/src/lib/server-auth';
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+
+/**
+ * GET /api/admin/blog-posts
+ * List all blog posts from the Go backend
+ */
 export async function GET() {
   const errorResponse = await protectAdminRoute();
   if (errorResponse) return errorResponse;
 
-  const { data, error } = await supabaseAdmin()
-    .from('portfolio_items')
-    .select('*')
-    .order('created_at', { ascending: false });
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/admin/blog-posts`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ items: data ?? [] });
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Backend blog posts list error:', error);
+      return NextResponse.json(
+        { error: error.error || 'Failed to load blog posts' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json({ items: data.data ?? data.items ?? [] });
+  } catch (err) {
+    console.error('Blog posts list unexpected error:', err);
+    return NextResponse.json(
+      { error: 'Failed to connect to backend server' },
+      { status: 500 }
+    );
+  }
 }
 
+/**
+ * POST /api/admin/blog-posts
+ * Create a new blog post via the Go backend
+ */
 export async function POST(request: NextRequest) {
   const errorResponse = await protectAdminRoute();
   if (errorResponse) return errorResponse;
 
-  const body = await request.json();
+  try {
+    const body = await request.json();
 
-  const insert = {
-    slug: body.slug,
-    title: body.title,
-    excerpt: body.excerpt ?? null,
-    content: body.content ?? null,
-    featured_image: body.featured_image ?? null,
-    author: body.author ?? null,
-    categories: body.categories ?? [],
-    tags: body.tags ?? [],
-    meta_title: body.meta_title ?? null,
-    meta_description: body.meta_description ?? null,
-    status: body.status ?? 'draft',
-    
-  };
+    const response = await fetch(`${BACKEND_URL}/api/admin/blog-posts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
 
-  const { data, error } = await supabaseAdmin()
-    .from('portfolio_items')
-    .insert(insert)
-    .select()
-    .single();
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Backend blog posts create error:', error);
+      return NextResponse.json(
+        { error: error.error || 'Failed to create blog post' },
+        { status: response.status }
+      );
+    }
 
-  if (error) {
-    console.error('Insert error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const data = await response.json();
+    const item = data.item ?? data;
+
+    // Revalidate cache after create
+    revalidateTag(CACHE_TAGS.BLOG_LIST);
+    revalidateTag(CACHE_TAGS.PORTFOLIO_LIST);
+    if (item?.slug) {
+      revalidateTag(CACHE_TAGS.BLOG_POST(item.slug));
+      revalidateTag(CACHE_TAGS.PORTFOLIO_ITEM(item.slug));
+    }
+    if (item?.id) {
+      revalidateTag(CACHE_TAGS.BLOG_POST(item.id));
+      revalidateTag(CACHE_TAGS.PORTFOLIO_ITEM(item.id));
+    }
+
+    return NextResponse.json({ item }, { status: 201 });
+  } catch (err) {
+    console.error('Blog posts create unexpected error:', err);
+    return NextResponse.json(
+      { error: 'Failed to connect to backend server' },
+      { status: 500 }
+    );
   }
-
-  revalidateTag(CACHE_TAGS.blogPosts, "max");
-  return NextResponse.json({ item: data });
 }

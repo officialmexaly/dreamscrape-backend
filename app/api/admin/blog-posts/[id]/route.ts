@@ -1,94 +1,168 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/src/lib/supabase-admin'
-import { revalidateTag } from 'next/cache'
-import { CACHE_TAGS } from '@/src/lib/cached-posts'
-import { protectAdminRoute } from '@/src/lib/server-auth'
+import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
+import { CACHE_TAGS } from '@/src/lib/cached-posts';
+import { protectAdminRoute } from '@/src/lib/server-auth';
 
-function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value
-  )
-}
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
-function normalizeKey(value: string) {
-  return value.trim().replace(/\s+/g, '')
-}
-
+/**
+ * GET /api/admin/blog-posts/[id]
+ * Get a single blog post by ID or slug from the Go backend
+ */
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const errorResponse = await protectAdminRoute()
-  if (errorResponse) return errorResponse
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
 
-  const { id } = await params
-  const key = normalizeKey(id || '')
+  const { id } = await params;
+  const key = (id || '').trim().replace(/\s+/g, '');
 
-  const query = supabaseAdmin().from('portfolio_items').select('*')
-  const { data, error } = isUuid(key)
-    ? await query.eq('id', key).maybeSingle()
-    : await query.eq('slug', key).maybeSingle()
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/admin/blog-posts/${key}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  return NextResponse.json({ item: data })
+    if (!response.ok) {
+      if (response.status === 404) {
+        return NextResponse.json({ error: 'Blog post not found' }, { status: 404 });
+      }
+      const error = await response.json();
+      console.error('Backend blog posts fetch error:', error);
+      return NextResponse.json(
+        { error: error.error || 'Failed to fetch blog post' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json({ item: data.item ?? data });
+  } catch (err) {
+    console.error('Blog posts unexpected error:', err);
+    return NextResponse.json(
+      { error: 'Failed to connect to backend server' },
+      { status: 500 }
+    );
+  }
 }
 
+/**
+ * PUT /api/admin/blog-posts/[id]
+ * Update a blog post via the Go backend
+ */
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const errorResponse = await protectAdminRoute()
-  if (errorResponse) return errorResponse
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
 
-  const { id } = await params
-  const key = normalizeKey(id || '')
-  const body = await request.json()
+  const { id } = await params;
+  const key = (id || '').trim().replace(/\s+/g, '');
+  const body = await request.json();
 
-  const update = {
-    slug: body.slug,
-    title: body.title,
-    excerpt: body.excerpt ?? null,
-    content: body.content ?? null,
-    featured_image: body.featured_image ?? null,
-    author: body.author ?? null,
-    categories: body.categories ?? [],
-    tags: body.tags ?? [],
-    meta_title: body.meta_title ?? null,
-    meta_description: body.meta_description ?? null,
-    status: body.status ?? 'draft',
-    
-    updated_at: new Date().toISOString(),
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/admin/blog-posts/${key}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Backend blog posts update error:', error);
+      return NextResponse.json(
+        { error: error.error || 'Failed to update blog post' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    const item = data.item ?? data;
+
+    // Revalidate cache after update
+    revalidateTag(CACHE_TAGS.BLOG_LIST);
+    revalidateTag(CACHE_TAGS.PORTFOLIO_LIST);
+    if (item?.slug) {
+      revalidateTag(CACHE_TAGS.BLOG_POST(item.slug));
+      revalidateTag(CACHE_TAGS.PORTFOLIO_ITEM(item.slug));
+    }
+    if (item?.id) {
+      revalidateTag(CACHE_TAGS.BLOG_POST(item.id));
+      revalidateTag(CACHE_TAGS.PORTFOLIO_ITEM(item.id));
+    }
+
+    return NextResponse.json({ item });
+  } catch (err) {
+    console.error('Blog posts update unexpected error:', err);
+    return NextResponse.json(
+      { error: 'Failed to connect to backend server' },
+      { status: 500 }
+    );
   }
-
-  const query = supabaseAdmin().from('portfolio_items').update(update).select().single()
-  const { data, error } = isUuid(key)
-    ? await query.eq('id', key)
-    : await query.eq('slug', key)
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  revalidateTag(CACHE_TAGS.blogPosts, "max")
-  return NextResponse.json({ item: data })
 }
 
+/**
+ * DELETE /api/admin/blog-posts/[id]
+ * Delete a blog post via the Go backend
+ */
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const errorResponse = await protectAdminRoute()
-  if (errorResponse) return errorResponse
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
 
-  const { id } = await params
-  const key = normalizeKey(id || '')
+  const { id } = await params;
+  const key = (id || '').trim().replace(/\s+/g, '');
 
-  const query = supabaseAdmin().from('portfolio_items').delete().select().single()
-  const { data, error } = isUuid(key)
-    ? await query.eq('id', key)
-    : await query.eq('slug', key)
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/admin/blog-posts/${key}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Backend blog posts delete error:', error);
+      return NextResponse.json(
+        { error: error.error || 'Failed to delete blog post' },
+        { status: response.status }
+      );
+    }
 
-  revalidateTag(CACHE_TAGS.blogPosts, "max")
-  return NextResponse.json({ item: data })
+    const data = await response.json();
+    const item = data.item ?? data;
+
+    // Revalidate cache after delete
+    revalidateTag(CACHE_TAGS.BLOG_LIST);
+    revalidateTag(CACHE_TAGS.PORTFOLIO_LIST);
+    if (item?.slug) {
+      revalidateTag(CACHE_TAGS.BLOG_POST(item.slug));
+      revalidateTag(CACHE_TAGS.PORTFOLIO_ITEM(item.slug));
+    }
+    if (item?.id) {
+      revalidateTag(CACHE_TAGS.BLOG_POST(item.id));
+      revalidateTag(CACHE_TAGS.PORTFOLIO_ITEM(item.id));
+    }
+
+    return NextResponse.json({ item });
+  } catch (err) {
+    console.error('Blog posts delete unexpected error:', err);
+    return NextResponse.json(
+      { error: 'Failed to connect to backend server' },
+      { status: 500 }
+    );
+  }
 }

@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/src/lib/supabase-admin';
+import { protectAdminRoute } from '@/src/lib/server-auth';
 
 const isUuid = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
   const { id } = await params;
   const column = isUuid(id) ? 'id' : 'slug';
   const { data, error } = await supabaseAdmin()
@@ -26,6 +29,8 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
   const { id } = await params;
   const body = await request.json();
 
@@ -87,6 +92,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const errorResponse = await protectAdminRoute();
+  if (errorResponse) return errorResponse;
   const { id } = await params;
   const column = isUuid(id) ? 'id' : 'slug';
   const { error } = await supabaseAdmin()

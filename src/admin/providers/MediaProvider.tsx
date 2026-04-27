@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
-import { useAuth } from './AuthProvider';
+import { useAuth } from '@/src/admin/providers/GolangAuthProvider';
+import { getAccessToken } from '@/src/lib/golang-auth';
 
 type MediaItem = any;
 
@@ -54,7 +55,21 @@ export function MediaProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/admin/media-library', { cache: 'no-store' });
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+      const token = getAccessToken();
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${backendUrl}/api/admin/media-library`, {
+        cache: 'no-store',
+        headers
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || 'Failed to load media');
       setMedia(json.items || []);
@@ -75,9 +90,20 @@ export function MediaProvider({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, refresh]);
 
   const createMedia: MediaContextValue['createMedia'] = async (draft) => {
-    const res = await fetch('/api/admin/media-library', {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+    const token = getAccessToken();
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${backendUrl}/api/admin/media-library`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers,
       body: JSON.stringify(draft),
     });
     const json = await res.json();
@@ -87,9 +113,20 @@ export function MediaProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateMedia: MediaContextValue['updateMedia'] = async (id, draft) => {
-    const res = await fetch(`/api/admin/media-library/${id}`, {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+    const token = getAccessToken();
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${backendUrl}/api/admin/media-library/${id}`, {
       method: 'PUT',
-      headers: { 'content-type': 'application/json' },
+      headers,
       body: JSON.stringify(draft),
     });
     const json = await res.json();
@@ -99,7 +136,21 @@ export function MediaProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteMedia: MediaContextValue['deleteMedia'] = async (id) => {
-    const res = await fetch(`/api/admin/media-library/${id}`, { method: 'DELETE' });
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+    const token = getAccessToken();
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${backendUrl}/api/admin/media-library/${id}`, {
+      method: 'DELETE',
+      headers
+    });
     const json = await res.json();
     if (!res.ok) throw new Error(json?.error || 'Failed to delete media');
     setMedia((prev) => prev.filter((m: any) => m.id !== id));

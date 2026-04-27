@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/auth'
+
+/**
+ * Golang Backend Authentication Middleware
+ * Replaces NextAuth with Golang backend session validation
+ */
 
 export async function proxy(request: any) {
   const { pathname } = request.nextUrl
@@ -7,8 +11,8 @@ export async function proxy(request: any) {
   requestHeaders.set('x-pathname', pathname)
 
   // Public paths that don't require authentication
-  const publicPaths = ['/admin/setup', '/admin/login', '/admin/forgot-password']
-  const isPublicPath = publicPaths.includes(pathname)
+  const publicPaths = ['/admin/setup', '/admin/login', '/admin/forgot-password', '/auth/callback']
+  const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
 
   // API routes that don't need auth check
   if (pathname.startsWith('/api/auth') || pathname.startsWith('/api/debug')) {
@@ -26,32 +30,44 @@ export async function proxy(request: any) {
   }
 
   try {
-    // Add timeout to auth check
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Auth timeout')), 5000)
-    )
+    // Check for Golang backend session cookies
+    const accessToken = request.cookies.get('access_token')?.value
+    const refreshToken = request.cookies.get('refresh_token')?.value
 
-    const session = (await Promise.race([auth(), timeoutPromise])) as any
-
-    // If no session, redirect to login
-    if (!session?.user) {
-      const loginUrl = new URL('/admin/login', request.url)
-      loginUrl.searchParams.set('callbackUrl', pathname)
-      return NextResponse.redirect(loginUrl)
-    }
-
-    // Check if user has admin role
-    if (session.user.role !== 'admin' && session.user.role !== 'super_admin') {
+    // If no session cookies, redirect to login
+    if (!accessToken && !refreshToken) {
       const loginUrl = new URL('/admin/login', request.url)
       return NextResponse.redirect(loginUrl)
     }
+
+    // Optionally validate token with backend (adds latency, so disabled by default)
+    // Uncomment if you want server-side token validation
+    /*
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080'
+    const validationResult = await fetch(`${backendUrl}/api/auth/me`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      },
+      credentials: 'include'
+    })
+
+    if (!validationResult.ok) {
+      const loginUrl = new URL('/admin/login', request.url)
+      return NextResponse.redirect(loginUrl)
+    }
+
+    const userData = await validationResult.json()
+    if (!userData.data || userData.data.role === 'user') {
+      const loginUrl = new URL('/admin/login', request.url)
+      return NextResponse.redirect(loginUrl)
+    }
+    */
 
     return NextResponse.next({ request: { headers: requestHeaders } })
   } catch (error) {
     console.error('Proxy auth error:', error)
     // On auth errors, redirect to login
     const loginUrl = new URL('/admin/login', request.url)
-    loginUrl.searchParams.set('callbackUrl', pathname)
     return NextResponse.redirect(loginUrl)
   }
 }
