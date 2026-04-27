@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"log/slog"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -38,7 +39,12 @@ import (
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
 
-func main() {
+var (
+	router *gin.Engine
+	logger *slog.Logger
+)
+
+func init() {
 	// Load configuration
 	if err := config.Load(); err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
@@ -48,7 +54,7 @@ func main() {
 	gin.SetMode(config.AppConfig.GinMode)
 
 	// Initialize structured logging
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
 
@@ -57,19 +63,18 @@ func main() {
 		logger.Error("Failed to initialize database", "error", err)
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
-	defer database.Close()
 
 	// Create Gin router
-	r := gin.New()
+	router = gin.New()
 
 	// Apply middleware
-	r.Use(middleware.Recovery(logger))
-	r.Use(middleware.Logger(logger))
-	r.Use(middleware.Security())
-	r.Use(middleware.CORS())
+	router.Use(middleware.Recovery(logger))
+	router.Use(middleware.Logger(logger))
+	router.Use(middleware.Security())
+	router.Use(middleware.CORS())
 
 	// Swagger documentation
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Test endpoint to verify database connection
 	// @Summary      Test database connection
@@ -80,7 +85,7 @@ func main() {
 	// @Success      200  {object}  map[string]interface{} "message: string, database: string"
 	// @Failure      500  {object}  map[string]interface{} "error: string"
 	// @Router       /api/test [get]
-	r.GET("/api/test", func(c *gin.Context) {
+	router.GET("/api/test", func(c *gin.Context) {
 		// Test the database connection with a simple query
 		if database.Pool != nil {
 			var result string
@@ -113,7 +118,7 @@ func main() {
 	oauthHandler := auth.NewOAuthHandler(authService)
 
 	// Authentication routes (no auth required) - Traditional & OAuth 2.0
-	auth := r.Group("/api/auth")
+	auth := router.Group("/api/auth")
 	{
 		// Traditional email/password authentication
 		auth.POST("/register", authHandler.Register)
@@ -133,7 +138,7 @@ func main() {
 	}
 
 	// Authenticated user routes (require valid JWT token)
-	userAuth := r.Group("/api/auth")
+	userAuth := router.Group("/api/auth")
 	userAuth.Use(middleware.RequireAuth())
 	{
 		userAuth.GET("/me", authHandler.GetMe)
@@ -141,7 +146,7 @@ func main() {
 	}
 
 	// Public API routes
-	public := r.Group("/api")
+	public := router.Group("/api")
 	{
 		// Portfolio items (public)
 		public.GET("/portfolio-items", portfolioHandler.GetPortfolioItems)
@@ -176,7 +181,7 @@ func main() {
 	}
 
 	// Admin API routes (authentication required)
-	adminAPI := r.Group("/api/admin")
+	adminAPI := router.Group("/api/admin")
 	adminAPI.Use(middleware.RequireAdmin())
 	{
 		// Portfolio items routes (admin)
@@ -237,7 +242,7 @@ func main() {
 	}
 
 	// Health check endpoint
-	r.GET("/health", func(c *gin.Context) {
+	router.GET("/health", func(c *gin.Context) {
 		dbStatus := "healthy"
 		if err := database.HealthCheck(c.Request.Context()); err != nil {
 			dbStatus = "unhealthy"
@@ -249,8 +254,15 @@ func main() {
 			"database": dbStatus,
 		})
 	})
+}
 
-	// Start server
+// Handler is the main entry point for Vercel serverless functions
+func Handler(w http.ResponseWriter, r *http.Request) {
+	router.ServeHTTP(w, r)
+}
+
+func main() {
+	// Start server (for local development)
 	port := config.AppConfig.ServerPort
 	if port == "" {
 		port = "8080"
@@ -262,7 +274,7 @@ func main() {
 		"gin_mode", config.AppConfig.GinMode,
 	)
 
-	if err := r.Run(":" + port); err != nil {
+	if err := router.Run(":" + port); err != nil {
 		logger.Error("Failed to start server", "error", err)
 		log.Fatalf("Failed to start server: %v", err)
 	}
