@@ -19,6 +19,8 @@ import (
 	"dreamscape-backend/pkg/config"
 )
 
+var router *gin.Engine
+
 // @title           Dreamscape Events API
 // @version         1.0
 // @description     API for Dreamscape Events - Event Planning and Management System
@@ -39,7 +41,7 @@ import (
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
 
-func main() {
+func initializeRouter() *gin.Engine {
 	// Load configuration
 	if err := config.Load(); err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
@@ -58,7 +60,6 @@ func main() {
 		logger.Error("Failed to initialize database", "error", err)
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
-	defer database.Close()
 
 	// Create Gin router
 	r := gin.New()
@@ -242,7 +243,6 @@ func main() {
 		dbStatus := "healthy"
 		if err := database.HealthCheck(c.Request.Context()); err != nil {
 			dbStatus = "unhealthy"
-			logger.Warn("Database health check failed", "error", err)
 		}
 
 		c.JSON(200, gin.H{
@@ -250,6 +250,19 @@ func main() {
 			"database": dbStatus,
 		})
 	})
+
+	return r
+}
+
+func main() {
+	// Initialize database connection
+	if err := database.Initialize(); err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer database.Close()
+
+	// Initialize router
+	router = initializeRouter()
 
 	// Start server - Vercel requires PORT environment variable
 	port := os.Getenv("PORT")
@@ -260,6 +273,10 @@ func main() {
 		port = "8080"
 	}
 
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+
 	logger.Info("Starting server",
 		"port", port,
 		"frontend_url", config.AppConfig.FrontendURL,
@@ -267,8 +284,25 @@ func main() {
 	)
 
 	// Vercel requires using 0.0.0.0 instead of localhost
-	if err := r.Run("0.0.0.0:" + port); err != nil {
+	if err := router.Run("0.0.0.0:" + port); err != nil {
 		logger.Error("Failed to start server", "error", err)
 		log.Fatalf("Failed to start server: %v", err)
 	}
+}
+
+// Handler is the Vercel serverless function entry point
+func Handler(w http.ResponseWriter, r *http.Request) {
+	// Initialize database connection if not already initialized
+	if err := database.Initialize(); err != nil {
+		http.Error(w, "Failed to initialize database", http.StatusInternalServerError)
+		return
+	}
+
+	// Initialize router if not already initialized
+	if router == nil {
+		router = initializeRouter()
+	}
+
+	// Serve the request
+	router.ServeHTTP(w, r)
 }
