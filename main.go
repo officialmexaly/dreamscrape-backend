@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -292,9 +293,24 @@ func main() {
 
 // Handler is the Vercel serverless function entry point
 func Handler(w http.ResponseWriter, r *http.Request) {
+	// Add panic recovery
+	defer func() {
+		if err := recover(); err != nil {
+			http.Error(w, fmt.Sprintf("Panic: %v", err), http.StatusInternalServerError)
+		}
+	}()
+
+	// Simple health check that doesn't require database
+	if r.URL.Path == "/health" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok","message":"Handler is working"}`))
+		return
+	}
+
 	// Initialize database connection if not already initialized
 	if err := database.Initialize(); err != nil {
-		http.Error(w, "Failed to initialize database", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to initialize database: %v", err), http.StatusInternalServerError)
 		return
 	}
 
