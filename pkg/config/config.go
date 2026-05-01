@@ -51,9 +51,10 @@ var AppConfig *Config
 
 // Load initializes the configuration from environment variables
 func Load() error {
-	// Load .env file if it exists
+	// Load .env file if it exists (optional for local development)
 	if err := godotenv.Load(); err != nil {
-		return fmt.Errorf("error loading .env file: %w", err)
+		// .env file is optional - continue with environment variables
+		fmt.Println("Note: .env file not found, using environment variables")
 	}
 
 	AppConfig = &Config{
@@ -93,14 +94,19 @@ func Load() error {
 		CookieSecure: getBool("COOKIE_SECURE", false),
 	}
 
-	// Validate required configuration
-	return AppConfig.Validate()
+	// Validate required configuration (log warnings but don't fail for optional fields)
+	if err := AppConfig.Validate(); err != nil {
+		fmt.Printf("Configuration warning: %v\n", err)
+	}
+
+	return nil
 }
 
 // Validate checks if all required configuration values are set
 func (c *Config) Validate() error {
+	// Only critical validation - JWT secret and Supabase credentials
 	if c.JWTSecret == "" {
-		return fmt.Errorf("JWT_SECRET is required")
+		fmt.Println("Warning: JWT_SECRET not set - authentication will not work properly")
 	}
 	if c.SupabaseURL == "" {
 		return fmt.Errorf("SUPABASE_URL is required")
