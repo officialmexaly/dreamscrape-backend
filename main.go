@@ -106,9 +106,10 @@ func initializeRouter() *gin.Engine {
 	eventHandler := public.NewEventHandler()
 	serviceHandler := public.NewServiceHandler()
 	completeBookingHandler := public.NewCompleteBookingHandler()
-	contentHandler := public.NewContentHandler(database.GetPool())
-	settingsHandler := public.NewSettingsHandler(database.GetPool())
+	contentHandler := public.NewContentHandler(database.SupabaseClient)
+	settingsHandler := public.NewSettingsHandler(database.SupabaseClient)
 	mediaHandler := public.NewMediaStorageHandler()
+	calendlyWebhookHandler := public.NewCalendlyWebhookHandlerWithDB(database.GetPool())
 
 	// Initialize auth handlers
 	authService := services.NewAuthService()
@@ -173,6 +174,9 @@ func initializeRouter() *gin.Engine {
 		public.GET("/content", contentHandler.GetSiteContent)
 		public.GET("/content/key/:key", contentHandler.GetContentByKey)
 		public.GET("/settings", settingsHandler.GetSiteSettings)
+
+		// Calendly webhook (public - no authentication required)
+		public.POST("/webhook/calendly", calendlyWebhookHandler.HandleWebhook)
 
 		// Temporary test endpoint for media storage (no auth required)
 		public.GET("/media-test", mediaHandler.GetMediaLibrary)
@@ -250,6 +254,33 @@ func initializeRouter() *gin.Engine {
 			"status":   "ok",
 			"database": dbStatus,
 		})
+	})
+
+	// Root endpoint - API information
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"name":        "Dreamscape Events API",
+			"version":     "1.0",
+			"status":      "operational",
+			"endpoints": gin.H{
+				"health":     "/health",
+				"api":        "/api",
+				"docs":       "/swagger/*",
+				"bookings":   "/api/bookings",
+				"events":     "/api/events",
+				"services":   "/api/services",
+				"portfolio":  "/api/portfolio-items",
+			},
+			"documentation": "Dreamscape Events - Event Planning and Management System API",
+		})
+	})
+
+	// Favicon handler - prevent 404 errors
+	r.GET("/favicon.ico", func(c *gin.Context) {
+		c.Status(204) // No Content
+	})
+	r.GET("/favicon.png", func(c *gin.Context) {
+		c.Status(204) // No Content
 	})
 
 	return r
