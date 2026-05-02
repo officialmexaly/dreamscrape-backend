@@ -15,7 +15,6 @@ import (
 	"dreamscape-backend/backend/database"
 	"dreamscape-backend/backend/handlers/common"
 	"dreamscape-backend/backend/models"
-	"dreamscape-backend/pkg/config"
 	"dreamscape-backend/pkg/errors"
 )
 
@@ -27,7 +26,7 @@ type BookingSystemHandler struct {
 // NewBookingSystemHandler creates a new booking system handler
 func NewBookingSystemHandler() *BookingSystemHandler {
 	return &BookingSystemHandler{
-		calendlyToken: config.AppConfig.CalendlyToken,
+		calendlyToken: os.Getenv("CALENDLY_TOKEN"),
 	}
 }
 
