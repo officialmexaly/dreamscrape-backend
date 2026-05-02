@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"dreamscape-backend/db"
+	"dreamscape-backend/backend/supabase"
 	"dreamscape-backend/backend/database"
 	"dreamscape-backend/backend/handlers/common"
 	"dreamscape-backend/backend/storage"
@@ -20,7 +20,7 @@ import (
 
 // MediaStorageHandler handles media endpoints with Supabase Storage integration
 type MediaStorageHandler struct {
-	dbClient  *db.Client
+	dbClient  *supabase.Client
 	storage   *storage.SupabaseStorageClient
 }
 

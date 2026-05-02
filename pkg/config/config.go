@@ -30,6 +30,9 @@ type Config struct {
 	GoogleClientSecret string
 	GoogleCalendarID   string
 
+	// Calendly
+	CalendlyToken string
+
 	// Supabase
 	SupabaseURL            string
 	SupabaseKey            string
@@ -76,6 +79,9 @@ func Load() error {
 		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
 		GoogleCalendarID:   getEnv("GOOGLE_CALENDAR_ID", ""),
+
+		// Calendly
+		CalendlyToken: getEnv("CALENDLY_TOKEN", ""),
 
 		// Supabase
 		SupabaseURL:            getEnv("SUPABASE_URL", ""),

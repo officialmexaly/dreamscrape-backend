@@ -1,13 +1,10 @@
 package public
 
 import (
-	"context"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"dreamscape-backend/backend/database"
 	"dreamscape-backend/backend/models"
 	"dreamscape-backend/backend/handlers/common"
@@ -15,14 +12,11 @@ import (
 
 // ServiceHandler handles public service operations
 type ServiceHandler struct {
-	pool *pgxpool.Pool
 }
 
 // NewServiceHandler creates a new service handler
 func NewServiceHandler() *ServiceHandler {
-	return &ServiceHandler{
-		pool: database.GetPool(),
-	}
+	return &ServiceHandler{}
 }
 
 // GetServices retrieves all public services
@@ -62,8 +56,7 @@ func (h *ServiceHandler) getServicesViaSupabase(c *gin.Context) {
 
 	// Query services using Supabase REST API
 	filters := map[string]string{
-		"status": "eq.published",
-		"order":  "display_order.asc,created_at.desc",
+		"status": "published",
 	}
 
 	servicesData, err := supabaseClient.Select("services", filters)
