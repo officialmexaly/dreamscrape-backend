@@ -106,8 +106,8 @@ func initializeRouter() *gin.Engine {
 	eventHandler := public.NewEventHandler()
 	serviceHandler := public.NewServiceHandler()
 	completeBookingHandler := public.NewCompleteBookingHandler()
-	contentHandler := public.NewContentHandler(database.SupabaseClient)
-	settingsHandler := public.NewSettingsHandler(database.SupabaseClient)
+	contentHandler := public.NewContentHandler(nil)
+	settingsHandler := public.NewSettingsHandler(nil)
 	mediaHandler := public.NewMediaStorageHandler()
 	calendlyWebhookHandler := public.NewCalendlyWebhookHandlerWithDB(database.GetPool())
 

@@ -1,91 +1,63 @@
 package public
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 
-	"dreamscape-backend/backend/models"
+	"dreamscape-backend/backend/database"
 	"dreamscape-backend/backend/handlers/common"
+	"dreamscape-backend/backend/models"
 	"dreamscape-backend/pkg/errors"
 )
 
 // ContentHandler handles content endpoints
 type ContentHandler struct {
-	db *pgxpool.Pool
 }
 
 // NewContentHandler creates a new content handler
-func NewContentHandler(db *pgxpool.Pool) *ContentHandler {
-	return &ContentHandler{db: db}
+func NewContentHandler(supabaseClient interface{}) *ContentHandler {
+	return &ContentHandler{}
 }
 
 // GetSiteContent retrieves public site content
 func (h *ContentHandler) GetSiteContent(c *gin.Context) {
-	if h == nil || h.db == nil {
+	if h == nil || database.SupabaseClient == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
 		return
 	}
-
-	ctx := context.Background()
 
 	// Get query parameters
 	page := c.Query("page")
 	section := c.Query("section")
 
-	// Build query
-	query := `
-		SELECT id, page, section, content_key, content_type, content, content_json, content_number, display_order, is_active, created_at, updated_at
-		FROM site_content
-		WHERE is_active = true
-	`
-
-	args := []interface{}{}
-	argCount := 1
-
+	// Build filters for Supabase query
+	filters := map[string]string{
+		"is_active": "true",
+	}
 	if page != "" {
-		query += " AND page = $" + common.SqlParam(argCount)
-		args = append(args, page)
-		argCount++
+		filters["page"] = page
 	}
-
 	if section != "" {
-		query += " AND section = $" + common.SqlParam(argCount)
-		args = append(args, section)
-		argCount++
+		filters["section"] = section
 	}
 
-	query += " ORDER BY page, section, display_order"
-
-	rows, err := h.db.Query(ctx, query, args...)
+	// Fetch from Supabase
+	data, err := database.SupabaseClient.Select("site_content", filters)
 	if err != nil {
 		common.ErrorResponse(c, err)
 		return
 	}
-	defer rows.Close()
 
+	// Convert to model format
 	var contents []models.SiteContent
-	for rows.Next() {
+	for _, item := range data {
+		contentBytes, _ := json.Marshal(item)
 		var content models.SiteContent
-		err := rows.Scan(
-			&content.ID, &content.Page, &content.Section, &content.ContentKey,
-			&content.ContentType, &content.Content, &content.ContentJSON,
-			&content.ContentNumber, &content.DisplayOrder, &content.IsActive,
-			&content.CreatedAt, &content.UpdatedAt,
-		)
-		if err != nil {
-			common.ErrorResponse(c, err)
-			return
+		if err := json.Unmarshal(contentBytes, &content); err == nil {
+			contents = append(contents, content)
 		}
-		contents = append(contents, content)
-	}
-
-	if err := rows.Err(); err != nil {
-		common.ErrorResponse(c, err)
-		return
 	}
 
 	common.SuccessResponse(c, http.StatusOK, contents)
@@ -93,42 +65,26 @@ func (h *ContentHandler) GetSiteContent(c *gin.Context) {
 
 // AdminGetContent retrieves all content (admin)
 func (h *ContentHandler) AdminGetContent(c *gin.Context) {
-	if h == nil || h.db == nil {
+	if h == nil || database.SupabaseClient == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
 		return
 	}
 
-	ctx := context.Background()
-
-	rows, err := h.db.Query(ctx,
-		`SELECT id, page, section, content_key, content_type, content, content_json, content_number, display_order, is_active, created_at, updated_at
-		 FROM site_content
-		 ORDER BY page, section, display_order`)
+	// Fetch all content from Supabase
+	data, err := database.SupabaseClient.Select("site_content", nil)
 	if err != nil {
 		common.ErrorResponse(c, err)
 		return
 	}
-	defer rows.Close()
 
+	// Convert to model format
 	var contents []models.SiteContent
-	for rows.Next() {
+	for _, item := range data {
+		contentBytes, _ := json.Marshal(item)
 		var content models.SiteContent
-		err := rows.Scan(
-			&content.ID, &content.Page, &content.Section, &content.ContentKey,
-			&content.ContentType, &content.Content, &content.ContentJSON,
-			&content.ContentNumber, &content.DisplayOrder, &content.IsActive,
-			&content.CreatedAt, &content.UpdatedAt,
-		)
-		if err != nil {
-			common.ErrorResponse(c, err)
-			return
+		if err := json.Unmarshal(contentBytes, &content); err == nil {
+			contents = append(contents, content)
 		}
-		contents = append(contents, content)
-	}
-
-	if err := rows.Err(); err != nil {
-		common.ErrorResponse(c, err)
-		return
 	}
 
 	common.SuccessResponse(c, http.StatusOK, contents)
@@ -136,26 +92,35 @@ func (h *ContentHandler) AdminGetContent(c *gin.Context) {
 
 // GetContentByKey retrieves content by key
 func (h *ContentHandler) GetContentByKey(c *gin.Context) {
-	if h == nil || h.db == nil {
+	if h == nil || database.SupabaseClient == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
 		return
 	}
 
 	key := c.Param("key")
-	ctx := context.Background()
 
-	var content models.SiteContent
-	err := h.db.QueryRow(ctx,
-		`SELECT id, page, section, content_key, content_type, content, content_json, content_number, display_order, is_active, created_at, updated_at
-		 FROM site_content WHERE content_key = $1`, key).Scan(
-		&content.ID, &content.Page, &content.Section, &content.ContentKey,
-		&content.ContentType, &content.Content, &content.ContentJSON,
-		&content.ContentNumber, &content.DisplayOrder, &content.IsActive,
-		&content.CreatedAt, &content.UpdatedAt,
-	)
+	// Fetch from Supabase with filter
+	filters := map[string]string{
+		"content_key": key,
+		"is_active":   "true",
+	}
 
+	data, err := database.SupabaseClient.Select("site_content", filters)
 	if err != nil {
-		common.ErrorResponse(c, errors.NotFound("Content not found"))
+		common.ErrorResponse(c, errors.NotFound("content not found"))
+		return
+	}
+
+	if len(data) == 0 {
+		common.ErrorResponse(c, errors.NotFound("content not found"))
+		return
+	}
+
+	// Convert first result
+	contentBytes, _ := json.Marshal(data[0])
+	var content models.SiteContent
+	if err := json.Unmarshal(contentBytes, &content); err != nil {
+		common.ErrorResponse(c, err)
 		return
 	}
 
@@ -164,59 +129,80 @@ func (h *ContentHandler) GetContentByKey(c *gin.Context) {
 
 // CreateContent creates new site content
 func (h *ContentHandler) CreateContent(c *gin.Context) {
-	if h == nil || h.db == nil {
+	if h == nil || database.SupabaseClient == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
 		return
 	}
 
 	var req models.CreateContentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ValidationErrorResponse(c, &errors.ValidationError{
-			Message: "Invalid request body",
-			Fields:  map[string]string{"error": err.Error()},
-		})
+		validationErr := errors.NewValidationError("Invalid request body")
+		validationErr.AddField("error", err.Error())
+		common.ValidationErrorResponse(c, validationErr)
 		return
 	}
-
-	ctx := context.Background()
 
 	// Check if key already exists
-	var exists bool
-	err := h.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM site_content WHERE content_key = $1)`, req.ContentKey).Scan(&exists)
+	filters := map[string]string{
+		"content_key": req.ContentKey,
+	}
+	existing, _ := database.SupabaseClient.Select("site_content", filters)
+	if len(existing) > 0 {
+		common.ErrorResponse(c, errors.Conflict("content with this key already exists"))
+		return
+	}
+
+	// Create content data
+	contentData := map[string]interface{}{
+		"page":          req.Page,
+		"section":       req.Section,
+		"content_key":   req.ContentKey,
+		"content_type":  req.ContentType,
+		"display_order": req.DisplayOrder,
+		"is_active":     req.IsActive,
+	}
+
+	// Normalize content value
+	if req.Content != nil {
+		contentValue, contentJSON, contentNumber := normalizeSiteContentValue(req.Content, req.ContentType)
+		if contentValue != nil {
+			contentData["content"] = contentValue
+		}
+		if contentJSON != nil {
+			contentData["content_json"] = contentJSON
+		}
+		if contentNumber != nil {
+			contentData["content_number"] = contentNumber
+		}
+	}
+
+	// Insert via Supabase
+	_, err := database.SupabaseClient.Insert("site_content", contentData)
 	if err != nil {
 		common.ErrorResponse(c, err)
 		return
 	}
-	if exists {
-		common.ErrorResponse(c, errors.Conflict("Content with this key already exists"))
+
+	// Fetch the created content
+	filters = map[string]string{
+		"content_key": req.ContentKey,
+	}
+	data, err := database.SupabaseClient.Select("site_content", filters)
+	if err != nil || len(data) == 0 {
+		common.ErrorResponse(c, errors.InternalServerError("failed to retrieve created content"))
 		return
 	}
 
-	contentValue, contentJSON, contentNumber := normalizeSiteContentValue(req.Content, req.ContentType)
-
-	// Create content
+	contentBytes, _ := json.Marshal(data[0])
 	var content models.SiteContent
-	err = h.db.QueryRow(ctx,
-		`INSERT INTO site_content (id, page, section, content_key, content_type, content, content_json, content_number, display_order, is_active, created_at, updated_at)
-		 VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
-		 RETURNING id, page, section, content_key, content_type, content, content_json, content_number, display_order, is_active, created_at, updated_at`,
-		req.Page, req.Section, req.ContentKey, req.ContentType, contentValue, contentJSON, contentNumber, req.DisplayOrder, req.IsActive).Scan(
-		&content.ID, &content.Page, &content.Section, &content.ContentKey,
-		&content.ContentType, &content.Content, &content.ContentJSON,
-		&content.ContentNumber, &content.DisplayOrder, &content.IsActive,
-		&content.CreatedAt, &content.UpdatedAt)
-
-	if err != nil {
-		common.ErrorResponse(c, err)
-		return
-	}
+	json.Unmarshal(contentBytes, &content)
 
 	common.SuccessResponse(c, http.StatusCreated, content)
 }
 
 // UpdateContent updates existing content
 func (h *ContentHandler) UpdateContent(c *gin.Context) {
-	if h == nil || h.db == nil {
+	if h == nil || database.SupabaseClient == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
 		return
 	}
@@ -224,64 +210,74 @@ func (h *ContentHandler) UpdateContent(c *gin.Context) {
 	id := c.Param("id")
 	var req models.UpdateContentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ValidationErrorResponse(c, &errors.ValidationError{
-			Message: "Invalid request body",
-			Fields:  map[string]string{"error": err.Error()},
-		})
+		validationErr := errors.NewValidationError("Invalid request body")
+		validationErr.AddField("error", err.Error())
+		common.ValidationErrorResponse(c, validationErr)
 		return
 	}
 
-	ctx := context.Background()
-
-	// Build dynamic update query
-	query := "UPDATE site_content SET updated_at = NOW()"
-	args := []interface{}{}
-	argCount := 1
+	// Build update data
+	updateData := map[string]interface{}{}
 
 	if req.Content != nil {
-		query += ", content = $" + common.SqlParam(argCount)
 		contentValue, contentJSON, contentNumber := normalizeSiteContentValue(*req.Content, "")
-		args = append(args, contentValue)
-		argCount++
-		_ = contentJSON
-		_ = contentNumber
+		if contentValue != nil {
+			updateData["content"] = contentValue
+		}
+		if contentJSON != nil {
+			updateData["content_json"] = contentJSON
+		}
+		if contentNumber != nil {
+			updateData["content_number"] = contentNumber
+		}
 	}
 	if req.IsActive != nil {
-		query += ", is_active = $" + common.SqlParam(argCount)
-		args = append(args, *req.IsActive)
-		argCount++
+		updateData["is_active"] = *req.IsActive
 	}
 	if req.DisplayOrder != nil {
-		query += ", display_order = $" + common.SqlParam(argCount)
-		args = append(args, *req.DisplayOrder)
-		argCount++
+		updateData["display_order"] = *req.DisplayOrder
 	}
 
-	query += " WHERE id = $" + common.SqlParam(argCount)
-	args = append(args, id)
+	// Update via Supabase
+	_, err := database.SupabaseClient.Update("site_content", id, updateData)
+	if err != nil {
+		common.ErrorResponse(c, errors.NotFound("content not found"))
+		return
+	}
 
-	_, err := h.db.Exec(ctx, query, args...)
+	// Fetch updated content
+	filters := map[string]string{
+		"id": id,
+	}
+	data, err := database.SupabaseClient.Select("site_content", filters)
+	if err != nil || len(data) == 0 {
+		common.ErrorResponse(c, errors.InternalServerError("failed to retrieve updated content"))
+		return
+	}
+
+	contentBytes, _ := json.Marshal(data[0])
+	var content models.SiteContent
+	json.Unmarshal(contentBytes, &content)
+
+	common.SuccessResponse(c, http.StatusOK, content)
+}
+
+// DeleteContent deletes content
+func (h *ContentHandler) DeleteContent(c *gin.Context) {
+	if h == nil || database.SupabaseClient == nil {
+		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
+		return
+	}
+
+	id := c.Param("id")
+
+	err := database.SupabaseClient.Delete("site_content", id)
 	if err != nil {
 		common.ErrorResponse(c, err)
 		return
 	}
 
-	// Fetch updated content
-	var content models.SiteContent
-	err = h.db.QueryRow(ctx,
-		`SELECT id, page, section, content_key, content_type, content, content_json, content_number, display_order, is_active, created_at, updated_at
-		 FROM site_content WHERE id = $1`, id).Scan(
-		&content.ID, &content.Page, &content.Section, &content.ContentKey,
-		&content.ContentType, &content.Content, &content.ContentJSON,
-		&content.ContentNumber, &content.DisplayOrder, &content.IsActive,
-		&content.CreatedAt, &content.UpdatedAt)
-
-	if err != nil {
-		common.ErrorResponse(c, errors.NotFound("Content not found"))
-		return
-	}
-
-	common.SuccessResponse(c, http.StatusOK, content)
+	common.MessageResponse(c, http.StatusOK, "Content deleted successfully")
 }
 
 func normalizeSiteContentValue(content interface{}, contentType string) (interface{}, interface{}, interface{}) {
@@ -312,23 +308,4 @@ func normalizeSiteContentValue(content interface{}, contentType string) (interfa
 		}
 		return string(b), string(b), nil
 	}
-}
-
-// DeleteContent deletes content
-func (h *ContentHandler) DeleteContent(c *gin.Context) {
-	if h == nil || h.db == nil {
-		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
-		return
-	}
-
-	id := c.Param("id")
-	ctx := context.Background()
-
-	_, err := h.db.Exec(ctx, "DELETE FROM site_content WHERE id = $1", id)
-	if err != nil {
-		common.ErrorResponse(c, err)
-		return
-	}
-
-	common.MessageResponse(c, http.StatusOK, "Content deleted successfully")
 }

@@ -1,13 +1,13 @@
 package public
 
 import (
-	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 
+	"dreamscape-backend/backend/database"
 	"dreamscape-backend/backend/models"
 	"dreamscape-backend/backend/handlers/common"
 	"dreamscape-backend/pkg/errors"
@@ -15,162 +15,225 @@ import (
 
 // SettingsHandler handles settings endpoints
 type SettingsHandler struct {
-	db *pgxpool.Pool
 }
 
 // NewSettingsHandler creates a new settings handler
-func NewSettingsHandler(db *pgxpool.Pool) *SettingsHandler {
-	return &SettingsHandler{db: db}
+func NewSettingsHandler(supabaseClient interface{}) *SettingsHandler {
+	return &SettingsHandler{}
 }
 
 // GetSiteSettings retrieves site settings
 func (h *SettingsHandler) GetSiteSettings(c *gin.Context) {
-	ctx := context.Background()
+	if h == nil || database.SupabaseClient == nil {
+		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
+		return
+	}
 
-	var settings models.SiteSettings
-	var socialLinksJSON, seoSettingsJSON, businessHoursJSON []byte
-
-	err := h.db.QueryRow(ctx,
-		`SELECT id, site_name, site_description, logo_url, favicon_url, contact_email, contact_phone,
-		       contact_address, whatsapp_number, social_links, seo_settings, business_hours, updated_at
-		 FROM site_settings
-		 ORDER BY updated_at DESC
-		 LIMIT 1`).Scan(
-		&settings.ID, &settings.SiteName, &settings.SiteDescription, &settings.LogoURL,
-		&settings.FaviconURL, &settings.ContactEmail, &settings.ContactPhone,
-		&settings.ContactAddress, &settings.WhatsAppNumber, &socialLinksJSON,
-		&seoSettingsJSON, &businessHoursJSON, &settings.UpdatedAt,
-	)
-
+	// Fetch settings from Supabase
+	data, err := database.SupabaseClient.Select("site_settings", nil)
 	if err != nil {
-		// Return default settings if none exist
-		settings = models.SiteSettings{
-			SiteName:        "Dreamscape Curated Events",
-			SiteDescription: "Creating unforgettable experiences",
-			LogoURL:         "",
-			FaviconURL:      "",
-			ContactEmail:    "info@dreamscape-events.com",
-			ContactPhone:    "",
-			ContactAddress:  "",
-			WhatsAppNumber:  "",
-			SocialLinks:     make(map[string]string),
-			SEOSettings:     make(map[string]string),
-			BusinessHours:   make(map[string]string),
+		common.ErrorResponse(c, err)
+		return
+	}
+
+	// Convert to model format - create default settings first
+	settings := models.SiteSettings{
+		SocialLinks:   make(map[string]string),
+		SEOSettings:   make(map[string]string),
+		BusinessHours: make(map[string]string),
+	}
+
+	for _, item := range data {
+		settingBytes, _ := json.Marshal(item)
+		var setting map[string]interface{}
+		if err := json.Unmarshal(settingBytes, &setting); err == nil {
+			if key, ok := setting["setting_key"].(string); ok {
+				if value, ok := setting["setting_value"].(string); ok {
+					switch key {
+					case "site_name":
+						settings.SiteName = value
+					case "site_description":
+						settings.SiteDescription = value
+					case "logo_url":
+						settings.LogoURL = value
+					case "favicon_url":
+						settings.FaviconURL = value
+					case "contact_email":
+						settings.ContactEmail = value
+					case "contact_phone":
+						settings.ContactPhone = value
+					case "contact_address":
+						settings.ContactAddress = value
+					case "whatsapp_number":
+						settings.WhatsAppNumber = value
+					}
+				}
+			}
 		}
-	} else {
-		// Parse JSON fields
-		json.Unmarshal(socialLinksJSON, &settings.SocialLinks)
-		json.Unmarshal(seoSettingsJSON, &settings.SEOSettings)
-		json.Unmarshal(businessHoursJSON, &settings.BusinessHours)
 	}
 
 	common.SuccessResponse(c, http.StatusOK, settings)
 }
 
-// UpdateSiteSettings updates site settings
+// UpdateSiteSettings updates site settings (admin)
 func (h *SettingsHandler) UpdateSiteSettings(c *gin.Context) {
-	var req models.UpdateSettingsRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ValidationErrorResponse(c, &errors.ValidationError{
-			Message: "Invalid request body",
-			Fields:  map[string]string{"error": err.Error()},
-		})
+	if h == nil || database.SupabaseClient == nil {
+		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
 		return
 	}
 
-	ctx := context.Background()
-
-	// Get current settings
-	var currentSettings models.SiteSettings
-	var socialLinksJSON, seoSettingsJSON, businessHoursJSON []byte
-
-	err := h.db.QueryRow(ctx,
-		`SELECT id, site_name, site_description, logo_url, favicon_url, contact_email, contact_phone,
-		       contact_address, whatsapp_number, social_links, seo_settings, business_hours, updated_at
-		 FROM site_settings
-		 ORDER BY updated_at DESC
-		 LIMIT 1`).Scan(
-		&currentSettings.ID, &currentSettings.SiteName, &currentSettings.SiteDescription,
-		&currentSettings.LogoURL, &currentSettings.FaviconURL, &currentSettings.ContactEmail,
-		&currentSettings.ContactPhone, &currentSettings.ContactAddress, &currentSettings.WhatsAppNumber,
-		&socialLinksJSON, &seoSettingsJSON, &businessHoursJSON, &currentSettings.UpdatedAt,
-	)
-
-	socialLinks := make(map[string]string)
-	seoSettings := make(map[string]string)
-	businessHours := make(map[string]string)
-
-	if err == nil {
-		json.Unmarshal(socialLinksJSON, &socialLinks)
-		json.Unmarshal(seoSettingsJSON, &seoSettings)
-		json.Unmarshal(businessHoursJSON, &businessHours)
+	var req models.UpdateSettingsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		validationErr := errors.NewValidationError("Invalid request body")
+		validationErr.AddField("error", err.Error())
+		common.ValidationErrorResponse(c, validationErr)
+		return
 	}
 
-	// Update fields with provided values
-	if req.SiteName != nil {
-		currentSettings.SiteName = *req.SiteName
+	// Handle simple string fields
+	stringFields := map[string]*string{
+		"site_name":        req.SiteName,
+		"site_description": req.SiteDescription,
+		"logo_url":         req.LogoURL,
+		"favicon_url":      req.FaviconURL,
+		"contact_email":    req.ContactEmail,
+		"contact_phone":    req.ContactPhone,
+		"contact_address":  req.ContactAddress,
+		"whatsapp_number":  req.WhatsAppNumber,
 	}
-	if req.SiteDescription != nil {
-		currentSettings.SiteDescription = *req.SiteDescription
+
+	for key, value := range stringFields {
+		if value != nil {
+			// Fetch existing setting
+			filters := map[string]string{
+				"setting_key": key,
+			}
+			data, err := database.SupabaseClient.Select("site_settings", filters)
+
+			updateData := map[string]interface{}{
+				"setting_key":   key,
+				"setting_value": *value,
+			}
+
+			if len(data) > 0 {
+				// Update existing setting
+				if id, ok := data[0]["id"].(string); ok {
+					_, err = database.SupabaseClient.Update("site_settings", id, updateData)
+					if err != nil {
+						common.ErrorResponse(c, err)
+						return
+					}
+				}
+			} else {
+				// Create new setting
+				_, err = database.SupabaseClient.Insert("site_settings", updateData)
+				if err != nil {
+					common.ErrorResponse(c, err)
+					return
+				}
+			}
+		}
 	}
-	if req.LogoURL != nil {
-		currentSettings.LogoURL = *req.LogoURL
-	}
-	if req.FaviconURL != nil {
-		currentSettings.FaviconURL = *req.FaviconURL
-	}
-	if req.ContactEmail != nil {
-		currentSettings.ContactEmail = *req.ContactEmail
-	}
-	if req.ContactPhone != nil {
-		currentSettings.ContactPhone = *req.ContactPhone
-	}
-	if req.ContactAddress != nil {
-		currentSettings.ContactAddress = *req.ContactAddress
-	}
-	if req.WhatsAppNumber != nil {
-		currentSettings.WhatsAppNumber = *req.WhatsAppNumber
-	}
+
+	// Handle complex fields (maps) - store as JSON
 	if req.SocialLinks != nil {
-		socialLinks = req.SocialLinks
+		socialJSON, _ := json.Marshal(req.SocialLinks)
+		updateSetting(h, "social_links", string(socialJSON))
 	}
+
 	if req.SEOSettings != nil {
-		seoSettings = req.SEOSettings
+		seoJSON, _ := json.Marshal(req.SEOSettings)
+		updateSetting(h, "seo_settings", string(seoJSON))
 	}
+
 	if req.BusinessHours != nil {
-		businessHours = req.BusinessHours
+		hoursJSON, _ := json.Marshal(req.BusinessHours)
+		updateSetting(h, "business_hours", string(hoursJSON))
 	}
 
-	// Convert maps to JSON
-	socialLinksNewJSON, _ := json.Marshal(socialLinks)
-	seoSettingsNewJSON, _ := json.Marshal(seoSettings)
-	businessHoursNewJSON, _ := json.Marshal(businessHours)
+	common.MessageResponse(c, http.StatusOK, "Settings updated successfully")
+}
 
-	// Update or insert settings
-	if currentSettings.ID != "" {
-		// Update existing
-		_, err = h.db.Exec(ctx,
-			`UPDATE site_settings
-			 SET site_name = $1, site_description = $2, logo_url = $3, favicon_url = $4, contact_email = $5,
-			     contact_phone = $6, contact_address = $7, whatsapp_number = $8, social_links = $9,
-			     seo_settings = $10, business_hours = $11, updated_at = NOW()
-			 WHERE id = $12`,
-			currentSettings.SiteName, currentSettings.SiteDescription, currentSettings.LogoURL,
-			currentSettings.FaviconURL, currentSettings.ContactEmail, currentSettings.ContactPhone,
-			currentSettings.ContactAddress, currentSettings.WhatsAppNumber, socialLinksNewJSON,
-			seoSettingsNewJSON, businessHoursNewJSON, currentSettings.ID)
+// GetSettingByKey retrieves a setting by key
+func (h *SettingsHandler) GetSettingByKey(c *gin.Context) {
+	if h == nil || database.SupabaseClient == nil {
+		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
+		return
+	}
+
+	key := c.Param("key")
+
+	// Fetch from Supabase
+	filters := map[string]string{
+		"setting_key": key,
+	}
+
+	data, err := database.SupabaseClient.Select("site_settings", filters)
+	if err != nil {
+		common.ErrorResponse(c, errors.NotFound("setting not found"))
+		return
+	}
+
+	if len(data) == 0 {
+		common.ErrorResponse(c, errors.NotFound("setting not found"))
+		return
+	}
+
+	common.SuccessResponse(c, http.StatusOK, data[0])
+}
+
+// UpdateSetting updates a single setting (admin)
+func (h *SettingsHandler) UpdateSetting(c *gin.Context) {
+	if h == nil || database.SupabaseClient == nil {
+		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
+		return
+	}
+
+	key := c.Param("key")
+	var req struct {
+		Value interface{} `json:"value"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		validationErr := errors.NewValidationError("Invalid request body")
+		validationErr.AddField("error", err.Error())
+		common.ValidationErrorResponse(c, validationErr)
+		return
+	}
+
+	// Convert value to string for storage
+	var valueStr string
+	switch v := req.Value.(type) {
+	case string:
+		valueStr = v
+	case float64, bool:
+		valueStr = fmt.Sprintf("%v", v)
+	case map[string]interface{}:
+		jsonBytes, _ := json.Marshal(v)
+		valueStr = string(jsonBytes)
+	default:
+		jsonBytes, _ := json.Marshal(req.Value)
+		valueStr = string(jsonBytes)
+	}
+
+	// Fetch existing setting
+	filters := map[string]string{
+		"setting_key": key,
+	}
+	data, err := database.SupabaseClient.Select("site_settings", filters)
+
+	updateData := map[string]interface{}{
+		"setting_key":   key,
+		"setting_value": valueStr,
+	}
+
+	if len(data) > 0 {
+		// Update existing setting
+		if id, ok := data[0]["id"].(string); ok {
+			_, err = database.SupabaseClient.Update("site_settings", id, updateData)
+		}
 	} else {
-		// Create new
-		err = h.db.QueryRow(ctx,
-			`INSERT INTO site_settings (site_name, site_description, logo_url, favicon_url, contact_email,
-			     contact_phone, contact_address, whatsapp_number, social_links, seo_settings, business_hours, updated_at)
-			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
-			 RETURNING id, updated_at`,
-			currentSettings.SiteName, currentSettings.SiteDescription, currentSettings.LogoURL,
-			currentSettings.FaviconURL, currentSettings.ContactEmail, currentSettings.ContactPhone,
-			currentSettings.ContactAddress, currentSettings.WhatsAppNumber, socialLinksNewJSON,
-			seoSettingsNewJSON, businessHoursNewJSON).Scan(
-			&currentSettings.ID, &currentSettings.UpdatedAt)
+		// Create new setting
+		_, err = database.SupabaseClient.Insert("site_settings", updateData)
 	}
 
 	if err != nil {
@@ -178,10 +241,30 @@ func (h *SettingsHandler) UpdateSiteSettings(c *gin.Context) {
 		return
 	}
 
-	// Return updated settings
-	currentSettings.SocialLinks = socialLinks
-	currentSettings.SEOSettings = seoSettings
-	currentSettings.BusinessHours = businessHours
+	common.MessageResponse(c, http.StatusOK, "Setting updated successfully")
+}
 
-	common.SuccessResponse(c, http.StatusOK, currentSettings)
+// Helper function to update a single setting
+func updateSetting(h *SettingsHandler, key string, value string) {
+	filters := map[string]string{
+		"setting_key": key,
+	}
+	data, err := database.SupabaseClient.Select("site_settings", filters)
+
+	updateData := map[string]interface{}{
+		"setting_key":   key,
+		"setting_value": value,
+	}
+
+	if len(data) > 0 {
+		if id, ok := data[0]["id"].(string); ok {
+			_, err = database.SupabaseClient.Update("site_settings", id, updateData)
+		}
+	} else {
+		_, err = database.SupabaseClient.Insert("site_settings", updateData)
+	}
+
+	if err != nil {
+		return
+	}
 }
