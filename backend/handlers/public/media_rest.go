@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"dreamscape-backend/db"
+	"dreamscape-backend/backend/supabase"
 	"dreamscape-backend/backend/database"
 	"dreamscape-backend/backend/handlers/common"
 	"dreamscape-backend/pkg/errors"
@@ -13,7 +13,7 @@ import (
 
 // MediaHandlerREST handles media endpoints using Supabase REST API
 type MediaHandlerREST struct {
-	client *db.Client
+	client *supabase.Client
 }
 
 // NewMediaHandlerREST creates a new media handler using Supabase REST API
