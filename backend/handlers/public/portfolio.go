@@ -398,7 +398,7 @@ func (h *PortfolioHandler) CreatePortfolioItem(c *gin.Context) {
 	}
 
 	// Use Supabase client for write operations
-	client := database.GetClient()
+	client := database.SupabaseClient
 	if client == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database client unavailable"})
 		return
@@ -474,7 +474,7 @@ func (h *PortfolioHandler) UpdatePortfolioItem(c *gin.Context) {
 		return
 	}
 
-	client := database.GetClient()
+	client := database.SupabaseClient
 	if client == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database client unavailable"})
 		return
@@ -572,7 +572,7 @@ func (h *PortfolioHandler) UpdatePortfolioItem(c *gin.Context) {
 func (h *PortfolioHandler) DeletePortfolioItem(c *gin.Context) {
 	id := c.Param("id")
 
-	client := database.GetClient()
+	client := database.SupabaseClient
 	if client == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database client unavailable"})
 		return
