@@ -62,7 +62,8 @@ func (h *EventHandler) getEventsViaPostgreSQL(c *gin.Context) {
 		WHERE status = 'published'
 		ORDER BY display_order ASC, created_at DESC`
 
-	rows, err := h.pool.Query(ctx, query)
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to Supabase REST API"})
+		return
 	if err != nil {
 		log.Printf("Error querying events: %v", err)
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to retrieve events"})
@@ -127,32 +128,7 @@ func (h *EventHandler) getEventByIDViaSupabase(c *gin.Context, id string) {
 }
 
 func (h *EventHandler) getEventByIDViaPostgreSQL(c *gin.Context, id string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	query := `SELECT id, slug, title, client_name, event_date, event_type, location,
-		       description, images, featured_image, gallery_images, budget, guest_count,
-		       vendors, testimonial, meta_title, meta_description, status, display_order,
-		       created_at, updated_at
-		FROM events
-		WHERE id = $1 AND status = 'published'`
-
-	var event models.Event
-	err := h.pool.QueryRow(ctx, query, id).Scan(
-		&event.ID, &event.Slug, &event.Title, &event.ClientName, &event.EventDate,
-		&event.EventType, &event.Location, &event.Description, &event.Images,
-		&event.FeaturedImage, &event.GalleryImages, &event.Budget, &event.GuestCount,
-		&event.Vendors, &event.Testimonial, &event.MetaTitle, &event.MetaDescription,
-		&event.Status, &event.DisplayOrder, &event.CreatedAt, &event.UpdatedAt,
-	)
-
-	if err != nil {
-		log.Printf("Error querying event by ID: %v", err)
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Event not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, models.EventItemResponse{Item: event})
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to Supabase REST API"})
 }
 
 func (h *EventHandler) GetEventBySlug(c *gin.Context) {
@@ -195,44 +171,11 @@ func (h *EventHandler) getEventBySlugViaSupabase(c *gin.Context, slug string) {
 }
 
 func (h *EventHandler) getEventBySlugViaPostgreSQL(c *gin.Context, slug string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	query := `SELECT id, slug, title, client_name, event_date, event_type, location,
-		       description, images, featured_image, gallery_images, budget, guest_count,
-		       vendors, testimonial, meta_title, meta_description, status, display_order,
-		       created_at, updated_at
-		FROM events
-		WHERE slug = $1 AND status = 'published'`
-
-	var event models.Event
-	err := h.pool.QueryRow(ctx, query, slug).Scan(
-		&event.ID, &event.Slug, &event.Title, &event.ClientName, &event.EventDate,
-		&event.EventType, &event.Location, &event.Description, &event.Images,
-		&event.FeaturedImage, &event.GalleryImages, &event.Budget, &event.GuestCount,
-		&event.Vendors, &event.Testimonial, &event.MetaTitle, &event.MetaDescription,
-		&event.Status, &event.DisplayOrder, &event.CreatedAt, &event.UpdatedAt,
-	)
-
-	if err != nil {
-		log.Printf("Error querying event by slug: %v", err)
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Event not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, models.EventItemResponse{Item: event})
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to Supabase REST API"})
 }
 
 func (h *EventHandler) CreateEvent(c *gin.Context) {
-	if database.GetClient() != nil {
-		h.createEventViaSupabase(c)
-		return
-	}
-	if false {
-		h.createEventViaPostgreSQL(c)
-		return
-	}
-	c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "No database connection available"})
+	h.createEventViaSupabase(c)
 }
 
 func (h *EventHandler) createEventViaSupabase(c *gin.Context) {
@@ -300,7 +243,8 @@ func (h *EventHandler) createEventViaPostgreSQL(c *gin.Context) {
 		          created_at, updated_at`
 
 	var event models.Event
-	err := h.pool.QueryRow(ctx, query,
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "Direct database access removed, using Supabase REST API"})
+		return
 		req.Slug, req.Title, req.ClientName, req.EventDate, req.EventType, req.Location,
 		req.Description, req.Images, req.FeaturedImage, req.GalleryImages, req.Budget,
 		req.GuestCount, req.Vendors, req.Testimonial, req.MetaTitle, req.MetaDescription,
@@ -324,15 +268,7 @@ func (h *EventHandler) createEventViaPostgreSQL(c *gin.Context) {
 
 func (h *EventHandler) UpdateEvent(c *gin.Context) {
 	id := c.Param("id")
-	if database.GetClient() != nil {
-		h.updateEventViaSupabase(c, id)
-		return
-	}
-	if false {
-		h.updateEventViaPostgreSQL(c, id)
-		return
-	}
-	c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "No database connection available"})
+	h.updateEventViaSupabase(c, id)
 }
 
 func (h *EventHandler) updateEventViaSupabase(c *gin.Context, id string) {
@@ -522,7 +458,8 @@ func (h *EventHandler) updateEventViaPostgreSQL(c *gin.Context, id string) {
 	query += " WHERE id = $" + common.SqlParam(argCount)
 	args = append(args, id)
 
-	_, err := h.pool.Exec(ctx, query, args...)
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to Supabase REST API"})
+		return
 	if err != nil {
 		log.Printf("Error updating event: %v", err)
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to update event"})
@@ -530,7 +467,8 @@ func (h *EventHandler) updateEventViaPostgreSQL(c *gin.Context, id string) {
 	}
 
 	var event models.Event
-	err = h.pool.QueryRow(ctx,
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "Direct database access removed, using Supabase REST API"})
+		return
 		`SELECT id, slug, title, client_name, event_date, event_type, location,
 		       description, images, featured_image, gallery_images, budget, guest_count,
 		       vendors, testimonial, meta_title, meta_description, status, display_order,
@@ -553,15 +491,7 @@ func (h *EventHandler) updateEventViaPostgreSQL(c *gin.Context, id string) {
 
 func (h *EventHandler) DeleteEvent(c *gin.Context) {
 	id := c.Param("id")
-	if database.GetClient() != nil {
-		h.deleteEventViaSupabase(c, id)
-		return
-	}
-	if false {
-		h.deleteEventViaPostgreSQL(c, id)
-		return
-	}
-	c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "No database connection available"})
+	h.deleteEventViaSupabase(c, id)
 }
 
 func (h *EventHandler) deleteEventViaSupabase(c *gin.Context, id string) {
@@ -584,7 +514,8 @@ func (h *EventHandler) deleteEventViaPostgreSQL(c *gin.Context, id string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	result, err := h.pool.Exec(ctx, "DELETE FROM events WHERE id = $1", id)
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "Direct database access removed, using Supabase REST API"})
+		return
 	if err != nil {
 		log.Printf("Error deleting event: %v", err)
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to delete event"})

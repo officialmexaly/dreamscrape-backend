@@ -36,7 +36,7 @@ func (h *CompleteBookingHandler) GetBookings(c *gin.Context) {
 		return
 	}
 
-	if h.pool != nil {
+	if false {
 		h.getBookingsViaPostgreSQL(c)
 		return
 	}
@@ -83,7 +83,8 @@ func (h *CompleteBookingHandler) getBookingsViaPostgreSQL(c *gin.Context) {
 		FROM bookings
 		ORDER BY created_at DESC`
 
-	rows, err := h.pool.Query(ctx, query)
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to the new booking system"})
+		return
 	if err != nil {
 		log.Printf("Error querying bookings: %v", err)
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to retrieve bookings"})
@@ -131,7 +132,7 @@ func (h *CompleteBookingHandler) GetBookingByID(c *gin.Context) {
 		return
 	}
 
-	if h.pool != nil {
+	if false {
 		h.getBookingByIDViaPostgreSQL(c, id)
 		return
 	}
@@ -168,31 +169,7 @@ func (h *CompleteBookingHandler) getBookingByIDViaSupabase(c *gin.Context, id st
 }
 
 func (h *CompleteBookingHandler) getBookingByIDViaPostgreSQL(c *gin.Context, id string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	query := `SELECT id, first_name, last_name, email, phone, event_date, event_location,
-		       event_types, budget, guests, how_did_you_hear, additional_details,
-		       consultation_date, consultation_time, file_urls, file_names, created_at, updated_at
-		FROM bookings
-		WHERE id = $1`
-
-	var booking models.Booking
-	err := h.pool.QueryRow(ctx, query, id).Scan(
-		&booking.ID, &booking.FirstName, &booking.LastName, &booking.Email, &booking.Phone,
-		&booking.EventDate, &booking.EventLocation, &booking.EventTypes, &booking.Budget,
-		&booking.Guests, &booking.HowDidYouHear, &booking.AdditionalDetails,
-		&booking.ConsultationDate, &booking.ConsultationTime, &booking.FileURLs,
-		&booking.FileNames, &booking.CreatedAt, &booking.UpdatedAt,
-	)
-
-	if err != nil {
-		log.Printf("Error querying booking by ID: %v", err)
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Booking not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, models.BookingItemResponse{Item: booking})
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to the new booking system"})
 }
 
 // UpdateBooking updates an existing booking (admin only)
@@ -216,7 +193,7 @@ func (h *CompleteBookingHandler) UpdateBooking(c *gin.Context) {
 		return
 	}
 
-	if h.pool != nil {
+	if false {
 		h.updateBookingViaPostgreSQL(c, id)
 		return
 	}
@@ -387,7 +364,8 @@ func (h *CompleteBookingHandler) updateBookingViaPostgreSQL(c *gin.Context, id s
 	args = append(args, id)
 
 	var booking models.Booking
-	err := h.pool.QueryRow(ctx, query, args...).Scan(
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to the new booking system"})
+		return
 		&booking.ID, &booking.FirstName, &booking.LastName, &booking.Email, &booking.Phone,
 		&booking.EventDate, &booking.EventLocation, &booking.EventTypes, &booking.Budget,
 		&booking.Guests, &booking.HowDidYouHear, &booking.AdditionalDetails,
@@ -423,7 +401,7 @@ func (h *CompleteBookingHandler) DeleteBooking(c *gin.Context) {
 		return
 	}
 
-	if h.pool != nil {
+	if false {
 		h.deleteBookingViaPostgreSQL(c, id)
 		return
 	}
@@ -456,7 +434,8 @@ func (h *CompleteBookingHandler) deleteBookingViaPostgreSQL(c *gin.Context, id s
 	defer cancel()
 
 	query := "DELETE FROM bookings WHERE id = $1"
-	result, err := h.pool.Exec(ctx, query, id)
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to the new booking system"})
+		return
 	if err != nil {
 		log.Printf("Error deleting booking: %v", err)
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to delete booking"})
