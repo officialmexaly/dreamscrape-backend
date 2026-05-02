@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"dreamscape-backend/backend/database"
 	"dreamscape-backend/backend/models"
@@ -16,23 +15,14 @@ import (
 
 // EventHandler handles public event operations
 type EventHandler struct {
-	pool *pgxpool.Pool
 }
 
 func NewEventHandler() *EventHandler {
-	return &EventHandler{pool: database.GetPool()}
+	return &EventHandler{}
 }
 
 func (h *EventHandler) GetEvents(c *gin.Context) {
-	if database.GetClient() != nil {
-		h.getEventsViaSupabase(c)
-		return
-	}
-	if h.pool != nil {
-		h.getEventsViaPostgreSQL(c)
-		return
-	}
-	c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "No database connection available"})
+	h.getEventsViaSupabase(c)
 }
 
 func (h *EventHandler) getEventsViaSupabase(c *gin.Context) {
@@ -107,10 +97,6 @@ func (h *EventHandler) GetEventByID(c *gin.Context) {
 		h.getEventByIDViaSupabase(c, id)
 		return
 	}
-	if h.pool != nil {
-		h.getEventByIDViaPostgreSQL(c, id)
-		return
-	}
 	c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "No database connection available"})
 }
 
@@ -175,7 +161,7 @@ func (h *EventHandler) GetEventBySlug(c *gin.Context) {
 		h.getEventBySlugViaSupabase(c, slug)
 		return
 	}
-	if h.pool != nil {
+	if false {
 		h.getEventBySlugViaPostgreSQL(c, slug)
 		return
 	}
@@ -242,7 +228,7 @@ func (h *EventHandler) CreateEvent(c *gin.Context) {
 		h.createEventViaSupabase(c)
 		return
 	}
-	if h.pool != nil {
+	if false {
 		h.createEventViaPostgreSQL(c)
 		return
 	}
@@ -342,7 +328,7 @@ func (h *EventHandler) UpdateEvent(c *gin.Context) {
 		h.updateEventViaSupabase(c, id)
 		return
 	}
-	if h.pool != nil {
+	if false {
 		h.updateEventViaPostgreSQL(c, id)
 		return
 	}
@@ -571,7 +557,7 @@ func (h *EventHandler) DeleteEvent(c *gin.Context) {
 		h.deleteEventViaSupabase(c, id)
 		return
 	}
-	if h.pool != nil {
+	if false {
 		h.deleteEventViaPostgreSQL(c, id)
 		return
 	}

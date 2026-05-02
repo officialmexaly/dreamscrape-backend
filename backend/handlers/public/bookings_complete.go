@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"dreamscape-backend/backend/database"
 	"dreamscape-backend/backend/models"
 	"dreamscape-backend/backend/handlers/common"
@@ -15,14 +14,11 @@ import (
 
 // CompleteBookingHandler handles complete booking CRUD operations
 type CompleteBookingHandler struct {
-	pool *pgxpool.Pool
 }
 
 // NewCompleteBookingHandler creates a new complete booking handler
 func NewCompleteBookingHandler() *CompleteBookingHandler {
-	return &CompleteBookingHandler{
-		pool: database.GetPool(),
-	}
+	return &CompleteBookingHandler{}
 }
 
 // GetBookings retrieves all bookings (admin only)

@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"dreamscape-backend/db"
+	"dreamscape-backend/backend/supabase"
 	"dreamscape-backend/backend/database"
 	"dreamscape-backend/backend/handlers/common"
 	"dreamscape-backend/pkg/errors"
@@ -14,11 +14,11 @@ import (
 
 // UtilitiesHandler handles utility endpoints
 type UtilitiesHandler struct {
-	client *db.Client
+	client *supabase.Client
 }
 
 // NewUtilitiesHandler creates a new utilities handler
-func NewUtilitiesHandler(client *db.Client) *UtilitiesHandler {
+func NewUtilitiesHandler(client *supabase.Client) *UtilitiesHandler {
 	return &UtilitiesHandler{client: client}
 }
 

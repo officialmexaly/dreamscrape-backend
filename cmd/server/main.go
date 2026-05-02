@@ -103,8 +103,9 @@ func main() {
 	eventHandler := public.NewEventHandler()
 	serviceHandler := public.NewServiceHandler()
 	completeBookingHandler := public.NewCompleteBookingHandler()
-	contentHandler := public.NewContentHandler(database.GetPool())
-	settingsHandler := public.NewSettingsHandler(database.GetPool())
+	bookingSystemHandler := public.NewBookingSystemHandler()
+	contentHandler := public.NewContentHandler(database.SupabaseClient)
+	settingsHandler := public.NewSettingsHandler(database.SupabaseClient)
 	mediaHandler := public.NewMediaStorageHandler()
 
 	// Initialize auth handlers
@@ -171,6 +172,15 @@ func main() {
 		public.GET("/content/key/:key", contentHandler.GetContentByKey)
 		public.GET("/settings", settingsHandler.GetSiteSettings)
 
+		// Booking routes (public)
+		public.GET("/bookings/availability", bookingSystemHandler.GetAvailability)
+		public.GET("/bookings/taken-slots", bookingSystemHandler.GetTakenSlots)
+		public.POST("/bookings", bookingSystemHandler.CreateBooking)
+		public.GET("/bookings", bookingSystemHandler.GetBookings)
+		public.GET("/bookings/:id", bookingSystemHandler.GetBookingByID)
+		public.PUT("/bookings/:id", bookingSystemHandler.UpdateBooking)
+		public.DELETE("/bookings/:id", bookingSystemHandler.DeleteBooking)
+
 		// Temporary test endpoint for media storage (no auth required)
 		public.GET("/media-test", mediaHandler.GetMediaLibrary)
 	}
@@ -227,6 +237,19 @@ func main() {
 		adminAPI.PUT("/users/:id", authHandler.UpdateUser)
 		adminAPI.DELETE("/users/:id", authHandler.DeleteUser)
 		adminAPI.PUT("/users/:id/status", authHandler.UpdateUserStatus)
+
+		// Content management routes (admin)
+		adminAPI.GET("/content", contentHandler.AdminGetContent)
+		adminAPI.POST("/content", contentHandler.CreateContent)
+		adminAPI.GET("/content/:id", contentHandler.GetContentByKey)
+		adminAPI.PUT("/content/:id", contentHandler.UpdateContent)
+		adminAPI.DELETE("/content/:id", contentHandler.DeleteContent)
+
+		// Settings management routes (admin)
+		adminAPI.GET("/settings", settingsHandler.GetSiteSettings)
+		adminAPI.PUT("/settings", settingsHandler.UpdateSiteSettings)
+		adminAPI.GET("/settings/:key", settingsHandler.GetSettingByKey)
+		adminAPI.PUT("/settings/:key", settingsHandler.UpdateSetting)
 
 		// Database utilities
 		adminAPI.GET("/db/tables", utilsHandler.GetDatabaseTables)
