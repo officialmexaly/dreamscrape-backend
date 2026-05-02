@@ -223,47 +223,7 @@ func (h *EventHandler) createEventViaSupabase(c *gin.Context) {
 }
 
 func (h *EventHandler) createEventViaPostgreSQL(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var req models.CreateEventRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid request body: " + err.Error()})
-		return
-	}
-
-	query := `INSERT INTO events (id, slug, title, client_name, event_date, event_type, location,
-		                   description, images, featured_image, gallery_images, budget,
-		                   guest_count, vendors, testimonial, meta_title, meta_description,
-		                   status, display_order)
-		VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-		RETURNING id, slug, title, client_name, event_date, event_type, location, description,
-		          images, featured_image, gallery_images, budget, guest_count, vendors,
-		          testimonial, meta_title, meta_description, status, display_order,
-		          created_at, updated_at`
-
-	var event models.Event
 	c.JSON(http.StatusNotImplemented, gin.H{"error": "Direct database access removed, using Supabase REST API"})
-		return
-		req.Slug, req.Title, req.ClientName, req.EventDate, req.EventType, req.Location,
-		req.Description, req.Images, req.FeaturedImage, req.GalleryImages, req.Budget,
-		req.GuestCount, req.Vendors, req.Testimonial, req.MetaTitle, req.MetaDescription,
-		req.Status, req.DisplayOrder,
-	).Scan(
-		&event.ID, &event.Slug, &event.Title, &event.ClientName, &event.EventDate,
-		&event.EventType, &event.Location, &event.Description, &event.Images,
-		&event.FeaturedImage, &event.GalleryImages, &event.Budget, &event.GuestCount,
-		&event.Vendors, &event.Testimonial, &event.MetaTitle, &event.MetaDescription,
-		&event.Status, &event.DisplayOrder, &event.CreatedAt, &event.UpdatedAt,
-	)
-
-	if err != nil {
-		log.Printf("Error creating event: %v", err)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to create event"})
-		return
-	}
-
-	c.JSON(http.StatusCreated, models.EventItemResponse{Item: event})
 }
 
 func (h *EventHandler) UpdateEvent(c *gin.Context) {
@@ -511,21 +471,5 @@ func (h *EventHandler) deleteEventViaSupabase(c *gin.Context, id string) {
 }
 
 func (h *EventHandler) deleteEventViaPostgreSQL(c *gin.Context, id string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	c.JSON(http.StatusNotImplemented, gin.H{"error": "Direct database access removed, using Supabase REST API"})
-		return
-	if err != nil {
-		log.Printf("Error deleting event: %v", err)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to delete event"})
-		return
-	}
-
-	if result.RowsAffected() == 0 {
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Event not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, models.SuccessResponse{Success: true, Message: "Event deleted successfully"})
 }
