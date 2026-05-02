@@ -28,7 +28,7 @@ func NewClient() (*supabase.Client, error) {
 		return nil, fmt.Errorf("failed to create Supabase client: %w", err)
 	}
 
-	log.Println("✅ Supabase REST API client initialized")
+	log.Println("Supabase REST API client initialized")
 	return client, nil
 }
 
@@ -59,7 +59,7 @@ func TestConnection() error {
 		return fmt.Errorf("failed to parse test response: %w", err)
 	}
 
-	log.Printf("✅ Supabase connection test successful! Found %d portfolio items", len(results))
+	log.Printf("Supabase connection test successful! Found %d portfolio items", len(results))
 	return nil
 }
 

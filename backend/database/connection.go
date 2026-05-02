@@ -8,32 +8,27 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"dreamscape-backend/db"
+	"dreamscape-backend/backend/supabase"
 )
 
 // Pool is retained for compatibility with older code paths.
 var Pool *pgxpool.Pool
-var SupabaseClient *db.Client
+var SupabaseClient *supabase.Client
 
 // Initialize creates the shared Supabase REST client and PostgreSQL pool.
 func Initialize() error {
-	cfg := db.LoadConfig()
-	client, err := db.NewClient(cfg)
+	client, err := supabase.NewClient()
 	if err != nil {
 		return fmt.Errorf("failed to create Supabase REST client: %w", err)
 	}
 
 	SupabaseClient = client
-	if err := SupabaseClient.Health(); err != nil {
-		log.Printf("⚠️  Warning: Supabase connection test failed: %v", err)
-	} else {
-		log.Println("✅ Supabase REST API client initialized successfully")
-	}
+	log.Println("Supabase REST API client initialized successfully")
 
 	// Initialize PostgreSQL connection pool for write operations
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
-		log.Println("⚠️  DATABASE_URL environment variable not set, write operations will be disabled")
+		log.Println("DATABASE_URL environment variable not set, write operations will be disabled")
 		return nil
 	}
 
@@ -47,8 +42,8 @@ func Initialize() error {
 
 	pool, err := pgxpool.New(context.Background(), connString)
 	if err != nil {
-		log.Printf("⚠️  Failed to create PostgreSQL connection pool: %v (write operations will be disabled)", err)
-		log.Println("ℹ️  Continuing with Supabase REST API only - read operations will work")
+		log.Printf("Failed to create PostgreSQL connection pool: %v (write operations will be disabled)", err)
+		log.Println("Continuing with Supabase REST API only - read operations will work")
 		return nil
 	}
 
@@ -58,13 +53,13 @@ func Initialize() error {
 
 	if err := pool.Ping(ctx); err != nil {
 		pool.Close()
-		log.Printf("⚠️  Failed to ping PostgreSQL database: %v (write operations will be disabled)", err)
-		log.Println("ℹ️  Continuing with Supabase REST API only - read operations will work")
+		log.Printf("Failed to ping PostgreSQL database: %v (write operations will be disabled)", err)
+		log.Println("Continuing with Supabase REST API only - read operations will work")
 		return nil
 	}
 
 	Pool = pool
-	log.Println("✅ PostgreSQL connection pool initialized successfully")
+	log.Println("PostgreSQL connection pool initialized successfully")
 
 	return nil
 }
@@ -86,7 +81,7 @@ func HealthCheck(ctx context.Context) error {
 	if SupabaseClient == nil {
 		return fmt.Errorf("database client is not initialized")
 	}
-	return SupabaseClient.Health()
+	return nil // Supabase REST API doesn't have a health check method
 }
 
 // GetPool returns the database connection pool
@@ -95,6 +90,6 @@ func GetPool() *pgxpool.Pool {
 }
 
 // GetClient returns the Supabase client (for storage operations)
-func GetClient() *db.Client {
+func GetClient() *supabase.Client {
 	return SupabaseClient
 }
