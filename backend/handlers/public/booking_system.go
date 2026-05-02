@@ -15,22 +15,19 @@ import (
 	"dreamscape-backend/backend/database"
 	"dreamscape-backend/backend/handlers/common"
 	"dreamscape-backend/backend/models"
-	"dreamscape-backend/backend/supabase"
 	"dreamscape-backend/pkg/config"
 	"dreamscape-backend/pkg/errors"
 )
 
 // BookingSystemHandler handles complete booking operations with Calendly integration
 type BookingSystemHandler struct {
-	supabaseClient *supabase.Client
-	calendlyToken  string
+	calendlyToken string
 }
 
 // NewBookingSystemHandler creates a new booking system handler
 func NewBookingSystemHandler() *BookingSystemHandler {
 	return &BookingSystemHandler{
-		supabaseClient: database.SupabaseClient,
-		calendlyToken:  config.AppConfig.CalendlyToken,
+		calendlyToken: config.AppConfig.CalendlyToken,
 	}
 }
 
@@ -47,7 +44,7 @@ type CalendlyAvailability struct {
 
 // CreateBooking creates a new consultation booking with Calendly integration
 func (h *BookingSystemHandler) CreateBooking(c *gin.Context) {
-	if h.supabaseClient == nil {
+	if database.SupabaseClient == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
 		return
 	}
@@ -80,7 +77,7 @@ func (h *BookingSystemHandler) CreateBooking(c *gin.Context) {
 		"consultation_time": req.ConsultationTime,
 	}
 
-	existing, _ := h.supabaseClient.Select("bookings", filters)
+	existing, _ := database.SupabaseClient.Select("bookings", filters)
 	if len(existing) > 0 {
 		common.ErrorResponse(c, errors.Conflict("This time slot is already booked"))
 		return
@@ -130,7 +127,7 @@ func (h *BookingSystemHandler) CreateBooking(c *gin.Context) {
 	}
 
 	// Insert via Supabase
-	result, err := h.supabaseClient.Insert("bookings", bookingData)
+	result, err := database.SupabaseClient.Insert("bookings", bookingData)
 	if err != nil {
 		log.Printf("Error creating booking: %v", err)
 		common.ErrorResponse(c, errors.InternalServerError("Failed to create booking"))
@@ -245,7 +242,7 @@ func (h *BookingSystemHandler) getCalendlyAvailability(startDate, endDate string
 
 // GetAvailability checks availability for a date range
 func (h *BookingSystemHandler) GetAvailability(c *gin.Context) {
-	if h.supabaseClient == nil {
+	if database.SupabaseClient == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
 		return
 	}
@@ -276,7 +273,7 @@ func (h *BookingSystemHandler) GetAvailability(c *gin.Context) {
 		"consultation_date": fmt.Sprintf("gte.%s", startDate),
 	}
 
-	bookingsData, err := h.supabaseClient.Select("bookings", filters)
+	bookingsData, err := database.SupabaseClient.Select("bookings", filters)
 	if err != nil {
 		log.Printf("Error querying bookings: %v", err)
 		common.ErrorResponse(c, errors.InternalServerError("Failed to check availability"))
@@ -354,7 +351,7 @@ func (h *BookingSystemHandler) GetAvailability(c *gin.Context) {
 
 // GetTakenSlots gets already booked slots for a specific date
 func (h *BookingSystemHandler) GetTakenSlots(c *gin.Context) {
-	if h.supabaseClient == nil {
+	if database.SupabaseClient == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
 		return
 	}
@@ -377,7 +374,7 @@ func (h *BookingSystemHandler) GetTakenSlots(c *gin.Context) {
 		"consultation_date": date,
 	}
 
-	bookingsData, err := h.supabaseClient.Select("bookings", filters)
+	bookingsData, err := database.SupabaseClient.Select("bookings", filters)
 	if err != nil {
 		log.Printf("Error querying bookings: %v", err)
 		common.ErrorResponse(c, errors.InternalServerError("Failed to get taken slots"))
@@ -404,7 +401,7 @@ func (h *BookingSystemHandler) GetTakenSlots(c *gin.Context) {
 
 // GetBookings retrieves all bookings (admin)
 func (h *BookingSystemHandler) GetBookings(c *gin.Context) {
-	if h.supabaseClient == nil {
+	if database.SupabaseClient == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
 		return
 	}
@@ -421,7 +418,7 @@ func (h *BookingSystemHandler) GetBookings(c *gin.Context) {
 		filters["consultation_date"] = date
 	}
 
-	bookingsData, err := h.supabaseClient.Select("bookings", filters)
+	bookingsData, err := database.SupabaseClient.Select("bookings", filters)
 	if err != nil {
 		log.Printf("Error querying bookings: %v", err)
 		common.ErrorResponse(c, errors.InternalServerError("Failed to retrieve bookings"))
@@ -437,7 +434,7 @@ func (h *BookingSystemHandler) GetBookings(c *gin.Context) {
 
 // GetBookingByID retrieves a booking by ID (admin)
 func (h *BookingSystemHandler) GetBookingByID(c *gin.Context) {
-	if h.supabaseClient == nil {
+	if database.SupabaseClient == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
 		return
 	}
@@ -448,7 +445,7 @@ func (h *BookingSystemHandler) GetBookingByID(c *gin.Context) {
 		"id": id,
 	}
 
-	bookingsData, err := h.supabaseClient.Select("bookings", filters)
+	bookingsData, err := database.SupabaseClient.Select("bookings", filters)
 	if err != nil {
 		log.Printf("Error querying booking: %v", err)
 		common.ErrorResponse(c, errors.InternalServerError("Failed to retrieve booking"))
@@ -468,7 +465,7 @@ func (h *BookingSystemHandler) GetBookingByID(c *gin.Context) {
 
 // UpdateBooking updates a booking (admin)
 func (h *BookingSystemHandler) UpdateBooking(c *gin.Context) {
-	if h.supabaseClient == nil {
+	if database.SupabaseClient == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
 		return
 	}
@@ -531,7 +528,7 @@ func (h *BookingSystemHandler) UpdateBooking(c *gin.Context) {
 	}
 
 	// Update via Supabase
-	result, err := h.supabaseClient.Update("bookings", id, updateData)
+	result, err := database.SupabaseClient.Update("bookings", id, updateData)
 	if err != nil {
 		log.Printf("Error updating booking: %v", err)
 		common.ErrorResponse(c, errors.NotFound("Booking not found"))
@@ -547,7 +544,7 @@ func (h *BookingSystemHandler) UpdateBooking(c *gin.Context) {
 
 // DeleteBooking deletes a booking (admin)
 func (h *BookingSystemHandler) DeleteBooking(c *gin.Context) {
-	if h.supabaseClient == nil {
+	if database.SupabaseClient == nil {
 		c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "Database connection unavailable"})
 		return
 	}
@@ -556,14 +553,14 @@ func (h *BookingSystemHandler) DeleteBooking(c *gin.Context) {
 
 	// Get booking details first to cancel Calendly event if exists
 	filters := map[string]string{"id": id}
-	bookingsData, _ := h.supabaseClient.Select("bookings", filters)
+	bookingsData, _ := database.SupabaseClient.Select("bookings", filters)
 	if len(bookingsData) > 0 {
 		if eventURI, ok := bookingsData[0]["calendly_event_uri"].(string); ok && eventURI != "" {
 			h.cancelCalendlyBooking(eventURI)
 		}
 	}
 
-	err := h.supabaseClient.Delete("bookings", id)
+	err := database.SupabaseClient.Delete("bookings", id)
 	if err != nil {
 		log.Printf("Error deleting booking: %v", err)
 		common.ErrorResponse(c, errors.NotFound("Booking not found"))
