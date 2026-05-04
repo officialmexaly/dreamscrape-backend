@@ -1,7 +1,6 @@
 package public
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"time"
@@ -10,7 +9,6 @@ import (
 
 	"dreamscape-backend/backend/database"
 	"dreamscape-backend/backend/models"
-	"dreamscape-backend/backend/handlers/common"
 )
 
 // EventHandler handles public event operations
@@ -49,47 +47,9 @@ func (h *EventHandler) getEventsViaSupabase(c *gin.Context) {
 	c.JSON(http.StatusOK, map[string]interface{}{"items": eventsData})
 }
 
+
 func (h *EventHandler) getEventsViaPostgreSQL(c *gin.Context) {
-	startTime := time.Now()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	query := `SELECT id, slug, title, client_name, event_date, event_type, location,
-		       description, images, featured_image, gallery_images, budget, guest_count,
-		       vendors, testimonial, meta_title, meta_description, status, display_order,
-		       created_at, updated_at
-		FROM events
-		WHERE status = 'published'
-		ORDER BY display_order ASC, created_at DESC`
-
 	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to Supabase REST API"})
-		return
-	if err != nil {
-		log.Printf("Error querying events: %v", err)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to retrieve events"})
-		return
-	}
-	defer rows.Close()
-
-	var events []models.Event
-	for rows.Next() {
-		var event models.Event
-		err := rows.Scan(
-			&event.ID, &event.Slug, &event.Title, &event.ClientName, &event.EventDate,
-			&event.EventType, &event.Location, &event.Description, &event.Images,
-			&event.FeaturedImage, &event.GalleryImages, &event.Budget, &event.GuestCount,
-			&event.Vendors, &event.Testimonial, &event.MetaTitle, &event.MetaDescription,
-			&event.Status, &event.DisplayOrder, &event.CreatedAt, &event.UpdatedAt,
-		)
-		if err != nil {
-			log.Printf("Error scanning event row: %v", err)
-			continue
-		}
-		events = append(events, event)
-	}
-
-	log.Printf("✅ Retrieved %d events via PostgreSQL in %v", len(events), time.Since(startTime))
-	c.JSON(http.StatusOK, models.EventsResponse{Items: events})
 }
 
 func (h *EventHandler) GetEventByID(c *gin.Context) {
@@ -311,142 +271,7 @@ func (h *EventHandler) updateEventViaSupabase(c *gin.Context, id string) {
 }
 
 func (h *EventHandler) updateEventViaPostgreSQL(c *gin.Context, id string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var req models.UpdateEventRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid request body: " + err.Error()})
-		return
-	}
-
-	query := "UPDATE events SET updated_at = NOW()"
-	args := []interface{}{}
-	argCount := 1
-
-	if req.Slug != nil {
-		query += ", slug = $" + common.SqlParam(argCount)
-		args = append(args, *req.Slug)
-		argCount++
-	}
-	if req.Title != nil {
-		query += ", title = $" + common.SqlParam(argCount)
-		args = append(args, *req.Title)
-		argCount++
-	}
-	if req.ClientName != nil {
-		query += ", client_name = $" + common.SqlParam(argCount)
-		args = append(args, *req.ClientName)
-		argCount++
-	}
-	if req.EventDate != nil {
-		query += ", event_date = $" + common.SqlParam(argCount)
-		args = append(args, *req.EventDate)
-		argCount++
-	}
-	if req.EventType != nil {
-		query += ", event_type = $" + common.SqlParam(argCount)
-		args = append(args, *req.EventType)
-		argCount++
-	}
-	if req.Location != nil {
-		query += ", location = $" + common.SqlParam(argCount)
-		args = append(args, *req.Location)
-		argCount++
-	}
-	if req.Description != nil {
-		query += ", description = $" + common.SqlParam(argCount)
-		args = append(args, *req.Description)
-		argCount++
-	}
-	if req.Images != nil {
-		query += ", images = $" + common.SqlParam(argCount)
-		args = append(args, *req.Images)
-		argCount++
-	}
-	if req.FeaturedImage != nil {
-		query += ", featured_image = $" + common.SqlParam(argCount)
-		args = append(args, *req.FeaturedImage)
-		argCount++
-	}
-	if req.GalleryImages != nil {
-		query += ", gallery_images = $" + common.SqlParam(argCount)
-		args = append(args, *req.GalleryImages)
-		argCount++
-	}
-	if req.Budget != nil {
-		query += ", budget = $" + common.SqlParam(argCount)
-		args = append(args, *req.Budget)
-		argCount++
-	}
-	if req.GuestCount != nil {
-		query += ", guest_count = $" + common.SqlParam(argCount)
-		args = append(args, *req.GuestCount)
-		argCount++
-	}
-	if req.Vendors != nil {
-		query += ", vendors = $" + common.SqlParam(argCount)
-		args = append(args, *req.Vendors)
-		argCount++
-	}
-	if req.Testimonial != nil {
-		query += ", testimonial = $" + common.SqlParam(argCount)
-		args = append(args, *req.Testimonial)
-		argCount++
-	}
-	if req.MetaTitle != nil {
-		query += ", meta_title = $" + common.SqlParam(argCount)
-		args = append(args, *req.MetaTitle)
-		argCount++
-	}
-	if req.MetaDescription != nil {
-		query += ", meta_description = $" + common.SqlParam(argCount)
-		args = append(args, *req.MetaDescription)
-		argCount++
-	}
-	if req.Status != nil {
-		query += ", status = $" + common.SqlParam(argCount)
-		args = append(args, *req.Status)
-		argCount++
-	}
-	if req.DisplayOrder != nil {
-		query += ", display_order = $" + common.SqlParam(argCount)
-		args = append(args, *req.DisplayOrder)
-		argCount++
-	}
-
-	query += " WHERE id = $" + common.SqlParam(argCount)
-	args = append(args, id)
-
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to Supabase REST API"})
-		return
-	if err != nil {
-		log.Printf("Error updating event: %v", err)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to update event"})
-		return
-	}
-
-	var event models.Event
 	c.JSON(http.StatusNotImplemented, gin.H{"error": "Direct database access removed, using Supabase REST API"})
-		return
-		`SELECT id, slug, title, client_name, event_date, event_type, location,
-		       description, images, featured_image, gallery_images, budget, guest_count,
-		       vendors, testimonial, meta_title, meta_description, status, display_order,
-		       created_at, updated_at
-		 FROM events WHERE id = $1`, id).Scan(
-		&event.ID, &event.Slug, &event.Title, &event.ClientName, &event.EventDate,
-		&event.EventType, &event.Location, &event.Description, &event.Images,
-		&event.FeaturedImage, &event.GalleryImages, &event.Budget, &event.GuestCount,
-		&event.Vendors, &event.Testimonial, &event.MetaTitle, &event.MetaDescription,
-		&event.Status, &event.DisplayOrder, &event.CreatedAt, &event.UpdatedAt)
-
-	if err != nil {
-		log.Printf("Error querying updated event: %v", err)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to retrieve event"})
-		return
-	}
-
-	c.JSON(http.StatusOK, models.EventItemResponse{Item: event})
 }
 
 func (h *EventHandler) DeleteEvent(c *gin.Context) {

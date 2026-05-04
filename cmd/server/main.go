@@ -80,22 +80,14 @@ func main() {
 	// @Success      200  {object}  map[string]interface{} "message: string, database: string"
 	// @Failure      500  {object}  map[string]interface{} "error: string"
 	// @Router       /api/test [get]
-	r.GET("/api/test", func(c *gin.Context) {
-		// Test the database connection with a simple query
-		if database.Pool != nil {
-			var result string
-			err := database.Pool.QueryRow(c.Request.Context(), "SELECT 'Database connection successful!'").Scan(&result)
-			if err != nil {
-				c.JSON(500, gin.H{"error": err.Error()})
-				return
+		r.GET("/api/test", func(c *gin.Context) {
+			// Test the database connection
+			if database.SupabaseClient != nil {
+				c.JSON(200, gin.H{"message": "Supabase REST API connection successful!", "database": "Supabase REST API"})
+			} else {
+				c.JSON(500, gin.H{"error": "No database connection available"})
 			}
-			c.JSON(200, gin.H{"message": result, "database": "PostgreSQL connected"})
-		} else if database.SupabaseClient != nil {
-			c.JSON(200, gin.H{"message": "Supabase REST API connection successful!", "database": "Supabase REST API"})
-		} else {
-			c.JSON(500, gin.H{"error": "No database connection available"})
-		}
-	})
+		})
 
 	// Initialize all handlers
 	portfolioHandler := public.NewPortfolioHandler()

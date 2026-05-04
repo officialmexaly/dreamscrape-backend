@@ -3,11 +3,11 @@ package public
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"dreamscape-backend/backend/database"
 	"dreamscape-backend/backend/models"
-	"dreamscape-backend/backend/handlers/common"
 )
 
 // ServiceHandler handles public service operations
@@ -32,12 +32,6 @@ func (h *ServiceHandler) GetServices(c *gin.Context) {
 	// Check if Supabase client is available (preferred method)
 	if database.GetClient() != nil {
 		h.getServicesViaSupabase(c)
-		return
-	}
-
-	// Fall back to PostgreSQL if available
-	if h.pool != nil {
-		h.getServicesViaPostgreSQL(c)
 		return
 	}
 
@@ -73,43 +67,9 @@ func (h *ServiceHandler) getServicesViaSupabase(c *gin.Context) {
 	})
 }
 
+
 func (h *ServiceHandler) getServicesViaPostgreSQL(c *gin.Context) {
-	startTime := time.Now()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	query := `SELECT id, slug, category, title, subtitle, description, image, list_items,
-		       cta_text, cta_link, status, display_order, created_at, updated_at
-		FROM services
-		WHERE status = 'published'
-		ORDER BY display_order ASC, created_at DESC`
-
-	rows, err := h.pool.Query(ctx, query)
-	if err != nil {
-		log.Printf("Error querying services: %v", err)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to retrieve services"})
-		return
-	}
-	defer rows.Close()
-
-	var services []models.Service
-	for rows.Next() {
-		var service models.Service
-		err := rows.Scan(
-			&service.ID, &service.Slug, &service.Category, &service.Title, &service.Subtitle,
-			&service.Description, &service.Image, &service.ListItems, &service.CTAText,
-			&service.CTALink, &service.Status, &service.DisplayOrder, &service.CreatedAt,
-			&service.UpdatedAt,
-		)
-		if err != nil {
-			log.Printf("Error scanning service row: %v", err)
-			continue
-		}
-		services = append(services, service)
-	}
-
-	log.Printf("✅ Retrieved %d services via PostgreSQL in %v", len(services), time.Since(startTime))
-	c.JSON(http.StatusOK, models.ServicesResponse{Items: services})
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to Supabase REST API"})
 }
 
 // GetServiceByID retrieves a single service by ID
@@ -128,11 +88,6 @@ func (h *ServiceHandler) GetServiceByID(c *gin.Context) {
 
 	if database.GetClient() != nil {
 		h.getServiceByIDViaSupabase(c, id)
-		return
-	}
-
-	if h.pool != nil {
-		h.getServiceByIDViaPostgreSQL(c, id)
 		return
 	}
 
@@ -169,29 +124,7 @@ func (h *ServiceHandler) getServiceByIDViaSupabase(c *gin.Context, id string) {
 }
 
 func (h *ServiceHandler) getServiceByIDViaPostgreSQL(c *gin.Context, id string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	query := `SELECT id, slug, category, title, subtitle, description, image, list_items,
-		       cta_text, cta_link, status, display_order, created_at, updated_at
-		FROM services
-		WHERE id = $1 AND status = 'published'`
-
-	var service models.Service
-	err := h.pool.QueryRow(ctx, query, id).Scan(
-		&service.ID, &service.Slug, &service.Category, &service.Title, &service.Subtitle,
-		&service.Description, &service.Image, &service.ListItems, &service.CTAText,
-		&service.CTALink, &service.Status, &service.DisplayOrder, &service.CreatedAt,
-		&service.UpdatedAt,
-	)
-
-	if err != nil {
-		log.Printf("Error querying service by ID: %v", err)
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Service not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, models.ServiceItemResponse{Item: service})
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to Supabase REST API"})
 }
 
 // GetServiceBySlug retrieves a single service by slug
@@ -210,11 +143,6 @@ func (h *ServiceHandler) GetServiceBySlug(c *gin.Context) {
 
 	if database.GetClient() != nil {
 		h.getServiceBySlugViaSupabase(c, slug)
-		return
-	}
-
-	if h.pool != nil {
-		h.getServiceBySlugViaPostgreSQL(c, slug)
 		return
 	}
 
@@ -251,29 +179,7 @@ func (h *ServiceHandler) getServiceBySlugViaSupabase(c *gin.Context, slug string
 }
 
 func (h *ServiceHandler) getServiceBySlugViaPostgreSQL(c *gin.Context, slug string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	query := `SELECT id, slug, category, title, subtitle, description, image, list_items,
-		       cta_text, cta_link, status, display_order, created_at, updated_at
-		FROM services
-		WHERE slug = $1 AND status = 'published'`
-
-	var service models.Service
-	err := h.pool.QueryRow(ctx, query, slug).Scan(
-		&service.ID, &service.Slug, &service.Category, &service.Title, &service.Subtitle,
-		&service.Description, &service.Image, &service.ListItems, &service.CTAText,
-		&service.CTALink, &service.Status, &service.DisplayOrder, &service.CreatedAt,
-		&service.UpdatedAt,
-	)
-
-	if err != nil {
-		log.Printf("Error querying service by slug: %v", err)
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Service not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, models.ServiceItemResponse{Item: service})
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to Supabase REST API"})
 }
 
 // CreateService creates a new service (admin only)
@@ -288,17 +194,7 @@ func (h *ServiceHandler) getServiceBySlugViaPostgreSQL(c *gin.Context, slug stri
 // @Failure      500  {object}  models.ErrorResponse
 // @Router       /api/admin/services [post]
 func (h *ServiceHandler) CreateService(c *gin.Context) {
-	if database.GetClient() != nil {
-		h.createServiceViaSupabase(c)
-		return
-	}
-
-	if h.pool != nil {
-		h.createServiceViaPostgreSQL(c)
-		return
-	}
-
-	c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "No database connection available"})
+	h.createServiceViaSupabase(c)
 }
 
 func (h *ServiceHandler) createServiceViaSupabase(c *gin.Context) {
@@ -342,45 +238,8 @@ func (h *ServiceHandler) createServiceViaSupabase(c *gin.Context) {
 }
 
 func (h *ServiceHandler) createServiceViaPostgreSQL(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var req models.CreateServiceRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid request body: " + err.Error()})
-		return
-	}
-
-	query := `INSERT INTO services (id, slug, category, title, subtitle, description, image, list_items,
-		                   cta_text, cta_link, status, display_order)
-		VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-		RETURNING id, slug, category, title, subtitle, description, image, list_items,
-		          cta_text, cta_link, status, display_order, created_at, updated_at`
-
-	var service models.Service
-	err := h.pool.QueryRow(ctx, query,
-		req.Slug, req.Category, req.Title, req.Subtitle, req.Description, req.Image, req.ListItems,
-		req.CTAText, req.CTALink, req.Status, req.DisplayOrder,
-	).Scan(
-		&service.ID, &service.Slug, &service.Category, &service.Title, &service.Subtitle,
-		&service.Description, &service.Image, &service.ListItems, &service.CTAText,
-		&service.CTALink, &service.Status, &service.DisplayOrder, &service.CreatedAt,
-		&service.UpdatedAt,
-	)
-
-	if err != nil {
-		log.Printf("Error creating service: %v", err)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to create service"})
-		return
-	}
-
-	c.JSON(http.StatusCreated, models.ServiceItemResponse{Item: service})
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to Supabase REST API"})
 }
-
-// UpdateService updates an existing service (admin only)
-// @Summary      Update service
-// @Description  Update an existing service (admin only)
-// @Tags         admin-services
 // @Accept       json
 // @Produce      json
 // @Param        id   path      string  true  "Service ID"
@@ -392,18 +251,7 @@ func (h *ServiceHandler) createServiceViaPostgreSQL(c *gin.Context) {
 // @Router       /api/admin/services/:id [put]
 func (h *ServiceHandler) UpdateService(c *gin.Context) {
 	id := c.Param("id")
-
-	if database.GetClient() != nil {
-		h.updateServiceViaSupabase(c, id)
-		return
-	}
-
-	if h.pool != nil {
-		h.updateServiceViaPostgreSQL(c, id)
-		return
-	}
-
-	c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "No database connection available"})
+	h.updateServiceViaSupabase(c, id)
 }
 
 func (h *ServiceHandler) updateServiceViaSupabase(c *gin.Context, id string) {
@@ -469,122 +317,8 @@ func (h *ServiceHandler) updateServiceViaSupabase(c *gin.Context, id string) {
 }
 
 func (h *ServiceHandler) updateServiceViaPostgreSQL(c *gin.Context, id string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var req models.UpdateServiceRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid request body: " + err.Error()})
-		return
-	}
-
-	query := "UPDATE services SET updated_at = NOW()"
-	args := []interface{}{}
-	argCount := 1
-
-	if req.Slug != nil {
-		query += ", slug = $" + common.SqlParam(argCount)
-		args = append(args, *req.Slug)
-		argCount++
-	}
-	if req.Category != nil {
-		query += ", category = $" + common.SqlParam(argCount)
-		args = append(args, *req.Category)
-		argCount++
-	}
-	if req.Title != nil {
-		query += ", title = $" + common.SqlParam(argCount)
-		args = append(args, *req.Title)
-		argCount++
-	}
-	if req.Subtitle != nil {
-		query += ", subtitle = $" + common.SqlParam(argCount)
-		args = append(args, *req.Subtitle)
-		argCount++
-	}
-	if req.Description != nil {
-		query += ", description = $" + common.SqlParam(argCount)
-		args = append(args, *req.Description)
-		argCount++
-	}
-	if req.Image != nil {
-		query += ", image = $" + common.SqlParam(argCount)
-		args = append(args, *req.Image)
-		argCount++
-	}
-	if req.ListItems != nil {
-		query += ", list_items = $" + common.SqlParam(argCount)
-		args = append(args, *req.ListItems)
-		argCount++
-	}
-	if req.CTAText != nil {
-		query += ", cta_text = $" + common.SqlParam(argCount)
-		args = append(args, *req.CTAText)
-		argCount++
-	}
-	if req.CTALink != nil {
-		query += ", cta_link = $" + common.SqlParam(argCount)
-		args = append(args, *req.CTALink)
-		argCount++
-	}
-	if req.Status != nil {
-		query += ", status = $" + common.SqlParam(argCount)
-		args = append(args, *req.Status)
-		argCount++
-	}
-	if req.DisplayOrder != nil {
-		query += ", display_order = $" + common.SqlParam(argCount)
-		args = append(args, *req.DisplayOrder)
-		argCount++
-	}
-
-	query += " WHERE id = $" + common.SqlParam(argCount) + " RETURNING *"
-	args = append(args, id)
-
-	var service models.Service
-	err := h.pool.QueryRow(ctx, query, args...).Scan(
-		&service.ID, &service.Slug, &service.Category, &service.Title, &service.Subtitle,
-		&service.Description, &service.Image, &service.ListItems, &service.CTAText,
-		&service.CTALink, &service.Status, &service.DisplayOrder, &service.CreatedAt,
-		&service.UpdatedAt,
-	)
-
-	if err != nil {
-		log.Printf("Error updating service: %v", err)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to update service"})
-		return
-	}
-
-	c.JSON(http.StatusOK, models.ServiceItemResponse{Item: service})
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to Supabase REST API"})
 }
-
-// DeleteService deletes a service (admin only)
-// @Summary      Delete service
-// @Description  Delete a service (admin only)
-// @Tags         admin-services
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Service ID"
-// @Success      200  {object}  models.SuccessResponse
-// @Failure      404  {object}  models.ErrorResponse
-// @Failure      500  {object}  models.ErrorResponse
-// @Router       /api/admin/services/:id [delete]
-func (h *ServiceHandler) DeleteService(c *gin.Context) {
-	id := c.Param("id")
-
-	if database.GetClient() != nil {
-		h.deleteServiceViaSupabase(c, id)
-		return
-	}
-
-	if h.pool != nil {
-		h.deleteServiceViaPostgreSQL(c, id)
-		return
-	}
-
-	c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{Error: "No database connection available"})
-}
-
 func (h *ServiceHandler) deleteServiceViaSupabase(c *gin.Context, id string) {
 	supabaseClient := database.GetClient()
 	if supabaseClient == nil {
@@ -606,24 +340,21 @@ func (h *ServiceHandler) deleteServiceViaSupabase(c *gin.Context, id string) {
 }
 
 func (h *ServiceHandler) deleteServiceViaPostgreSQL(c *gin.Context, id string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "This endpoint is being migrated to Supabase REST API"})
+}
 
-	query := "DELETE FROM services WHERE id = $1"
-	result, err := h.pool.Exec(ctx, query, id)
-	if err != nil {
-		log.Printf("Error deleting service: %v", err)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to delete service"})
-		return
-	}
-
-	if result.RowsAffected() == 0 {
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Service not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, models.SuccessResponse{
-		Success: true,
-		Message: "Service deleted successfully",
-	})
+// DeleteService deletes a service (admin only)
+// @Summary      Delete service
+// @Description  Delete a service (admin only)
+// @Tags         admin-services
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Service ID"
+// @Success      200  {object}  models.SuccessResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/admin/services/:id [delete]
+func (h *ServiceHandler) DeleteService(c *gin.Context) {
+	id := c.Param("id")
+	h.deleteServiceViaSupabase(c, id)
 }
