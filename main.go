@@ -85,7 +85,7 @@ func initializeRouter() *gin.Engine {
 	// @Router       /api/test [get]
 	r.GET("/api/test", func(c *gin.Context) {
 		// Test the database connection
-		if database.SupabaseClient != nil {
+		if database.GetClient() != nil {
 			c.JSON(200, gin.H{"message": "Supabase REST API connection successful!", "database": "Supabase REST API"})
 		} else {
 			c.JSON(500, gin.H{"error": "No database connection available"})
@@ -94,7 +94,7 @@ func initializeRouter() *gin.Engine {
 
 	// Initialize all handlers
 	portfolioHandler := public.NewPortfolioHandler()
-	utilsHandler := public.NewUtilitiesHandler(database.SupabaseClient)
+	utilsHandler := public.NewUtilitiesHandler(database.GetClient())
 	eventHandler := public.NewEventHandler()
 	serviceHandler := public.NewServiceHandler()
 	completeBookingHandler := public.NewCompleteBookingHandler()
