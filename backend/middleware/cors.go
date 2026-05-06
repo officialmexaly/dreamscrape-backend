@@ -9,22 +9,24 @@ import (
 
 // CORS returns the CORS middleware with production configuration
 func CORS() gin.HandlerFunc {
-	// Allow both www and non-www versions of the frontend
-	allowedOrigins := []string{
-		config.AppConfig.FrontendURL,
+	// Create set of allowed origins to avoid duplicates
+	originSet := make(map[string]bool)
+
+	// Add the configured frontend URL
+	if config.AppConfig.FrontendURL != "" {
+		originSet[config.AppConfig.FrontendURL] = true
 	}
 
-	// Add www variant if not already present
-	if config.AppConfig.FrontendURL != "" {
-		wwwURL := ""
-		if config.AppConfig.FrontendURL[:7] == "http://" {
-			wwwURL = "http://www." + config.AppConfig.FrontendURL[7:]
-		} else if config.AppConfig.FrontendURL[:8] == "https://" {
-			wwwURL = "https://www." + config.AppConfig.FrontendURL[8:]
-		}
-		if wwwURL != "" && wwwURL != config.AppConfig.FrontendURL {
-			allowedOrigins = append(allowedOrigins, wwwURL)
-		}
+	// Explicitly add both www and non-www variants
+	originSet["https://www.dreamscapecurated.com"] = true
+	originSet["https://dreamscapecurated.com"] = true
+	originSet["http://localhost:3000"] = true
+	originSet["http://localhost:8080"] = true
+
+	// Convert map to slice
+	allowedOrigins := make([]string, 0, len(originSet))
+	for origin := range originSet {
+		allowedOrigins = append(allowedOrigins, origin)
 	}
 
 	corsConfig := cors.Config{
