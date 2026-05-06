@@ -33,7 +33,7 @@ func (s *AuthService) ensureDB() error {
 	if s == nil {
 		return errors.New("authentication service unavailable")
 	}
-	if s.useSupabase && database.SupabaseClient == nil {
+	if s.useSupabase && database.GetClient() == nil {
 		return errors.New("authentication database unavailable")
 	}
 	return nil
@@ -112,7 +112,7 @@ func (s *AuthService) GenerateTokenPair(user *models.User) (*TokenPair, error) {
 		"expires_at": time.Now().Add(config.AppConfig.RefreshTokenDuration),
 		"created_at": time.Now(),
 	}
-	if _, err := database.SupabaseClient.Insert("refresh_tokens", refreshRecord); err != nil {
+	if _, err := database.GetClient().Insert("refresh_tokens", refreshRecord); err != nil {
 		log.Printf("Warning: failed to store refresh token in database: %v", err)
 		// Continue anyway - the token will still work, just won't be stored for revocation
 	}
@@ -151,7 +151,7 @@ func (s *AuthService) RefreshAccessToken(refreshToken string) (*TokenPair, strin
 		return nil, "", err
 	}
 
-	tokens, err := database.SupabaseClient.Select("refresh_tokens", map[string]string{
+	tokens, err := database.GetClient().Select("refresh_tokens", map[string]string{
 		"revoked_at": "is.null",
 		"order":      "created_at.desc",
 		"select":     "*",
@@ -214,7 +214,7 @@ func (s *AuthService) RefreshAccessToken(refreshToken string) (*TokenPair, strin
 	}
 
 	// Revoke old refresh token
-	if _, err := database.SupabaseClient.UpdateWhere("refresh_tokens",
+	if _, err := database.GetClient().UpdateWhere("refresh_tokens",
 		map[string]string{"user_id": "eq." + userID, "token": "eq." + hashedToken},
 		map[string]interface{}{"revoked_at": time.Now()}); err != nil {
 		return nil, "", fmt.Errorf("failed to revoke old refresh token: %w", err)
@@ -229,7 +229,7 @@ func (s *AuthService) RevokeRefreshToken(userID string) error {
 		return err
 	}
 
-	_, err := database.SupabaseClient.UpdateWhere(
+	_, err := database.GetClient().UpdateWhere(
 		"refresh_tokens",
 		map[string]string{"user_id": "eq." + userID, "revoked_at": "is.null"},
 		map[string]interface{}{"revoked_at": time.Now()},
@@ -253,7 +253,7 @@ func (s *AuthService) Register(req *models.RegisterRequest) (*models.User, error
 
 	// Check if user already exists
 	filters := map[string]string{"email": "eq." + req.Email}
-	existingUsers, err := database.SupabaseClient.Select("users", filters)
+	existingUsers, err := database.GetClient().Select("users", filters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check user existence: %w", err)
 	}
@@ -280,7 +280,7 @@ func (s *AuthService) Register(req *models.RegisterRequest) (*models.User, error
 	}
 
 	// Insert user using Supabase
-	insertedUser, err := database.SupabaseClient.Insert("users", newUser)
+	insertedUser, err := database.GetClient().Insert("users", newUser)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
@@ -303,7 +303,7 @@ func (s *AuthService) Login(req *models.LoginRequest) (*models.User, error) {
 
 	// Get user by email using Supabase
 	filters := map[string]string{"email": "eq." + req.Email}
-	users, err := database.SupabaseClient.Select("users", filters)
+	users, err := database.GetClient().Select("users", filters)
 	if err != nil {
 		log.Printf("❌ Failed to fetch user: %v", err)
 		return nil, fmt.Errorf("failed to fetch user: %w", err)
@@ -394,7 +394,7 @@ func (s *AuthService) GetUserByID(userID string) (*models.User, error) {
 
 	// Use Supabase REST API
 	filters := map[string]string{"id": "eq." + userID}
-	users, err := database.SupabaseClient.Select("users", filters)
+	users, err := database.GetClient().Select("users", filters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}
@@ -418,7 +418,7 @@ func (s *AuthService) CreatePasswordResetToken(email string) (string, error) {
 		return "", err
 	}
 
-	users, err := database.SupabaseClient.Select("users", map[string]string{"email": "eq." + email, "limit": "1"})
+	users, err := database.GetClient().Select("users", map[string]string{"email": "eq." + email, "limit": "1"})
 	if err != nil {
 		return "", fmt.Errorf("user not found: %w", err)
 	}
@@ -449,7 +449,7 @@ func (s *AuthService) CreatePasswordResetToken(email string) (string, error) {
 		"used":       false,
 		"created_at": time.Now(),
 	}
-	if _, err := database.SupabaseClient.Insert("password_reset_tokens", record); err != nil {
+	if _, err := database.GetClient().Insert("password_reset_tokens", record); err != nil {
 		return "", fmt.Errorf("failed to store password reset token: %w", err)
 	}
 
@@ -462,7 +462,7 @@ func (s *AuthService) ValidatePasswordResetToken(token string) (string, string, 
 		return "", "", err
 	}
 
-	tokens, err := database.SupabaseClient.Select("password_reset_tokens", map[string]string{
+	tokens, err := database.GetClient().Select("password_reset_tokens", map[string]string{
 		"used":  "eq.false",
 		"order": "created_at.desc",
 		"select": "*",
@@ -529,7 +529,7 @@ func (s *AuthService) ResetPassword(token, newPassword string) error {
 		return err
 	}
 
-	if _, err := database.SupabaseClient.UpdateByID("users", userID, map[string]interface{}{
+	if _, err := database.GetClient().UpdateByID("users", userID, map[string]interface{}{
 		"password_hash": hashedPassword,
 		"updated_at":    time.Now(),
 	}); err != nil {
@@ -537,7 +537,7 @@ func (s *AuthService) ResetPassword(token, newPassword string) error {
 	}
 
 	// Mark token as used
-	if _, err := database.SupabaseClient.UpdateByID("password_reset_tokens", tokenID, map[string]interface{}{"used": true}); err != nil {
+	if _, err := database.GetClient().UpdateByID("password_reset_tokens", tokenID, map[string]interface{}{"used": true}); err != nil {
 		return fmt.Errorf("failed to mark token as used: %w", err)
 	}
 
@@ -552,7 +552,7 @@ func (s *AuthService) ChangePassword(userID string, currentPassword, newPassword
 
 	// Get user by ID using Supabase
 	filters := map[string]string{"id": "eq." + userID}
-	users, err := database.SupabaseClient.Select("users", filters)
+	users, err := database.GetClient().Select("users", filters)
 	if err != nil {
 		return fmt.Errorf("failed to fetch user: %w", err)
 	}
@@ -578,7 +578,7 @@ func (s *AuthService) ChangePassword(userID string, currentPassword, newPassword
 		return fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	if _, err := database.SupabaseClient.UpdateByID("users", userID, map[string]interface{}{
+	if _, err := database.GetClient().UpdateByID("users", userID, map[string]interface{}{
 		"password_hash": hashedPassword,
 		"updated_at":    time.Now(),
 	}); err != nil {
@@ -614,7 +614,7 @@ func (s *AuthService) CreateEmailVerificationToken(userID string) (string, error
 		"used":       false,
 		"created_at": time.Now(),
 	}
-	if _, err := database.SupabaseClient.Insert("email_verification_tokens", record); err != nil {
+	if _, err := database.GetClient().Insert("email_verification_tokens", record); err != nil {
 		return "", fmt.Errorf("failed to store email verification token: %w", err)
 	}
 
@@ -627,7 +627,7 @@ func (s *AuthService) VerifyEmail(token string) error {
 		return err
 	}
 
-	tokens, err := database.SupabaseClient.Select("email_verification_tokens", map[string]string{
+	tokens, err := database.GetClient().Select("email_verification_tokens", map[string]string{
 		"used":  "eq.false",
 		"order": "created_at.desc",
 		"select": "*",
@@ -673,7 +673,7 @@ func (s *AuthService) VerifyEmail(token string) error {
 		return errors.New("invalid token")
 	}
 
-	if _, err := database.SupabaseClient.UpdateByID("users", userID, map[string]interface{}{
+	if _, err := database.GetClient().UpdateByID("users", userID, map[string]interface{}{
 		"email_verified": true,
 		"is_active":      true,
 		"locked_until":   nil,
@@ -683,7 +683,7 @@ func (s *AuthService) VerifyEmail(token string) error {
 	}
 
 	// Mark token as used
-	if _, err := database.SupabaseClient.UpdateByID("email_verification_tokens", tokenID, map[string]interface{}{"used": true}); err != nil {
+	if _, err := database.GetClient().UpdateByID("email_verification_tokens", tokenID, map[string]interface{}{"used": true}); err != nil {
 		return fmt.Errorf("failed to mark token as used: %w", err)
 	}
 
@@ -705,7 +705,7 @@ func (s *AuthService) GetUsers() ([]models.User, error) {
 		return nil, err
 	}
 
-	usersData, err := database.SupabaseClient.Select("users", map[string]string{"order": "created_at.desc"})
+	usersData, err := database.GetClient().Select("users", map[string]string{"order": "created_at.desc"})
 	if err != nil {
 		return nil, fmt.Errorf("failed to query users: %w", err)
 	}
@@ -763,7 +763,7 @@ func (s *AuthService) UpdateUser(userID string, req *models.UpdateUserRequest) (
 		updateData["name"] = strings.TrimSpace(strings.Join(nameParts, " "))
 	}
 
-	updated, err := database.SupabaseClient.UpdateByID("users", userID, updateData)
+	updated, err := database.GetClient().UpdateByID("users", userID, updateData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
@@ -782,10 +782,10 @@ func (s *AuthService) DeleteUser(userID string) error {
 		return err
 	}
 
-	if err := database.SupabaseClient.DeleteWhere("refresh_tokens", map[string]string{"user_id": "eq." + userID}); err != nil {
+	if err := database.GetClient().DeleteWhere("refresh_tokens", map[string]string{"user_id": "eq." + userID}); err != nil {
 		return fmt.Errorf("failed to delete refresh tokens: %w", err)
 	}
-	if err := database.SupabaseClient.DeleteByID("users", userID); err != nil {
+	if err := database.GetClient().DeleteByID("users", userID); err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
 	return nil
@@ -807,7 +807,7 @@ func (s *AuthService) UpdateUserStatus(userID string, status models.UserStatus) 
 		updateData["locked_until"] = nil
 	}
 
-	if _, err := database.SupabaseClient.UpdateByID("users", userID, map[string]interface{}{
+	if _, err := database.GetClient().UpdateByID("users", userID, map[string]interface{}{
 		"is_active":    updateData["is_active"],
 		"locked_until": updateData["locked_until"],
 		"updated_at":   updateData["updated_at"],
@@ -825,7 +825,7 @@ func (s *AuthService) CreateOrUpdateOAuthUser(provider, email string, userInfo i
 	}
 
 	// Check if user exists by email
-	users, err := database.SupabaseClient.Select("users", map[string]string{"email": "eq." + email, "limit": "1"})
+	users, err := database.GetClient().Select("users", map[string]string{"email": "eq." + email, "limit": "1"})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to query user: %w", err)
 	}
@@ -910,7 +910,7 @@ func (s *AuthService) createOAuthUser(provider string, userInfo interface{}) (*m
 		}
 	}
 
-	inserted, err := database.SupabaseClient.Insert("users", map[string]interface{}{
+	inserted, err := database.GetClient().Insert("users", map[string]interface{}{
 		"id":             uuid.NewString(),
 		"email":          email,
 		"name":           strings.TrimSpace(firstName + " " + lastName),
@@ -937,7 +937,7 @@ func (s *AuthService) updateLastLogin(userID string) error {
 		return err
 	}
 
-	_, err := database.SupabaseClient.UpdateByID("users", userID, map[string]interface{}{
+	_, err := database.GetClient().UpdateByID("users", userID, map[string]interface{}{
 		"last_login_at": time.Now(),
 	})
 	if err != nil {

@@ -45,20 +45,20 @@ type PortfolioItem struct {
 	Subtitle        *string                `json:"subtitle,omitempty" db:"subtitle"`
 	Excerpt         *string                `json:"excerpt,omitempty" db:"excerpt"`
 	Author          *string                `json:"author,omitempty" db:"author"`
-	Categories      StringArray            `json:"categories,omitempty" db:"categories" example:"["weddings","corporate"]"`
-	Tags            StringArray            `json:"tags,omitempty" db:"tags" example:"["outdoor","elegant"]"`
+	Categories      StringArray            `json:"categories,omitempty" db:"categories" example:"[\"weddings\",\"corporate\"]"`
+	Tags            StringArray            `json:"tags,omitempty" db:"tags" example:"[\"outdoor\",\"elegant\"]"`
 	Content         *JSONB                 `json:"content,omitempty" db:"content"`
 	ClientName      *string                `json:"client_name,omitempty" db:"client_name"`
 	EventDate       *time.Time             `json:"event_date,omitempty" db:"event_date"`
 	EventType       *string                `json:"event_type,omitempty" db:"event_type"`
 	Location        *string                `json:"location,omitempty" db:"location"`
 	Description     *string                `json:"description,omitempty" db:"description"`
-	Images          StringArray            `json:"images,omitempty" db:"images" example:"["image1.jpg","image2.jpg"]"`
+	Images          StringArray            `json:"images,omitempty" db:"images" example:"[\"image1.jpg\",\"image2.jpg\"]"`
 	FeaturedImage   *string                `json:"featured_image,omitempty" db:"featured_image"`
-	GalleryImages   StringArray            `json:"gallery_images,omitempty" db:"gallery_images" example:"["gallery1.jpg","gallery2.jpg"]"`
+	GalleryImages   StringArray            `json:"gallery_images,omitempty" db:"gallery_images" example:"[\"gallery1.jpg\",\"gallery2.jpg\"]"`
 	Budget          *string                `json:"budget,omitempty" db:"budget"`
 	GuestCount      *int                   `json:"guest_count,omitempty" db:"guest_count"`
-	Vendors         StringArray            `json:"vendors,omitempty" db:"vendors" example:"["catering","photography"]"`
+	Vendors         StringArray            `json:"vendors,omitempty" db:"vendors" example:"[\"catering\",\"photography\"]"`
 	Testimonial     *string                `json:"testimonial,omitempty" db:"testimonial"`
 	MetaTitle       *string                `json:"meta_title,omitempty" db:"meta_title"`
 	MetaDescription *string                `json:"meta_description,omitempty" db:"meta_description"`

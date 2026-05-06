@@ -18,7 +18,7 @@ func main() {
 	}
 
 	// Connect to database
-	conn, err := pgxpool.Connect(context.Background(), dbURL)
+	conn, err := pgxpool.New(context.Background(), dbURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
