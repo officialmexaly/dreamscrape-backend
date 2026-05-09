@@ -1,0 +1,40 @@
+{
+  "enabled": true,
+  "default_limits": {
+    "requests_per_minute": 60,
+    "requests_per_hour": 1000
+  },
+  "endpoint_specific_limits": {
+    "/api/auth/login": {
+      "requests_per_minute": 5,
+      "requests_per_hour": 20
+    },
+    "/api/auth/register": {
+      "requests_per_minute": 3,
+      "requests_per_hour": 10
+    },
+    "/api/auth/forgot-password": {
+      "requests_per_minute": 3,
+      "requests_per_hour": 5
+    },
+    "/api/admin/*": {
+      "requests_per_minute": 120,
+      "requests_per_hour": 2000
+    },
+    "/api/webhook/*": {
+      "requests_per_minute": 100,
+      "requests_per_hour": 5000
+    }
+  },
+  "exempted_paths": [
+    "/health",
+    "/swagger/*",
+    "/favicon.ico",
+    "/api/test"
+  ],
+  "cleanup_interval_minutes": 5,
+  "bypass_keys": [
+    "internal_service_key",
+    "test_bypass_key"
+  ]
+}

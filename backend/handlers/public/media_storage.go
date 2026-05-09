@@ -1,6 +1,7 @@
 package public
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -22,10 +23,21 @@ import (
 type MediaStorageHandler struct {
 	dbClient  *supabase.Client
 	storage   *storage.SupabaseStorageClient
+	uploadConfig *config.UploadsConfig
 }
 
 // NewMediaStorageHandler creates a new media handler with Supabase Storage
 func NewMediaStorageHandler() *MediaStorageHandler {
+	// Get upload configuration
+	uploadConfig := config.AppConfig.Uploads
+	if uploadConfig == nil {
+		uploadConfig = &config.UploadsConfig{
+			Enabled:          true,
+			MaxFileSizeBytes: 10 * 1024 * 1024, // 10MB default
+			AllowedFileTypes: []string{"image/jpeg", "image/png", "image/gif"},
+		}
+	}
+
 	// Try to determine which bucket to use
 	bucketName := "dreamscape" // Use the main bucket
 	if config.AppConfig.SupabaseBucket != "" {
@@ -39,8 +51,9 @@ func NewMediaStorageHandler() *MediaStorageHandler {
 	)
 
 	return &MediaStorageHandler{
-		dbClient: database.SupabaseClient,
-		storage:  storageClient,
+		dbClient:     database.SupabaseClient,
+		storage:      storageClient,
+		uploadConfig: uploadConfig,
 	}
 }
 
@@ -135,12 +148,14 @@ func (h *MediaStorageHandler) UploadMedia(c *gin.Context) {
 		return
 	}
 
-	// Validate file size (max 10MB)
-	const maxFileSize = 10 * 1024 * 1024
+	// Validate file size using configuration
+	maxFileSize := h.uploadConfig.MaxFileSizeBytes
 	if fileHeader.Size > maxFileSize {
 		common.ValidationErrorResponse(c, &errors.ValidationError{
-			Message: "File too large",
-			Fields:  map[string]string{"file": "File size must be less than 10MB"},
+			Message: config.GetMessage("validation", "file_too_large", map[string]string{
+				"max_size": fmt.Sprintf("%.1f", float64(maxFileSize)/(1024*1024)),
+			}),
+			Fields: map[string]string{"file": fmt.Sprintf("File size must be less than %.1fMB", float64(maxFileSize)/(1024*1024))},
 		})
 		return
 	}

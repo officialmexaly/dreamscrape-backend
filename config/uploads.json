@@ -1,0 +1,49 @@
+{
+  "enabled": true,
+  "max_file_size_mb": 10,
+  "max_file_size_bytes": 10485760,
+  "allowed_file_types": [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "application/pdf",
+    "video/mp4",
+    "video/quicktime",
+    "audio/mpeg",
+    "audio/wav"
+  ],
+  "file_type_restrictions": {
+    "image": {
+      "max_size_mb": 5,
+      "allowed_types": ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"]
+    },
+    "video": {
+      "max_size_mb": 50,
+      "allowed_types": ["video/mp4", "video/quicktime"]
+    },
+    "document": {
+      "max_size_mb": 10,
+      "allowed_types": ["application/pdf"]
+    }
+  },
+  "validation_rules": {
+    "min_file_size_bytes": 1024,
+    "max_filename_length": 255,
+    "allowed_filename_pattern": "^[a-zA-Z0-9._-]+$",
+    "forbidden_filenames": [".", "..", ".htaccess", "web.config"]
+  },
+  "storage_settings": {
+    "compression_enabled": true,
+    "thumbnail_generation": true,
+    "auto_optimization": true,
+    "backup_enabled": true
+  },
+  "security": {
+    "scan_for_malware": false,
+    "check_file_signature": true,
+    "sanitize_filename": true,
+    "max_uploads_per_request": 10
+  }
+}

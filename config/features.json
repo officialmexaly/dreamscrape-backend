@@ -1,0 +1,160 @@
+{
+  "version": "1.0.0",
+  "environment": "development",
+  "features": {
+    "authentication": {
+      "enabled": true,
+      "providers": {
+        "email_password": {
+          "enabled": true,
+          "require_email_verification": false
+        },
+        "google_oauth": {
+          "enabled": true,
+          "require_verified_email": true
+        },
+        "facebook_oauth": {
+          "enabled": true
+        },
+        "apple_oauth": {
+          "enabled": false
+        }
+      },
+      "password_reset": {
+        "enabled": true,
+        "token_expiry_hours": 24
+      },
+      "two_factor_auth": {
+        "enabled": false,
+        "methods": ["sms", "email", "authenticator_app"]
+      }
+    },
+    "bookings": {
+      "enabled": true,
+      "calendly_integration": {
+        "enabled": true,
+        "webhook_enabled": true
+      },
+      "google_calendar_integration": {
+        "enabled": true,
+        "auto_create_events": true
+      },
+      "email_notifications": {
+        "enabled": true,
+        "confirmation_email": true,
+        "reminder_email": true,
+        "cancellation_email": true
+      }
+    },
+    "content_management": {
+      "enabled": true,
+      "portfolio": {
+        "enabled": true,
+        "auto_draft": false,
+        "require_approval": false
+      },
+      "events": {
+        "enabled": true,
+        "allow_public_submission": false
+      },
+      "services": {
+        "enabled": true
+      },
+      "blog": {
+        "enabled": true,
+        "comments_enabled": false,
+        "sharing_enabled": true
+      }
+    },
+    "media": {
+      "enabled": true,
+      "storage": {
+        "enabled": true,
+        "cdn_enabled": false,
+        "compression_enabled": true,
+        "thumbnail_generation": true
+      },
+      "upload": {
+        "enabled": true,
+        "max_file_size_mb": 10,
+        "allowed_formats": ["images", "documents", "videos"]
+      }
+    },
+    "admin": {
+      "enabled": true,
+      "dashboard": {
+        "enabled": true,
+        "analytics_enabled": true,
+        "real_time_stats": true
+      },
+      "user_management": {
+        "enabled": true,
+        "bulk_operations": true,
+        "export_enabled": true
+      },
+      "media_library": {
+        "enabled": true,
+        "bulk_upload": true,
+        "folder_organization": true
+      }
+    },
+    "api": {
+      "enabled": true,
+      "rate_limiting": {
+        "enabled": true
+      },
+      "cors": {
+        "enabled": true
+      },
+      "swagger_docs": {
+        "enabled": true,
+        "accessible_in_production": false
+      },
+      "health_check": {
+        "enabled": true,
+        "detailed_checks": false
+      }
+    },
+    "notifications": {
+      "email": {
+        "enabled": true,
+        "provider": "resend",
+        "templates_enabled": true
+      },
+      "sms": {
+        "enabled": false,
+        "provider": "twilio"
+      },
+      "push": {
+        "enabled": false,
+        "provider": "firebase"
+      }
+    },
+    "analytics": {
+      "enabled": false,
+      "tracking_enabled": false,
+      "user_analytics": false,
+      "performance_monitoring": false
+    },
+    "experimental": {
+      "ai_features": {
+        "enabled": false,
+        "image_tagging": false,
+        "content_generation": false
+      },
+      "advanced_search": {
+        "enabled": false,
+        "full_text_search": false
+      },
+      "caching": {
+        "enabled": false,
+        "redis_integration": false
+      }
+    }
+  },
+  "beta_features": {
+    "multi_language_support": false,
+    "advanced_analytics": false,
+    "api_v2": false
+  }
+}

@@ -7,36 +7,23 @@ import (
 	"dreamscape-backend/pkg/config"
 )
 
-// CORS returns the CORS middleware with production configuration
+// CORS returns the CORS middleware with configuration from JSON file
 func CORS() gin.HandlerFunc {
-	// Create set of allowed origins to avoid duplicates
-	originSet := make(map[string]bool)
+	corsConfig := config.AppConfig.CORS
 
-	// Add the configured frontend URL
-	if config.AppConfig.FrontendURL != "" {
-		originSet[config.AppConfig.FrontendURL] = true
+	if corsConfig == nil {
+		// Fallback to default configuration if CORS config is not loaded
+		corsConfig = config.GetDefaultCORSConfig()
 	}
 
-	// Explicitly add both www and non-www variants
-	originSet["https://www.dreamscapecurated.com"] = true
-	originSet["https://dreamscapecurated.com"] = true
-	originSet["http://localhost:3000"] = true
-	originSet["http://localhost:8080"] = true
-
-	// Convert map to slice
-	allowedOrigins := make([]string, 0, len(originSet))
-	for origin := range originSet {
-		allowedOrigins = append(allowedOrigins, origin)
+	config := cors.Config{
+		AllowOrigins:     corsConfig.AllowedOrigins,
+		AllowMethods:     corsConfig.AllowedMethods,
+		AllowHeaders:     corsConfig.AllowedHeaders,
+		ExposeHeaders:    corsConfig.ExposedHeaders,
+		AllowCredentials: corsConfig.AllowCredentials,
+		MaxAge:           12 * 60 * 60, // 12 hours in seconds
 	}
 
-	corsConfig := cors.Config{
-		AllowOrigins:     allowedOrigins,
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Cookie", "X-CSRF-Token", "X-Request-ID"},
-		ExposeHeaders:    []string{"Content-Length", "Content-Type", "X-Request-ID"},
-		AllowCredentials: true,
-		MaxAge:           12 * 60 * 60, // 12 hours
-	}
-
-	return cors.New(corsConfig)
+	return cors.New(config)
 }

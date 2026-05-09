@@ -1,0 +1,63 @@
+{
+  "version": "1.0.0",
+  "language": "en",
+  "errors": {
+    "authentication": {
+      "invalid_credentials": "Invalid email or password",
+      "token_expired": "Your session has expired. Please log in again",
+      "token_invalid": "Invalid authentication token",
+      "unauthorized": "You don't have permission to access this resource",
+      "account_locked": "Your account has been locked. Please contact support",
+      "email_not_verified": "Please verify your email address before continuing"
+    },
+    "validation": {
+      "required_field": "The field '{field}' is required",
+      "invalid_email": "Please provide a valid email address",
+      "invalid_phone": "Please provide a valid phone number",
+      "password_too_short": "Password must be at least {min_length} characters",
+      "passwords_dont_match": "Passwords do not match",
+      "invalid_url": "Please provide a valid URL",
+      "invalid_date": "Please provide a valid date",
+      "file_too_large": "File size exceeds maximum allowed size of {max_size}MB",
+      "invalid_file_type": "File type '{file_type}' is not allowed"
+    },
+    "database": {
+      "connection_failed": "Database connection failed",
+      "query_failed": "Failed to execute query",
+      "record_not_found": "The requested record was not found",
+      "duplicate_entry": "A record with these details already exists",
+      "constraint_violation": "This operation violates data constraints"
+    },
+    "rate_limit": {
+      "too_many_requests": "Rate limit exceeded. Please try again later",
+      "rate_limit_minute": "You have exceeded the rate limit of {limit} requests per minute",
+      "rate_limit_hour": "You have exceeded the rate limit of {limit} requests per hour"
+    },
+    "files": {
+      "upload_failed": "Failed to upload file",
+      "file_not_found": "The requested file was not found",
+      "invalid_file_format": "Invalid file format",
+      "file_too_large": "File size exceeds maximum allowed size",
+      "virus_detected": "The uploaded file contains malicious content"
+    },
+    "general": {
+      "internal_error": "An internal server error occurred. Please try again later",
+      "not_found": "The requested resource was not found",
+      "method_not_allowed": "This method is not allowed for this endpoint",
+      "invalid_request": "Invalid request format",
+      "service_unavailable": "Service temporarily unavailable. Please try again later"
+    }
+  },
+  "success": {
+    "created": "Successfully created {resource}",
+    "updated": "Successfully updated {resource}",
+    "deleted": "Successfully deleted {resource}",
+    "uploaded": "Successfully uploaded {file_count} file(s)",
+    "processed": "Successfully processed {item_count} item(s)"
+  },
+  "info": {
+    "welcome": "Welcome to Dreamscape Events API",
+    "maintenance": "System under maintenance. Please try again later",
+    "feature_disabled": "This feature is currently disabled"
+  }
+}
