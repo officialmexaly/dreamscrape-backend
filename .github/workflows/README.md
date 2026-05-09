@@ -2,7 +2,20 @@
 
 This directory contains GitHub Actions workflows for automated testing, deployment, and monitoring of the Dreamscape backend.
 
-## 🚀 Workflows
+## ⚠️ **STATUS: CI/CD PIPELINES CURRENTLY DISABLED**
+
+All workflows have been temporarily disabled by renaming with `.disabled` extension.
+
+**To enable**: Remove `.disabled` extension from workflow files:
+```bash
+cd .github/workflows
+for file in *.yml.disabled; do mv "$file" "${file%.disabled}"; done
+git add .
+git commit -m "feat: Enable CI/CD pipelines"
+git push origin backend
+```
+
+## 🚀 Workflows (Currently Disabled)
 
 ### 1. **Backend to Main Pipeline** (`backend-to-main.yml`)
 **Trigger**: Automatic on push to `backend` branch
