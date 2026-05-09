@@ -1,0 +1,111 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [backend, main, develop]
+  pull_request:
+    branches: [backend, main, develop]
+
+jobs:
+  test:
+    name: Test & Build
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        go-version: ['1.24', '1.25']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run go fmt check
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "Go code is not formatted:"
+            gofmt -d .
+            exit 1
+          fi
+
+      - name: Build project
+        run: go build -v -o test-build main.go
+
+      - name: Run tests
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Check coverage
+        run: go tool cover -func=coverage.out
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: ./...
+
+  config-validation:
+    name: Validate Configurations
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate JSON files
+        run: |
+          echo "Validating JSON configuration files..."
+          for file in config/*.json vercel.json; do
+            if [ -f "$file" ]; then
+              if ! python3 -m json.tool "$file" > /dev/null 2>&1; then
+                echo "❌ Invalid JSON: $file"
+                exit 1
+              fi
+              echo "✅ Valid JSON: $file"
+            fi
+          done
+
+      - name: Check required config files
+        run: |
+          required_files=(
+            "config/cors.json"
+            "config/rate-limiting.json"
+            "config/uploads.json"
+            "config/messages.json"
+            "config/features.json"
+            "vercel.json"
+          )
+
+          missing_files=()
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              missing_files+=("$file")
+            fi
+          done
+
+          if [ ${#missing_files[@]} -gt 0 ]; then
+            echo "❌ Missing required configuration files:"
+            for file in "${missing_files[@]}"; do
+              echo "  - $file"
+            done
+            exit 1
+          fi
+
+          echo "✅ All required configuration files present"
