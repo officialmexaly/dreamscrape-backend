@@ -156,12 +156,15 @@ var AppConfig *Config
 
 // loadCORSConfig loads CORS configuration from JSON file
 func loadCORSConfig() (*CORSConfig, error) {
-	// Try to find cors.json in various locations
+	// Try to find cors.json in various locations (including Vercel paths)
 	paths := []string{
 		"config/cors.json",
 		"./config/cors.json",
 		"cors.json",
 		"./cors.json",
+		"/var/task/config/cors.json",  // Vercel path
+		"/app/config/cors.json",        // Some container environments
+		"../config/cors.json",          // Relative path fallback
 	}
 
 	var corsFile *os.File
@@ -171,6 +174,7 @@ func loadCORSConfig() (*CORSConfig, error) {
 	for _, path := range paths {
 		corsFile, err = os.Open(path)
 		if err == nil {
+			fmt.Printf("Loaded CORS config from: %s\n", path)
 			break
 		}
 	}
@@ -313,9 +317,14 @@ func loadFeaturesConfig() (*FeaturesConfig, error) {
 
 // loadConfigFile is a generic helper to load config files
 func loadConfigFile[T any](path string, defaultFunc func() *T) (*T, error) {
+	// Try multiple possible paths for different environments
 	paths := []string{
-		path,
-		"./" + path,
+		path,                    // config/cors.json
+		"./" + path,             // ./config/cors.json
+		"../" + path,            // ../config/cors.json
+		"../../" + path,         // ../../config/cors.json
+		"/var/task/" + path,     // Vercel path
+		"/app/" + path,          // Some container environments
 	}
 
 	var configFile *os.File
@@ -324,12 +333,13 @@ func loadConfigFile[T any](path string, defaultFunc func() *T) (*T, error) {
 	for _, p := range paths {
 		configFile, err = os.Open(p)
 		if err == nil {
+			fmt.Printf("Loaded config from: %s\n", p)
 			break
 		}
 	}
 
 	if configFile == nil {
-		fmt.Printf("Warning: %s not found, using default configuration\n", path)
+		fmt.Printf("Warning: %s not found in any location, using default configuration\n", path)
 		return defaultFunc(), nil
 	}
 	defer configFile.Close()

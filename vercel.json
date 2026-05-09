@@ -2,7 +2,14 @@
   "builds": [
     {
       "src": "main.go",
-      "use": "@vercel/go"
+      "use": "@vercel/go",
+      "config": {
+        "include": [
+          "config/**/*",
+          "pkg/**/*",
+          "backend/**/*"
+        ]
+      }
     }
   ],
   "routes": [
@@ -10,5 +17,8 @@
       "src": "/(.*)",
       "dest": "/main.go"
     }
+  ],
+  "include": [
+    "config/**/*"
   ]
 }

@@ -1,0 +1,37 @@
+# Test files
+*_test.go
+tests/
+
+# Documentation (not needed in deployment)
+README.md
+docs/
+*.md
+
+# Build artifacts
+*.test
+*.out
+build/
+dist/
+
+# Temporary files
+*.tmp
+*.backup
+*.backup*
+*.bak
+server
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Development files
+.gitignore
+Makefile
+.editorconfig
+
+# Backup files
+backend/handlers/public/services.go.backup3
