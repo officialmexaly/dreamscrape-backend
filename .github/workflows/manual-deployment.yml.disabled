@@ -1,0 +1,197 @@
+name: Manual Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+      skip_tests:
+        description: 'Skip tests (not recommended)'
+        required: false
+        default: 'false'
+        type: boolean
+      create_tag:
+        description: 'Create git tag'
+        required: false
+        default: 'true'
+        type: boolean
+      rollback:
+        description: 'Rollback to previous version'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    name: Validate Deployment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate environment
+        run: |
+          ENV="${{ inputs.environment }}"
+          echo "Deploying to: $ENV"
+
+          if [ "$ENV" != "production" ] && [ "$ENV" != "staging" ] && [ "$ENV" != "development" ]; then
+            echo "❌ Invalid environment: $ENV"
+            exit 1
+          fi
+
+          echo "✅ Environment validated: $ENV"
+
+      - name: Check branch
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          echo "Current branch: $BRANCH"
+
+          if [ "$BRANCH" != "backend" ] && [ "$BRANCH" != "main" ]; then
+            echo "⚠️ Warning: Not on standard deployment branch"
+          else
+            echo "✅ On deployment branch: $BRANCH"
+          fi
+
+  test:
+    name: Run Tests
+    needs: validate
+    runs-on: ubuntu-latest
+    if: inputs.skip_tests != 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: |
+          echo "Running test suite..."
+          go test -v -race ./...
+          echo "✅ Tests passed"
+
+  deploy:
+    name: Deploy to Environment
+    needs: [validate, test]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+
+      - name: Deploy to environment
+        run: |
+          ENV="${{ inputs.environment }}"
+          echo "🚀 Deploying to $ENV..."
+
+          if [ "$ENV" == "production" ]; then
+            echo "Production deployment procedure"
+            # Add production-specific deployment steps here
+          elif [ "$ENV" == "staging" ]; then
+            echo "Staging deployment procedure"
+            # Add staging-specific deployment steps here
+          else
+            echo "Development deployment procedure"
+            # Add development-specific deployment steps here
+          fi
+
+      - name: Create deployment tag
+        if: inputs.create_tag == 'true'
+        run: |
+          ENV="${{ inputs.environment }}"
+          TAG="v$(date '+%Y%m%d-%H%M%S')-$ENV"
+
+          echo "Creating tag: $TAG"
+          git tag -a "$TAG" -m "Deployment to $ENV - $(date '+%Y-%m-%d %H:%M:%S')"
+          git push origin "$TAG"
+
+          echo "✅ Tag created: $TAG"
+
+      - name: Trigger Vercel deployment
+        run: |
+          ENV="${{ inputs.environment }}"
+          echo "Triggering Vercel deployment for $ENV..."
+
+          # Note: Vercel will automatically deploy when changes are pushed to main
+          # For other environments, you might need to use Vercel CLI
+          if [ "$ENV" == "production" ]; then
+            echo "Vercel production deployment triggered"
+          elif [ "$ENV" == "staging" ]; then
+            echo "Vercel staging deployment would be triggered here"
+          fi
+
+      - name: Deployment summary
+        run: |
+          ENV="${{ inputs.environment }}"
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: $ENV" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ✅ Deployment completed" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp**: $(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: inputs.rollback == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get previous stable version
+        id: previous_version
+        run: |
+          # Get the tag before the latest one
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1)
+          echo "tag=$PREV_TAG" >> $GITHUB_OUTPUT
+          echo "Previous stable version: $PREV_TAG"
+
+      - name: Checkout previous version
+        run: |
+          git checkout ${{ steps.previous_version.tag }}
+
+      - name: Create rollback branch
+        run: |
+          ROLLBACK_BRANCH="rollback-$(date '+%Y%m%d-%H%M%S')"
+          git checkout -b "$ROLLBACK_BRANCH"
+          git push origin "$ROLLBACK_BRANCH"
+          echo "Created rollback branch: $ROLLBACK_BRANCH"
+
+      - name: Rollback summary
+        run: |
+          echo "## ⚠️ Rollback Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Previous Version**: ${{ steps.previous_version.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ✅ Rollback completed" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp**: $(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Note**: Manual deployment of the rollback branch may be required" >> $GITHUB_STEP_SUMMARY

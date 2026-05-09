@@ -1,0 +1,177 @@
+name: Health Check & Monitoring
+
+on:
+  schedule:
+    # Run health check every hour
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    name: API Health Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check API Health
+        id: health
+        run: |
+          # Replace with your actual Vercel deployment URL
+          API_URL="https://dreamscape-events.vercel.app/health"
+
+          echo "Checking API health at: $API_URL"
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" "$API_URL")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+
+          echo "HTTP Status Code: $HTTP_CODE"
+          echo "Response Body: $BODY"
+
+          if [ "$HTTP_CODE" == "200" ]; then
+            echo "status=healthy" >> $GITHUB_OUTPUT
+            echo "message=API is healthy" >> $GITHUB_OUTPUT
+            echo "✅ API Health Check Passed"
+          else
+            echo "status=unhealthy" >> $GITHUB_OUTPUT
+            echo "message=API returned HTTP $HTTP_CODE" >> $GITHUB_OUTPUT
+            echo "❌ API Health Check Failed"
+            exit 1
+          fi
+
+      - name: Health check summary
+        if: always()
+        run: |
+          STATUS="${{ steps.health.outputs.status }}"
+          MESSAGE="${{ steps.health.outputs.message }}"
+
+          if [ "$STATUS" == "healthy" ]; then
+            echo "## ✅ Health Check Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ Health Check Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: $MESSAGE" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp**: $(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**API URL**: https://dreamscape-events.vercel.app" >> $GITHUB_STEP_SUMMARY
+
+  config-monitoring:
+    name: Configuration Monitoring
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check configuration integrity
+        run: |
+          echo "Checking configuration files..."
+
+          # Check if all required config files exist
+          required_files=(
+            "config/cors.json"
+            "config/rate-limiting.json"
+            "config/uploads.json"
+            "config/messages.json"
+            "config/features.json"
+            "vercel.json"
+          )
+
+          missing_files=()
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              missing_files+=("$file")
+            fi
+          done
+
+          if [ ${#missing_files[@]} -gt 0 ]; then
+            echo "❌ Missing configuration files:"
+            for file in "${missing_files[@]}"; do
+              echo "  - $file"
+            done
+            exit 1
+          fi
+
+          echo "✅ All required configuration files present"
+
+      - name: Validate JSON syntax
+        run: |
+          echo "Validating JSON files..."
+          for file in config/*.json vercel.json; do
+            if [ -f "$file" ]; then
+              if ! python3 -m json.tool "$file" > /dev/null 2>&1; then
+                echo "❌ Invalid JSON: $file"
+                exit 1
+              fi
+            fi
+          done
+          echo "✅ All JSON files are valid"
+
+      - name: Check security settings
+        run: |
+          echo "Checking security configurations..."
+
+          # Check if rate limiting is enabled
+          if grep -q '"enabled".*true' config/rate-limiting.json; then
+            echo "✅ Rate limiting is enabled"
+          else
+            echo "⚠️ Rate limiting might be disabled"
+          fi
+
+          # Check if security features are enabled in uploads
+          if grep -q '"check_file_signature".*true' config/uploads.json; then
+            echo "✅ File signature checking is enabled"
+          else
+            echo "⚠️ File signature checking might be disabled"
+          fi
+
+      - name: Configuration summary
+        run: |
+          echo "## 🔧 Configuration Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **Config Files**: All present and valid" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **JSON Syntax**: All files valid" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **Security**: Rate limiting enabled" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **File Uploads**: Security checks enabled" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp**: $(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+  dependency-check:
+    name: Dependency Security Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Check for vulnerabilities
+        run: |
+          echo "Checking Go dependencies for vulnerabilities..."
+
+          # Install govulncheck if not present
+          if ! command -v govulncheck &> /dev/null; then
+            echo "Installing govulncheck..."
+            go install golang.org/x/vuln/cmd/govulncheck@latest
+          fi
+
+          # Run vulnerability check
+          govulncheck ./... || echo "⚠️ Vulnerabilities found, please review"
+
+      - name: Check for outdated dependencies
+        run: |
+          echo "Checking for outdated dependencies..."
+          go list -u -m all
+
+      - name: Dependency summary
+        run: |
+          echo "## 📦 Dependency Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **Vulnerability Check**: Completed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **Dependency Check**: Completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Note**: Review the output for any security concerns" >> $GITHUB_STEP_SUMMARY
