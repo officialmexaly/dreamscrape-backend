@@ -44,6 +44,8 @@ Thumbs.db
 *.dylib
 *.test
 *.out
+server
+main
 
 # Go specific
 vendor/
