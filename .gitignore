@@ -48,7 +48,6 @@ server
 main
 
 # Go specific
-vendor/
 go.sum
 *.mod.sum
 
