@@ -42,10 +42,20 @@ func NewRateLimiter(config RateLimiterConfig) *RateLimiter {
 
 // DefaultRateLimiter creates a rate limiter with default configuration
 func DefaultRateLimiter() *RateLimiter {
+	if config.AppConfig.RateLimiting == nil {
+		// Fallback to environment variables
+		return NewRateLimiter(RateLimiterConfig{
+			RequestsPerMinute: config.AppConfig.RateLimitPerMinute,
+			RequestsPerHour:   config.AppConfig.RateLimitPerHour,
+			Enabled:           true,
+		})
+	}
+
+	rateLimitConfig := config.AppConfig.RateLimiting
 	return NewRateLimiter(RateLimiterConfig{
-		RequestsPerMinute: config.AppConfig.RateLimitPerMinute,
-		RequestsPerHour:   config.AppConfig.RateLimitPerHour,
-		Enabled:           true,
+		RequestsPerMinute: rateLimitConfig.DefaultLimits.RequestsPerMinute,
+		RequestsPerHour:   rateLimitConfig.DefaultLimits.RequestsPerHour,
+		Enabled:           rateLimitConfig.Enabled,
 	})
 }
 

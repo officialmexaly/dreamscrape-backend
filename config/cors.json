@@ -1,0 +1,32 @@
+{
+  "allowed_origins": [
+    "https://www.dreamscapecurated.com",
+    "https://dreamscapecurated.com",
+    "http://localhost:3000",
+    "http://localhost:8080"
+  ],
+  "allowed_methods": [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS"
+  ],
+  "allowed_headers": [
+    "Origin",
+    "Content-Type",
+    "Authorization",
+    "Cookie",
+    "X-CSRF-Token",
+    "X-Request-ID"
+  ],
+  "exposed_headers": [
+    "Content-Length",
+    "Content-Type",
+    "X-Request-ID"
+  ],
+  "allow_credentials": true,
+  "max_age_seconds": 43200,
+  "debug_mode": false
+}
