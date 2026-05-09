@@ -8,10 +8,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 
-	_ "dreamscape-backend/docs" // swagger docs
 	"dreamscape-backend/backend/database"
 	"dreamscape-backend/backend/handlers/auth"
 	"dreamscape-backend/backend/handlers/public"
@@ -71,8 +68,8 @@ func initializeRouter() *gin.Engine {
 	r.Use(middleware.Security())
 	r.Use(middleware.CORS())
 
-	// Swagger documentation
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Swagger documentation (disabled for Vercel deployment)
+	// r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Test endpoint to verify database connection
 	// @Summary      Test database connection
