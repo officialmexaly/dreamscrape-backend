@@ -1,7 +1,4 @@
 // Vercel configuration for Dreamscape Backend
-import type { Config } from '@vercel/go';
-
-// Vercel configuration
 export default {
   builds: [
     {
@@ -15,4 +12,4 @@ export default {
       dest: '/main.go',
     },
   ],
-} as Config;
+};
