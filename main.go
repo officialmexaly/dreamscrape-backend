@@ -320,20 +320,28 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	// Get the origin from the request
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		origin = "*"
+	}
+
 	// Handle CORS preflight requests
 	if r.Method == "OPTIONS" {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization, X-CSRF-Token, X-Request-ID")
+		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization, Cookie, X-CSRF-Token, X-Request-ID")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Max-Age", "86400")
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
 	// Add CORS headers to all responses
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", origin)
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization, X-CSRF-Token, X-Request-ID")
+	w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization, Cookie, X-CSRF-Token, X-Request-ID")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 	// Simple health check that doesn't require database
 	if r.URL.Path == "/health" {
