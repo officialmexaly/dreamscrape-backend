@@ -65,8 +65,8 @@ func initializeRouter() *gin.Engine {
 	// Apply middleware
 	r.Use(middleware.Recovery(logger))
 	r.Use(middleware.Logger(logger))
+	r.Use(middleware.CORS()) // Must be before Security()
 	r.Use(middleware.Security())
-	// r.Use(middleware.CORS()) // CORS disabled temporarily
 
 	// Swagger documentation (disabled for Vercel deployment)
 	// r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
