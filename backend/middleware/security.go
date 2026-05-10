@@ -30,7 +30,7 @@ func Security() gin.HandlerFunc {
 			"style-src 'self' 'unsafe-inline'; " +
 			"img-src 'self' data: https:; " +
 			"font-src 'self' data:; " +
-			"connect-src 'self'; " +
+			"connect-src '*'; " +
 			"frame-ancestors 'none';"
 		c.Header("Content-Security-Policy", csp)
 

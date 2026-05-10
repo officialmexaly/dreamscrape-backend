@@ -1,29 +1,25 @@
 package middleware
 
 import (
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-
-	"dreamscape-backend/pkg/config"
 )
 
-// CORS returns the CORS middleware with configuration from JSON file
+// CORS returns a simple CORS middleware that allows all origins
 func CORS() gin.HandlerFunc {
-	corsConfig := config.AppConfig.CORS
+	return func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization, Cookie, X-CSRF-Token, X-Request-ID")
+		c.Header("Access-Control-Expose-Headers", "Content-Length, Content-Type, X-Request-ID")
+		c.Header("Access-Control-Allow-Credentials", "true")
+		c.Header("Access-Control-Max-Age", "86400")
 
-	if corsConfig == nil {
-		// Fallback to default configuration if CORS config is not loaded
-		corsConfig = config.GetDefaultCORSConfig()
+		// Handle preflight requests
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
 	}
-
-	config := cors.Config{
-		AllowOrigins:     corsConfig.AllowedOrigins,
-		AllowMethods:     corsConfig.AllowedMethods,
-		AllowHeaders:     corsConfig.AllowedHeaders,
-		ExposeHeaders:    corsConfig.ExposedHeaders,
-		AllowCredentials: corsConfig.AllowCredentials,
-		MaxAge:           12 * 60 * 60, // 12 hours in seconds
-	}
-
-	return cors.New(config)
 }
